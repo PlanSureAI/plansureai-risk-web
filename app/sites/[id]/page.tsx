@@ -95,7 +95,35 @@ async function getSite(id: string): Promise<Site | null> {
   }
 
   console.log("✅ Site loaded successfully:", data?.site_name);
-  return data as Site;
+  // Explicit type-safe return with nullish fallbacks
+  const site: Site = {
+    id: data.id,
+    site_name: data.site_name,
+    address: data.address,
+    local_planning_authority: data.local_planning_authority,
+    status: data.status,
+    planning_outcome: data.planning_outcome,
+    planning_summary: data.planning_summary,
+    key_planning_considerations: data.key_planning_considerations,
+    decision_summary: data.decision_summary,
+    objection_likelihood: data.objection_likelihood,
+    ai_outcome: data.ai_outcome,
+    ai_risk_summary: data.ai_risk_summary,
+    ai_report: data.ai_report,
+    risk_rationale: data.risk_rationale,
+    site_killers: data.site_killers,
+    gdv: data.gdv ?? null,
+    total_cost: data.total_cost ?? null,
+    profit_on_cost_percent: data.profit_on_cost_percent ?? null,
+    loan_amount: data.loan_amount ?? null,
+    ltc_percent: data.ltc_percent ?? null,
+    ltgdv_percent: data.ltgdv_percent ?? null,
+    interest_cover: data.interest_cover ?? null,
+    planning_confidence_score: data.planning_confidence_score ?? null,
+    confidence_reasons: data.confidence_reasons ?? null,
+  };
+
+  return site;
 }
 
 // Reusable fetch for lender contexts; narrowed to fields the lender page consumes.
