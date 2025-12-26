@@ -33,20 +33,24 @@ export default async function LenderSummaryPage({ params }: PageProps) {
 
         {/* Metrics strip band */}
         <section className="grid gap-4 md:grid-cols-4">
-          <MetricCard label="GDV" value={site.gdv} format="currency" />
-          <MetricCard label="Total cost" value={site.total_cost} format="currency" />
+          <MetricCard label="GDV" value={site.gdv ?? null} format="currency" />
+          <MetricCard label="Total cost" value={site.total_cost ?? null} format="currency" />
           <MetricCard
             label="Profit on cost"
-            value={site.profit_on_cost_percent}
+            value={site.profit_on_cost_percent ?? null}
             format="percent"
           />
-          <MetricCard label="Loan amount" value={site.loan_amount} format="currency" />
-          <MetricCard label="LTC" value={site.ltc_percent} format="percent" />
-          <MetricCard label="LTGDV" value={site.ltgdv_percent} format="percent" />
-          <MetricCard label="Interest cover" value={site.interest_cover} format="number" />
+          <MetricCard label="Loan amount" value={site.loan_amount ?? null} format="currency" />
+          <MetricCard label="LTC" value={site.ltc_percent ?? null} format="percent" />
+          <MetricCard label="LTGDV" value={site.ltgdv_percent ?? null} format="percent" />
+          <MetricCard
+            label="Interest cover"
+            value={site.interest_cover ?? null}
+            format="number"
+          />
           <MetricCard
             label="Planning confidence"
-            value={site.planning_confidence_score}
+            value={site.planning_confidence_score ?? null}
             format="percent"
           />
         </section>
