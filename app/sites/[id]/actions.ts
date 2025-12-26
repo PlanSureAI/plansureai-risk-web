@@ -79,7 +79,7 @@ Say “do_not_proceed” if you see major unresolved risks.
   const completion = await openai.responses.create({
     model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
     input: prompt,
-    response_format: { type: "json_object" },
+    response_format: { type: "json_object" } as const,
   });
 
   const contentBlock = completion.output[0].content[0];
