@@ -39,6 +39,14 @@ type Site = {
   interest_cover: number | null;
   planning_confidence_score: number | null;
   confidence_reasons: string[] | null;
+  // Optional legacy finance fields
+  gdv?: number;
+  total_cost?: number;
+  profit_on_cost?: number;
+  loan_amount?: number;
+  ltc?: number;
+  ltgdv?: number;
+  interest_cover?: number;
 };
 
 type PageProps = {
