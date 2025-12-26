@@ -76,14 +76,13 @@ Focus on UK planning policy, settlement pattern, likely objections and overall d
 Say “do_not_proceed” if you see major unresolved risks.
 `;
 
-  const completion = await openai.responses.create({
-    model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
-    input: prompt,
+  const completion = await openai.chat.completions.create({
+    model: process.env.OPENAI_MODEL ?? "gpt-4-turbo-preview",
+    messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" } as const,
   });
 
-  const contentBlock = completion.output[0].content[0];
-  const raw = "text" in contentBlock ? contentBlock.text : "";
+  const raw = completion.choices[0]?.message?.content?.trim() ?? "";
 
   let parsed: PlanningAnalysis;
 
