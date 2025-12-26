@@ -95,7 +95,7 @@ async function getSite(id: string): Promise<Site | null> {
   }
 
   console.log("✅ Site loaded successfully:", data?.site_name);
-  return data;
+  return data as Site;
 }
 
 // Reusable fetch for lender contexts; narrowed to fields the lender page consumes.
