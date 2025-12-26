@@ -30,23 +30,15 @@ type Site = {
       }[]
     | null;
   // Finance + scores
-  gdv: number | null;
-  total_cost: number | null;
-  profit_on_cost_percent: number | null;
-  loan_amount: number | null;
-  ltc_percent: number | null;
-  ltgdv_percent: number | null;
-  interest_cover: number | null;
+  gdv?: number | null;
+  total_cost?: number | null;
+  profit_on_cost_percent?: number | null;
+  loan_amount?: number | null;
+  ltc_percent?: number | null;
+  ltgdv_percent?: number | null;
+  interest_cover?: number | null;
   planning_confidence_score: number | null;
   confidence_reasons: string[] | null;
-  // Optional legacy finance fields
-  gdv?: number;
-  total_cost?: number;
-  profit_on_cost?: number;
-  loan_amount?: number;
-  ltc?: number;
-  ltgdv?: number;
-  interest_cover?: number;
 };
 
 type PageProps = {
