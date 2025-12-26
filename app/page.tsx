@@ -25,7 +25,7 @@ export default function Home() {
 
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/sites/new"
+              href="/signin?redirect=/sites/new"
               className="flex h-11 items-center justify-center rounded-full bg-zinc-900 px-6 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800"
             >
               Analyse a site
