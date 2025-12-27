@@ -8,6 +8,7 @@ import { RiskRationaleSection } from "./RiskRationaleSection";
 import { SiteKillersSection } from "./SiteKillersSection";
 import { runFundingEligibility } from "./actions";
 import { FinancePackButton } from "./FinancePackButton";
+import { FinancePackPdfButton } from "./FinancePackPdfButton";
 
 type Site = {
   id: string;
@@ -543,7 +544,10 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             </button>
           </form>
 
-          <FinancePackButton siteId={site.id} siteName={site.site_name} />
+          <div className="flex gap-2">
+            <FinancePackButton siteId={site.id} siteName={site.site_name} />
+            <FinancePackPdfButton siteId={site.id} siteName={site.site_name} />
+          </div>
 
           <form action={uploadSitePdf} className="space-y-2">
             <input type="hidden" name="id" value={site.id} />

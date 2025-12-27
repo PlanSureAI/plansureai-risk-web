@@ -143,3 +143,60 @@ export type FinancePack = {
     results: EligibilityResult[];
   };
 };
+
+export type FinancePackCsvRow = {
+  site_id: string;
+  site_name: string | null;
+  address: string | null;
+  local_authority: string | null;
+  country: string;
+  units_total: number | null;
+  planning_status: string | null;
+  land_control: string | null;
+  gdv: number | null;
+  total_cost: number | null;
+  profit_on_cost_pct: number | null;
+  loan_amount: number | null;
+  ltc_percent: number | null;
+  ltgdv_percent: number | null;
+  sme_housebuilder: boolean | null;
+  uk_registered: boolean | null;
+  target_sap: number | null;
+  fossil_fuel_free: boolean | null;
+  mmc_used: boolean | null;
+  real_living_wage: boolean | null;
+  lighthouse_charity: boolean | null;
+  hbf_status: string | null;
+  gha_status: string | null;
+};
+
+export function packToCsvRow(pack: FinancePack): FinancePackCsvRow {
+  const hbf = pack.funding.results.find((r) => r.productId === "homeBuildingFund");
+  const gha = pack.funding.results.find((r) => r.productId === "greenerHomesAlliance");
+
+  return {
+    site_id: pack.scheme.id,
+    site_name: pack.scheme.name,
+    address: pack.scheme.address,
+    local_authority: pack.scheme.localAuthority,
+    country: pack.scheme.country,
+    units_total: pack.scheme.unitsTotal,
+    planning_status: pack.scheme.planningStatus,
+    land_control: pack.scheme.landControl,
+    gdv: pack.viability.gdv,
+    total_cost: pack.viability.totalCost,
+    profit_on_cost_pct: pack.viability.profitOnCostPct,
+    loan_amount: pack.viability.loanAmount,
+    ltc_percent: pack.viability.ltcPercent,
+    ltgdv_percent: pack.viability.ltgdvPercent,
+    sme_housebuilder: pack.sponsor.smeHousebuilder,
+    uk_registered: pack.sponsor.ukRegistered,
+    target_sap: pack.sustainability.targetSAP,
+    fossil_fuel_free: pack.sustainability.fossilFuelFree,
+    mmc_used: pack.sustainability.mmcUsed,
+    real_living_wage: pack.sustainability.realLivingWage,
+    lighthouse_charity: pack.sustainability.lighthouseCharity,
+    hbf_status: hbf?.status ?? null,
+    gha_status: gha?.status ?? null,
+  };
+}

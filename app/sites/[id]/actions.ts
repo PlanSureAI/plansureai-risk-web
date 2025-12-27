@@ -1,6 +1,7 @@
 "use server";
 
 import OpenAI from "openai";
+import { PDFDocument, StandardFonts } from "pdf-lib";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
@@ -342,6 +343,94 @@ export async function generateFinancePack(formData: FormData): Promise<FinancePa
   };
 
   return pack;
+}
+
+export async function generateFinancePackPdf(formData: FormData): Promise<string> {
+  const pack = await generateFinancePack(formData);
+
+  const pdf = await PDFDocument.create();
+  const page = pdf.addPage([595, 842]); // A4
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const { width } = page.getSize();
+
+  let y = 800;
+  const lineHeight = 14;
+  const draw = (text: string, size = 11, bold = false) => {
+    page.drawText(text, {
+      x: 40,
+      y,
+      size,
+      font,
+      color: undefined,
+    });
+    y -= lineHeight;
+  };
+
+  // Header
+  draw(`Finance Pack - ${pack.scheme.name ?? "Site"}`, 14);
+  draw(`${pack.scheme.address ?? "No address"} · ${pack.scheme.localAuthority ?? "No LPA"}`, 11);
+  draw(`Generated: ${new Date().toLocaleDateString()}`, 10);
+  y -= lineHeight;
+
+  // Scheme
+  draw("Scheme", 12, true);
+  draw(
+    `Country: ${pack.scheme.country} | Units: ${pack.scheme.unitsTotal ?? "—"} | Planning status: ${pack.scheme.planningStatus ?? "—"}`
+  );
+  draw(`Land control: ${pack.scheme.landControl ?? "—"}`);
+  draw(
+    `Sponsor: ${pack.sponsor.smeHousebuilder ? "SME housebuilder" : "Not SME"}, ${
+      pack.sponsor.ukRegistered ? "UK registered" : "Not UK registered"
+    }`
+  );
+  y -= lineHeight;
+
+  // Viability
+  draw("Viability", 12, true);
+  draw(
+    `GDV: ${pack.viability.gdv ?? "—"} | Total cost: ${pack.viability.totalCost ?? "—"} | Profit on cost %: ${
+      pack.viability.profitOnCostPct ?? "—"
+    }`
+  );
+  draw(
+    `Loan: ${pack.viability.loanAmount ?? "—"} | LTC: ${pack.viability.ltcPercent ?? "—"} | LTGDV: ${
+      pack.viability.ltgdvPercent ?? "—"
+    }`
+  );
+  y -= lineHeight;
+
+  // Sustainability
+  draw("Sustainability", 12, true);
+  draw(
+    `SAP target: ${pack.sustainability.targetSAP ?? "—"} | EPC: ${pack.sustainability.targetEPCBand ?? "—"} | Fossil-fuel-free: ${
+      pack.sustainability.fossilFuelFree === true ? "Yes" : pack.sustainability.fossilFuelFree === false ? "No" : "—"
+    }`
+  );
+  draw(
+    `MMC: ${pack.sustainability.mmcUsed ? "Yes" : "No"} | Real Living Wage: ${
+      pack.sustainability.realLivingWage ? "Yes" : "No"
+    } | Lighthouse Charity: ${pack.sustainability.lighthouseCharity ? "Yes" : "No"}`
+  );
+  y -= lineHeight;
+
+  // Funding options
+  draw("Funding options", 12, true);
+  const results = pack.funding.results;
+  if (results.length === 0) {
+    draw("No funding results available.");
+  } else {
+    results.forEach((r) => {
+      draw(`${r.productId} — ${r.status}`);
+      const strengths = r.passedCriteria.slice(0, 2).join("; ") || "—";
+      const gaps = r.failedCriteria.slice(0, 2).join("; ") || "—";
+      draw(`Strengths: ${strengths}`);
+      draw(`Gaps: ${gaps}`);
+      y -= lineHeight;
+    });
+  }
+
+  const pdfBytes = await pdf.save();
+  return Buffer.from(pdfBytes).toString("base64");
 }
 
 export async function updateSite(formData: FormData) {

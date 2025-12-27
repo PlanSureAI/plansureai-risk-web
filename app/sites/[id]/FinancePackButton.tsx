@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { generateFinancePack } from "./actions";
+import { packToCsvRow, type FinancePackCsvRow } from "../types/siteFinance";
 
 type Props = { siteId: string; siteName?: string | null };
 
@@ -15,8 +16,9 @@ export function FinancePackButton({ siteId, siteName }: Props) {
 
       try {
         const pack = await generateFinancePack(formData);
-        const json = JSON.stringify(pack, null, 2);
-        const blob = new Blob([json], { type: "application/json" });
+        const row = packToCsvRow(pack);
+        const csv = toCsv(row);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
 
         const safeName =
@@ -29,7 +31,7 @@ export function FinancePackButton({ siteId, siteName }: Props) {
 
         const a = document.createElement("a");
         a.href = url;
-        a.download = `finance-pack-${safeName}.json`;
+        a.download = `finance-pack-${safeName}.csv`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -47,7 +49,18 @@ export function FinancePackButton({ siteId, siteName }: Props) {
       disabled={isPending}
       className="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
     >
-      {isPending ? "Preparing..." : "Download JSON pack"}
+      {isPending ? "Preparing..." : "Download CSV pack"}
     </button>
   );
+}
+
+function toCsv(row: FinancePackCsvRow): string {
+  const headers = Object.keys(row);
+  const values = headers.map((h) => {
+    const v = (row as any)[h];
+    if (v === null || v === undefined) return "";
+    const str = String(v);
+    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+  });
+  return headers.join(",") + "\n" + values.join(",");
 }
