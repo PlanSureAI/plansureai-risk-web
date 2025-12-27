@@ -5,6 +5,11 @@ import { PDFDocument, StandardFonts } from "pdf-lib";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { buildSiteRiskProfileInput, type SitePlanningData } from "@/app/lib/planningDataProvider";
+import {
+  formatPlanningDataForPromptJson,
+  type PlanningInstructionPayload,
+} from "@/app/lib/formatPlanningDataForPrompt";
 import {
   mapSiteFinanceProfile,
   type SiteFinanceProfile,
@@ -41,6 +46,14 @@ function toNullableString(value: FormDataEntryValue | null) {
   return str ? str : null;
 }
 
+function extractPostcode(address?: string | null): string | null {
+  if (!address) return null;
+  const match = address.match(
+    /\b([A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2})\b/i,
+  );
+  return match ? match[1].toUpperCase() : null;
+}
+
 export async function runSiteAnalysis(formData: FormData) {
   const id = formData.get("id") as string;
 
@@ -61,7 +74,8 @@ export async function runSiteAnalysis(formData: FormData) {
         objection_likelihood,
         key_planning_considerations,
         planning_summary,
-        decision_summary
+        decision_summary,
+        geometry
       `
     )
     .eq("id", id)
@@ -69,35 +83,51 @@ export async function runSiteAnalysis(formData: FormData) {
 
   if (error || !site) throw error ?? new Error("Site not found");
 
-  const prompt = `
-You are a UK planning specialist AI assessing planning risk for a single site.
+  const landtechKey = process.env.LANDTECH_API_KEY;
+  const postcode = extractPostcode(site.address ?? undefined);
+  const geometry = (site as any)?.geometry ?? null;
 
-Return JSON with this exact shape:
+  let landtechPlanning: SitePlanningData | null = null;
+  if (landtechKey && postcode) {
+    try {
+      landtechPlanning = await buildSiteRiskProfileInput({
+        apiKey: landtechKey,
+        geometry: geometry ?? undefined,
+        postcode: geometry ? undefined : postcode,
+      });
+    } catch (err) {
+      console.error("LandTech planning fetch failed", err);
+    }
+  }
 
-{
-  "outcome": "proceed" | "conditional" | "do_not_proceed",
-  "risk_summary": "2–4 sentences explaining the key planning risks and opportunities.",
-  "report": "A concise planning risk memo (~400-600 words) suitable for an internal decision pack."
-}
+  const planningDataForPrompt = formatPlanningDataForPromptJson(landtechPlanning);
 
-Site data:
-- Site name: ${site.site_name ?? "Unknown"}
-- Address: ${site.address ?? "Unknown"}
-- Local planning authority: ${site.local_planning_authority ?? "Unknown"}
-- Current status: ${site.status ?? "Unknown"}
-- Existing planning outcome: ${site.planning_outcome ?? "None"}
-- Objection likelihood: ${site.objection_likelihood ?? "Unknown"}
-- Key planning considerations: ${site.key_planning_considerations ?? "None"}
-- Planning summary: ${site.planning_summary ?? "None"}
-- Decision summary: ${site.decision_summary ?? "None"}
+  const payload: PlanningInstructionPayload = {
+    instruction:
+      "You are a UK planning specialist AI assessing planning risk for a single site. Return JSON with this exact shape: {\"outcome\":\"proceed\"|\"conditional\"|\"do_not_proceed\",\"risk_summary\":\"2–4 sentences.\",\"report\":\"400–600 word planning risk memo.\"} Focus on UK planning policy, settlement pattern, likely objections and overall deliverability. Use outcome \"do_not_proceed\" if there are major unresolved risks.",
+    site: {
+      name: site.site_name ?? "Unknown",
+      address: site.address ?? "Unknown",
+      lpa: site.local_planning_authority ?? "Unknown",
+      status: site.status ?? "Unknown",
+      existing_planning_outcome: site.planning_outcome ?? "None",
+      objection_likelihood: site.objection_likelihood ?? "Unknown",
+      key_planning_considerations: site.key_planning_considerations ?? "None",
+      planning_summary: site.planning_summary ?? "None",
+      decision_summary: site.decision_summary ?? "None",
+    },
+    planning_data: planningDataForPrompt,
+  };
 
-Focus on UK planning policy, settlement pattern, likely objections and overall deliverability.
-Say “do_not_proceed” if you see major unresolved risks.
-`;
+  // Logging for manual validation
+  console.log("[runSiteAnalysis] SitePlanningData:", JSON.stringify(landtechPlanning));
+  const payloadString = JSON.stringify(payload);
+  console.log("[runSiteAnalysis] payload_length_chars:", payloadString.length);
+  console.log("[runSiteAnalysis] payload_preview:", payloadString.slice(0, 800));
 
   const completion = await openai.chat.completions.create({
     model: process.env.OPENAI_MODEL ?? "gpt-4-turbo-preview",
-    messages: [{ role: "user", content: prompt }],
+    messages: [{ role: "user", content: payloadString }],
     response_format: { type: "json_object" } as const,
   });
 
