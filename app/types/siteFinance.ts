@@ -200,3 +200,68 @@ export function packToCsvRow(pack: FinancePack): FinancePackCsvRow {
     gha_status: gha?.status ?? null,
   };
 }
+
+export type NextMove = "proceed" | "hold" | "walk_away";
+
+export type NextMoveResult = {
+  move: NextMove;
+  reason: string;
+};
+
+export function getNextMove(
+  aiOutcome: string | null,
+  eligibilityResults: EligibilityResult[] | null
+): NextMoveResult {
+  const results = eligibilityResults ?? [];
+
+  const hbf = results.find((r) => r.productId === "homeBuildingFund");
+  const gha = results.find((r) => r.productId === "greenerHomesAlliance");
+
+  const anyFundingBorderlineOrBetter =
+    [hbf, gha].some(
+      (r) => r && (r.status === "Eligible" || r.status === "Borderline")
+    );
+
+  // Walk away
+  if (aiOutcome === "do_not_proceed") {
+    return {
+      move: "walk_away",
+      reason:
+        "Planning risk looks high and the scheme currently fails key funding checks, so time and cash are likely better spent on other sites.",
+    };
+  }
+
+  // Proceed
+  if (aiOutcome === "proceed" && anyFundingBorderlineOrBetter) {
+    return {
+      move: "proceed",
+      reason:
+        "Planning risk looks manageable and at least one funding route (e.g. HBF or GHA) is in scope, so it is worth progressing to consultants and lenders.",
+    };
+  }
+
+  // Hold & clarify
+  return {
+    move: "hold",
+    reason:
+      "There are some promising signals but also gaps in planning or funding fit. Clarify units, sustainability targets, or land control before committing more spend.",
+  };
+}
+
+export function getFrictionHint(
+  objectionLikelihood: string | null,
+  aiOutcome: string | null
+): string | null {
+  const lower = objectionLikelihood?.toLowerCase() ?? "";
+  const highObjection = lower.includes("high") || lower.includes("moderate");
+
+  if (aiOutcome === "do_not_proceed") {
+    return "Planning risk is flagged as high; expect prolonged discussions and potentially sunk costs before a clear refusal or redesign.";
+  }
+
+  if (aiOutcome === "conditional" || highObjection) {
+    return "Objections and conditions are likely, which usually means extra months in planning and higher finance interest — treat this as a high-friction site.";
+  }
+
+  return null;
+}

@@ -134,6 +134,22 @@ export default function NewSitePage() {
 
           <div>
             <label className="block text-xs font-medium text-zinc-700">
+              Proposed units
+            </label>
+            <input
+              type="number"
+              name="proposed_units"
+              min={1}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              placeholder="12"
+            />
+            <p className="mt-1 text-xs text-zinc-500">
+              Best for 3–40 homes in England; above that, treat outputs as indicative only.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-zinc-700">
               Initial notes / planning summary
             </label>
             <textarea

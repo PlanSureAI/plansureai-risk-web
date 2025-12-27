@@ -9,6 +9,7 @@ import { SiteKillersSection } from "./SiteKillersSection";
 import { runFundingEligibility } from "./actions";
 import { FinancePackButton } from "./FinancePackButton";
 import { FinancePackPdfButton } from "./FinancePackPdfButton";
+import { getNextMove, getFrictionHint, type NextMove } from "@/app/types/siteFinance";
 
 type Site = {
   id: string;
@@ -25,6 +26,8 @@ type Site = {
   ai_risk_summary: string | null;
   ai_report: string | null;
   risk_rationale: string | null;
+  proposed_units: number | null | undefined;
+  ai_units_estimate: number | null | undefined;
   site_killers:
     | {
         risk: string;
@@ -69,6 +72,18 @@ const STATUS_CLASS = {
   NotEligible: "bg-rose-100 text-rose-800",
 } as const;
 
+const MOVE_LABEL: Record<NextMove, string> = {
+  proceed: "Proceed",
+  hold: "Hold & clarify",
+  walk_away: "Walk away",
+};
+
+const MOVE_CLASS: Record<NextMove, string> = {
+  proceed: "border-emerald-200 bg-emerald-50 text-emerald-900",
+  hold: "border-amber-200 bg-amber-50 text-amber-900",
+  walk_away: "border-rose-200 bg-rose-50 text-rose-900",
+};
+
 type PageProps = {
   params: { id: string };
   searchParams?: { upload?: string };
@@ -91,6 +106,8 @@ async function getSite(id: string): Promise<Site | null> {
         key_planning_considerations,
         planning_summary,
         decision_summary,
+        proposed_units,
+        ai_units_estimate,
         ai_outcome,
         ai_risk_summary,
         ai_report,
@@ -136,6 +153,8 @@ async function getSite(id: string): Promise<Site | null> {
     key_planning_considerations: data.key_planning_considerations,
     decision_summary: data.decision_summary,
     objection_likelihood: data.objection_likelihood,
+    proposed_units: (data as any).proposed_units ?? null,
+    ai_units_estimate: (data as any).ai_units_estimate ?? null,
     ai_outcome: data.ai_outcome,
     ai_risk_summary: data.ai_risk_summary,
     ai_report: data.ai_report,
@@ -174,6 +193,8 @@ export async function getSiteForLender(id: string): Promise<Site | null> {
         key_planning_considerations,
         planning_summary,
         decision_summary,
+        proposed_units,
+        ai_units_estimate,
         risk_rationale,
         site_killers,
         gdv,
@@ -181,11 +202,11 @@ export async function getSiteForLender(id: string): Promise<Site | null> {
         profit_on_cost_percent,
         loan_amount,
         ltc_percent,
-    ltgdv_percent,
-    interest_cover,
-    planning_confidence_score,
-    confidence_reasons,
-    eligibility_results
+        ltgdv_percent,
+        interest_cover,
+        planning_confidence_score,
+        confidence_reasons,
+        eligibility_results
       `
     )
     .eq("id", id)
@@ -251,6 +272,8 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
   const site = await getSite(id);
   const resolvedSearchParams = await searchParams;
   const uploadStatus = resolvedSearchParams?.upload;
+  const nextMove = site ? getNextMove(site.ai_outcome, site.eligibility_results ?? []) : null;
+  const units = site ? site.proposed_units ?? site.ai_units_estimate ?? null : null;
 
   if (!site) {
     return (
@@ -265,6 +288,19 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
       <main className="mx-auto max-w-3xl px-4 py-10 space-y-8">
+        {nextMove && (
+          <section
+            className={`mb-4 rounded-lg border px-4 py-3 text-sm ${MOVE_CLASS[nextMove.move]}`}
+          >
+            <div className="mb-1 flex items-center gap-2">
+              <span className="inline-flex rounded-full bg-white/80 px-2 py-0.5 text-xs font-semibold">
+                Next move: {MOVE_LABEL[nextMove.move]}
+              </span>
+            </div>
+            <p>{nextMove.reason}</p>
+          </section>
+        )}
+
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
             PlansureAI
@@ -278,6 +314,19 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
           <p className="mt-1 text-xs text-zinc-500">
             {site.local_planning_authority || "No LPA set"}
           </p>
+          <p className="mt-1 text-xs text-zinc-600">
+            Units: {units ?? "—"}
+            {units && units > 50 && (
+              <span className="ml-2 inline-flex rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-700">
+                Outside PlanSureAI’s sweet spot (optimised for small SME sites)
+              </span>
+            )}
+          </p>
+          {units && units > 50 && (
+            <p className="mt-1 text-xs text-zinc-600">
+              This scheme is larger than PlanSureAI’s core 3–40 home focus; treat planning and funding outputs as high-level only.
+            </p>
+          )}
         </div>
 
         <section className="grid gap-4 md:grid-cols-3">
@@ -465,6 +514,11 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             <p className="mt-2 whitespace-pre-line text-zinc-800">
               {site.planning_summary || "No planning summary recorded yet."}
             </p>
+            {getFrictionHint(site.objection_likelihood, site.ai_outcome) && (
+              <p className="mt-2 text-xs text-amber-700">
+                {getFrictionHint(site.objection_likelihood, site.ai_outcome)}
+              </p>
+            )}
           </div>
 
           <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm">
