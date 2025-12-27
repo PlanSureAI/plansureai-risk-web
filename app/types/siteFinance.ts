@@ -104,3 +104,42 @@ export function mapSiteFinanceProfile(row: Record<string, any>): SiteFinanceProf
     },
   };
 }
+
+export type FinancePack = {
+  scheme: {
+    id: string;
+    name: string | null;
+    address: string | null;
+    localAuthority: string | null;
+    country: string;
+    unitsTotal: number | null;
+    planningStatus: string | null;
+    landControl: string | null;
+  };
+  viability: {
+    gdv: number | null;
+    totalCost: number | null;
+    profitOnCostPct: number | null;
+    loanAmount: number | null;
+    ltcPercent: number | null;
+    ltgdvPercent: number | null;
+  };
+  sustainability: {
+    fossilFuelFree: boolean | null;
+    targetSAP: number | null;
+    targetEPCBand: string | null;
+    mmcUsed: boolean | null;
+    realLivingWage: boolean | null;
+    lighthouseCharity: boolean | null;
+  };
+  sponsor: {
+    smeHousebuilder: boolean | null;
+    ukRegistered: boolean | null;
+    entityType: string | null;
+    completedUnits: number | null;
+    yearsActive: number | null;
+  };
+  funding: {
+    results: EligibilityResult[];
+  };
+};

@@ -6,6 +6,8 @@ import { RunAnalysisButton } from "./RunAnalysisButton";
 import { ConfidenceScoreSection } from "./ConfidenceScoreSection";
 import { RiskRationaleSection } from "./RiskRationaleSection";
 import { SiteKillersSection } from "./SiteKillersSection";
+import { runFundingEligibility } from "./actions";
+import { FinancePackButton } from "./FinancePackButton";
 
 type Site = {
   id: string;
@@ -52,6 +54,19 @@ type Site = {
       }[]
     | null;
 };
+
+const PRODUCT_LABELS = {
+  homeBuildingFund: "Home Building Fund (development finance)",
+  smeAccelerator: "SME Accelerator",
+  greenerHomesAlliance: "Greener Homes Alliance",
+  housingGrowthPartnership: "Housing Growth Partnership",
+} as const;
+
+const STATUS_CLASS = {
+  Eligible: "bg-emerald-100 text-emerald-800",
+  Borderline: "bg-amber-100 text-amber-800",
+  NotEligible: "bg-rose-100 text-rose-800",
+} as const;
 
 type PageProps = {
   params: { id: string };
@@ -461,6 +476,50 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
           </div>
         </section>
 
+        {site.eligibility_results && site.eligibility_results.length > 0 && (
+          <section className="space-y-4">
+            {site.eligibility_results.map((result) => (
+              <div
+                key={result.productId}
+                className="rounded-lg border border-zinc-200 bg-white p-4"
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">
+                    {PRODUCT_LABELS[result.productId] ?? result.productId}
+                  </h3>
+                  <span
+                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[result.status]}`}
+                  >
+                    {result.status}
+                  </span>
+                </div>
+
+                {result.passedCriteria.length > 0 && (
+                  <div className="mb-2">
+                    <p className="text-xs font-medium text-zinc-600">Strengths</p>
+                    <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs text-zinc-700">
+                      {result.passedCriteria.map((c) => (
+                        <li key={c}>{c}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {result.failedCriteria.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-zinc-600">Gaps</p>
+                    <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs text-zinc-700">
+                      {result.failedCriteria.map((c) => (
+                        <li key={c}>{c}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ))}
+          </section>
+        )}
+
         <div className="space-y-4">
           {uploadStatus === "success" && (
             <p className="text-sm text-green-600">PDF uploaded successfully.</p>
@@ -473,6 +532,18 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             <input type="hidden" name="id" value={site.id} />
             <RunAnalysisButton />
           </form>
+
+          <form action={runFundingEligibility}>
+            <input type="hidden" name="id" value={site.id} />
+            <button
+              type="submit"
+              className="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+            >
+              Run funding fit-check
+            </button>
+          </form>
+
+          <FinancePackButton siteId={site.id} siteName={site.site_name} />
 
           <form action={uploadSitePdf} className="space-y-2">
             <input type="hidden" name="id" value={site.id} />
