@@ -39,6 +39,18 @@ type Site = {
   interest_cover: number | null | undefined;
   planning_confidence_score: number | null;
   confidence_reasons: string[] | null;
+  eligibility_results:
+    | {
+        productId:
+          | "homeBuildingFund"
+          | "smeAccelerator"
+          | "greenerHomesAlliance"
+          | "housingGrowthPartnership";
+        status: "Eligible" | "Borderline" | "NotEligible";
+        passedCriteria: string[];
+        failedCriteria: string[];
+      }[]
+    | null;
 };
 
 type PageProps = {
@@ -76,7 +88,8 @@ async function getSite(id: string): Promise<Site | null> {
         ltgdv_percent,
         interest_cover,
         planning_confidence_score,
-        confidence_reasons
+        confidence_reasons,
+        eligibility_results
       `
     )
     .eq("id", id)
@@ -121,6 +134,7 @@ async function getSite(id: string): Promise<Site | null> {
     interest_cover: data.interest_cover ?? null,
     planning_confidence_score: data.planning_confidence_score ?? null,
     confidence_reasons: data.confidence_reasons ?? null,
+    eligibility_results: (data as any).eligibility_results ?? null,
   };
 
   return site;
@@ -151,10 +165,11 @@ export async function getSiteForLender(id: string): Promise<Site | null> {
         profit_on_cost_percent,
         loan_amount,
         ltc_percent,
-        ltgdv_percent,
-        interest_cover,
-        planning_confidence_score,
-        confidence_reasons
+    ltgdv_percent,
+    interest_cover,
+    planning_confidence_score,
+    confidence_reasons,
+    eligibility_results
       `
     )
     .eq("id", id)
@@ -197,6 +212,7 @@ export async function getSiteForLender(id: string): Promise<Site | null> {
     interest_cover: data.interest_cover ?? null,
     planning_confidence_score: data.planning_confidence_score ?? null,
     confidence_reasons: data.confidence_reasons ?? null,
+    eligibility_results: (data as any).eligibility_results ?? null,
   };
 
   return site;

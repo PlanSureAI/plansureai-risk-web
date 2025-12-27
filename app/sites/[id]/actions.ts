@@ -4,6 +4,10 @@ import OpenAI from "openai";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import {
+  mapSiteFinanceProfile,
+  type SiteFinanceProfile,
+} from "@/app/types/siteFinance";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -15,6 +19,19 @@ type PlanningAnalysis = {
   outcome: PlanningOutcome;
   risk_summary: string;
   report: string;
+};
+
+type EligibilityStatus = "Eligible" | "Borderline" | "NotEligible";
+
+type EligibilityResult = {
+  productId:
+    | "homeBuildingFund"
+    | "smeAccelerator"
+    | "greenerHomesAlliance"
+    | "housingGrowthPartnership";
+  status: EligibilityStatus;
+  passedCriteria: string[];
+  failedCriteria: string[];
 };
 
 function toNullableString(value: FormDataEntryValue | null) {
@@ -108,6 +125,72 @@ Say “do_not_proceed” if you see major unresolved risks.
 
   revalidatePath(`/sites/${id}`);
   revalidatePath("/sites");
+}
+
+export async function runFundingEligibility(formData: FormData) {
+  const id = formData.get("id") as string;
+  if (!id) throw new Error("Missing site id");
+
+  const supabase = await createSupabaseServerClient();
+
+  const { data: site, error } = await supabase
+    .from("sites")
+    .select(
+      `
+        id,
+        country,
+        proposed_units,
+        gdv,
+        total_cost,
+        profit_on_cost,
+        profit_on_cost_percent,
+        sponsor_uk_registered,
+        sponsor_sme_housebuilder,
+        sponsor_completed_units,
+        sponsor_years_active,
+        land_control,
+        majority_control,
+        would_stall_without_funding,
+        fossil_fuel_free,
+        target_sap,
+        target_epc_band,
+        mmc_used,
+        real_living_wage,
+        lighthouse_charity_support,
+        follow_on_site_appetite,
+        growth_horizon_years
+      `
+  )
+  .eq("id", id)
+  .single();
+
+  if (error || !site) throw error ?? new Error("Site not found");
+
+  const profile = mapSiteFinanceProfile(site);
+
+  const results: EligibilityResult[] = evaluateFundingForSite(profile);
+
+  const { error: updateError } = await supabase
+    .from("sites")
+    .update({ eligibility_results: results })
+    .eq("id", id);
+
+  if (updateError) throw updateError;
+
+  revalidatePath(`/sites/${id}`);
+  revalidatePath("/sites");
+}
+
+function evaluateFundingForSite(profile: SiteFinanceProfile): EligibilityResult[] {
+  // TODO: Replace with real funding engine logic.
+  return [
+    {
+      productId: "homeBuildingFund",
+      status: "Borderline",
+      passedCriteria: [],
+      failedCriteria: ["Engine not implemented"],
+    },
+  ];
 }
 
 export async function updateSite(formData: FormData) {
