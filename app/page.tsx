@@ -1,5 +1,11 @@
 import Link from "next/link";
 
+export const metadata = {
+  title: "PlanSureAI – planning risk, clearly explained",
+  description:
+    "PlanSureAI helps landowners, developers and lenders see planning risk in seconds, not weeks.",
+};
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-zinc-50 px-4 py-16 text-zinc-900">
@@ -7,8 +13,8 @@ export default function Home() {
       <main className="mx-auto flex min-h-[calc(100vh-64px)] max-w-6xl flex-col justify-center px-6 py-16 lg:flex-row lg:items-center lg:gap-16">
         {/* Left column – headline + copy + primary actions */}
         <section className="max-w-xl space-y-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">
-            Planning risk, clearly explained
+          <p className="text-xs font-medium tracking-[0.2em] text-zinc-500">
+            PlanSureAI · PLANNING RISK, CLEARLY EXPLAINED
           </p>
 
           <h1 className="text-4xl font-semibold tracking-tight text-zinc-950 sm:text-5xl">
@@ -17,9 +23,9 @@ export default function Home() {
             before time and money are wasted.
           </h1>
 
-          <p className="text-lg leading-relaxed text-zinc-600">
-            PlanSureAI helps landowners, developers, and lenders see planning
-            risk in seconds, not weeks. Turn complex policy, precedent, and
+          <p className="mt-4 max-w-xl text-sm text-zinc-600">
+            <span className="font-semibold">PlanSureAI</span> helps landowners, developers, and
+            lenders see planning risk in seconds, not weeks. Turn complex policy, precedent, and
             context into clear, actionable insight you can share with your team.
           </p>
 
