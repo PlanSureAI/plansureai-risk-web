@@ -346,91 +346,111 @@ export async function generateFinancePack(formData: FormData): Promise<FinancePa
 }
 
 export async function generateFinancePackPdf(formData: FormData): Promise<string> {
+  const id = formData.get("id") as string;
+  if (!id) throw new Error("Missing site id");
+
   const pack = await generateFinancePack(formData);
 
-  const pdf = await PDFDocument.create();
-  const page = pdf.addPage([595, 842]); // A4
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
-  const { width } = page.getSize();
+  const doc = await PDFDocument.create();
+  let page = doc.addPage([595, 842]); // A4 portrait
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
 
-  let y = 800;
-  const lineHeight = 14;
-  const draw = (text: string, size = 11, bold = false) => {
-    page.drawText(text, {
-      x: 40,
-      y,
-      size,
-      font,
-      color: undefined,
-    });
-    y -= lineHeight;
+  const { width, height } = page.getSize();
+  let y = height - 50;
+
+  const drawText = (text: string, opts: { size?: number; bold?: boolean } = {}) => {
+    const size = opts.size ?? 10;
+    const usedFont = opts.bold ? fontBold : font;
+    page.drawText(text, { x: 50, y, size, font: usedFont });
+    y -= size + 4;
   };
 
   // Header
-  draw(`Finance Pack - ${pack.scheme.name ?? "Site"}`, 14);
-  draw(`${pack.scheme.address ?? "No address"} · ${pack.scheme.localAuthority ?? "No LPA"}`, 11);
-  draw(`Generated: ${new Date().toLocaleDateString()}`, 10);
-  y -= lineHeight;
+  drawText("PlanSureAI – Indicative Development Finance Pack", { size: 12, bold: true });
+  drawText(`Site: ${pack.scheme.name ?? "Untitled site"}`, { size: 11, bold: true });
+  drawText(`Address: ${pack.scheme.address ?? "—"}`);
+  drawText(`LPA: ${pack.scheme.localAuthority ?? "—"} | Country: ${pack.scheme.country}`);
 
-  // Scheme
-  draw("Scheme", 12, true);
-  draw(
-    `Country: ${pack.scheme.country} | Units: ${pack.scheme.unitsTotal ?? "—"} | Planning status: ${pack.scheme.planningStatus ?? "—"}`
+  y -= 10;
+  drawText("1. Scheme snapshot", { bold: true });
+  drawText(
+    `Units: ${pack.scheme.unitsTotal ?? "—"} | Planning status: ${
+      pack.scheme.planningStatus ?? "—"
+    } | Land control: ${pack.scheme.landControl ?? "—"}`
   );
-  draw(`Land control: ${pack.scheme.landControl ?? "—"}`);
-  draw(
-    `Sponsor: ${pack.sponsor.smeHousebuilder ? "SME housebuilder" : "Not SME"}, ${
-      pack.sponsor.ukRegistered ? "UK registered" : "Not UK registered"
+
+  y -= 6;
+  drawText("2. Viability overview", { bold: true });
+  drawText(
+    `GDV: £${pack.viability.gdv?.toLocaleString() ?? "—"} | Total cost: £${
+      pack.viability.totalCost?.toLocaleString() ?? "—"
     }`
   );
-  y -= lineHeight;
-
-  // Viability
-  draw("Viability", 12, true);
-  draw(
-    `GDV: ${pack.viability.gdv ?? "—"} | Total cost: ${pack.viability.totalCost ?? "—"} | Profit on cost %: ${
-      pack.viability.profitOnCostPct ?? "—"
-    }`
+  drawText(
+    `Profit on cost: ${pack.viability.profitOnCostPct?.toFixed(1) ?? "—"}% | LTC: ${
+      pack.viability.ltcPercent?.toFixed(1) ?? "—"
+    }% | LTGDV: ${pack.viability.ltgdvPercent?.toFixed(1) ?? "—"}%`
   );
-  draw(
-    `Loan: ${pack.viability.loanAmount ?? "—"} | LTC: ${pack.viability.ltcPercent ?? "—"} | LTGDV: ${
-      pack.viability.ltgdvPercent ?? "—"
-    }`
-  );
-  y -= lineHeight;
-
-  // Sustainability
-  draw("Sustainability", 12, true);
-  draw(
-    `SAP target: ${pack.sustainability.targetSAP ?? "—"} | EPC: ${pack.sustainability.targetEPCBand ?? "—"} | Fossil-fuel-free: ${
-      pack.sustainability.fossilFuelFree === true ? "Yes" : pack.sustainability.fossilFuelFree === false ? "No" : "—"
-    }`
-  );
-  draw(
-    `MMC: ${pack.sustainability.mmcUsed ? "Yes" : "No"} | Real Living Wage: ${
-      pack.sustainability.realLivingWage ? "Yes" : "No"
-    } | Lighthouse Charity: ${pack.sustainability.lighthouseCharity ? "Yes" : "No"}`
-  );
-  y -= lineHeight;
-
-  // Funding options
-  draw("Funding options", 12, true);
-  const results = pack.funding.results;
-  if (results.length === 0) {
-    draw("No funding results available.");
-  } else {
-    results.forEach((r) => {
-      draw(`${r.productId} — ${r.status}`);
-      const strengths = r.passedCriteria.slice(0, 2).join("; ") || "—";
-      const gaps = r.failedCriteria.slice(0, 2).join("; ") || "—";
-      draw(`Strengths: ${strengths}`);
-      draw(`Gaps: ${gaps}`);
-      y -= lineHeight;
-    });
+  if (pack.viability.downsideProfitOnCostPct != null) {
+    drawText(
+      `Downside (cost +10%, GDV −10%): ~${pack.viability.downsideProfitOnCostPct.toFixed(
+        1
+      )}% profit on cost`
+    );
   }
 
-  const pdfBytes = await pdf.save();
-  return Buffer.from(pdfBytes).toString("base64");
+  y -= 6;
+  drawText("3. Sustainability & GHA fit", { bold: true });
+  drawText(
+    `Target SAP: ${pack.sustainability.targetSAP ?? "—"} | EPC: ${
+      pack.sustainability.targetEPCBand ?? "—"
+    } | Fossil-fuel-free: ${pack.sustainability.fossilFuelFree ? "Yes" : "No"}`
+  );
+  drawText(
+    `MMC: ${pack.sustainability.mmcUsed ? "Yes" : "No"} | Real Living Wage: ${
+      pack.sustainability.realLivingWage ? "Yes" : "No"
+    } | Lighthouse: ${pack.sustainability.lighthouseCharity ? "Yes" : "No"}`
+  );
+
+  y -= 6;
+  drawText("4. Sponsor overview", { bold: true });
+  drawText(
+    `SME housebuilder: ${
+      pack.sponsor.smeHousebuilder ? "Yes" : "No"
+    } | UK registered: ${pack.sponsor.ukRegistered ? "Yes" : "No"}`
+  );
+  drawText(
+    `Entity: ${pack.sponsor.entityType ?? "—"} | Track record: ${
+      pack.sponsor.completedUnits ?? "—"
+    } units over ${pack.sponsor.yearsActive ?? "—"} years`
+  );
+
+  y -= 6;
+  drawText("5. Funding options (indicative)", { bold: true });
+
+  for (const r of pack.funding.results) {
+    if (y < 80) {
+      page = doc.addPage([595, 842]);
+      y = height - 50;
+    }
+    drawText(
+      `• ${r.productId}: ${r.status} – strengths: ${
+        r.passedCriteria.slice(0, 2).join("; ") || "None"
+      }; gaps: ${r.failedCriteria.slice(0, 2).join("; ") || "None"}`
+    );
+  }
+
+  y -= 6;
+  drawText(
+    "Note: This pack is indicative only and does not constitute financial or planning advice.",
+    { size: 8 }
+  );
+
+  const pdfBytes = await doc.save();
+  const base64 = Buffer.from(pdfBytes).toString("base64");
+
+  return base64;
 }
 
 export async function updateSite(formData: FormData) {

@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { generateFinancePack } from "./actions";
-import { packToCsvRow, type FinancePackCsvRow } from "../types/siteFinance";
+import { packToCsvRow, type FinancePackCsvRow } from "@/app/types/siteFinance";
 
 type Props = { siteId: string; siteName?: string | null };
 

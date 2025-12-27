@@ -23,6 +23,10 @@ export function BrokerSendForm({
         className="rounded border border-zinc-200 bg-white px-2 py-1 text-xs"
         onChange={(e) => {
           const brokerId = e.target.value;
+          if (brokerId === "__add") {
+            window.location.href = "/brokers/new";
+            return;
+          }
           const broker = brokers.find((b) => b.id === brokerId);
           if (!broker) return;
           const body = encodeURIComponent(
@@ -37,6 +41,7 @@ export function BrokerSendForm({
         <option value="" disabled>
           Select broker
         </option>
+        <option value="__add">+ Add new broker</option>
         {brokers.map((b) => (
           <option key={b.id} value={b.id}>
             {b.name} {b.firm ? `– ${b.firm}` : ""}
