@@ -36,6 +36,7 @@ export type FinanceViability = {
   loanAmount: number | null;
   ltcPercent: number | null;
   ltgdvPercent: number | null;
+  downsideProfitOnCostPct: number | null;
 };
 
 export type EligibilityStatus = "Eligible" | "Borderline" | "NotEligible";
@@ -61,6 +62,10 @@ export type SiteFinanceProfile = {
 
 // Derive a SiteFinanceProfile from a Supabase row without altering generated types.
 export function mapSiteFinanceProfile(row: Record<string, any>): SiteFinanceProfile {
+  const gdvValue = row.gdv != null ? Number(row.gdv) : row.viability?.gdv ?? null;
+  const totalCostValue =
+    row.total_cost != null ? Number(row.total_cost) : row.viability?.totalCost ?? null;
+
   return {
     scheme: {
       country: (row.country ?? row.scheme?.country ?? "England") as SchemeProfile["country"],
@@ -93,14 +98,15 @@ export function mapSiteFinanceProfile(row: Record<string, any>): SiteFinanceProf
       lighthouseCharity: row.lighthouse_charity_support ?? row.sustainability?.lighthouseCharity ?? null,
     },
     viability: {
-      gdv: row.gdv != null ? Number(row.gdv) : row.viability?.gdv ?? null,
-      totalCost: row.total_cost != null ? Number(row.total_cost) : row.viability?.totalCost ?? null,
+      gdv: gdvValue,
+      totalCost: totalCostValue,
       profitOnCostPct:
         row.profit_on_cost != null ? Number(row.profit_on_cost) : row.viability?.profitOnCostPct ?? null,
       loanAmount: row.loan_amount != null ? Number(row.loan_amount) : row.viability?.loanAmount ?? null,
       ltcPercent: row.ltc_percent != null ? Number(row.ltc_percent) : row.viability?.ltcPercent ?? null,
       ltgdvPercent:
         row.ltgdv_percent != null ? Number(row.ltgdv_percent) : row.viability?.ltgdvPercent ?? null,
+      downsideProfitOnCostPct: computeDownsideProfit(gdvValue, totalCostValue),
     },
   };
 }
@@ -199,6 +205,15 @@ export function packToCsvRow(pack: FinancePack): FinancePackCsvRow {
     hbf_status: hbf?.status ?? null,
     gha_status: gha?.status ?? null,
   };
+}
+
+function computeDownsideProfit(gdv: number | null, totalCost: number | null): number | null {
+  if (gdv == null || totalCost == null) return null;
+  const gdvDown = gdv * 0.9;
+  const costUp = totalCost * 1.1;
+  if (costUp === 0) return null;
+  const profit = gdvDown - costUp;
+  return (profit / costUp) * 100;
 }
 
 export type NextMove = "proceed" | "hold" | "walk_away";

@@ -10,6 +10,7 @@ import { runFundingEligibility } from "./actions";
 import { FinancePackButton } from "./FinancePackButton";
 import { FinancePackPdfButton } from "./FinancePackPdfButton";
 import { getNextMove, getFrictionHint, type NextMove } from "@/app/types/siteFinance";
+import { BrokerSendForm } from "./BrokerSendForm";
 
 type Site = {
   id: string;
@@ -59,6 +60,13 @@ type Site = {
     | null;
 };
 
+type Broker = {
+  id: string;
+  name: string;
+  firm: string | null;
+  email: string;
+};
+
 const PRODUCT_LABELS = {
   homeBuildingFund: "Home Building Fund (development finance)",
   smeAccelerator: "SME Accelerator",
@@ -83,6 +91,25 @@ const MOVE_CLASS: Record<NextMove, string> = {
   hold: "border-amber-200 bg-amber-50 text-amber-900",
   walk_away: "border-rose-200 bg-rose-50 text-rose-900",
 };
+
+function computeDownsideProfit(
+  gdv: number | null | undefined,
+  totalCost: number | null | undefined
+): number | null {
+  if (gdv == null || totalCost == null) return null;
+  const gdvDown = Number(gdv) * 0.9;
+  const costUp = Number(totalCost) * 1.1;
+  if (costUp === 0) return null;
+  const profit = gdvDown - costUp;
+  return (profit / costUp) * 100;
+}
+
+function viabilityFlagClass(value: number | null, goodRange: [number, number]) {
+  if (value == null) return "text-zinc-500";
+  const [min, max] = goodRange;
+  if (value < min || value > max) return "text-amber-700";
+  return "text-zinc-800";
+}
 
 type PageProps = {
   params: { id: string };
@@ -173,6 +200,32 @@ async function getSite(id: string): Promise<Site | null> {
   };
 
   return site;
+}
+
+async function getBrokersForCurrentUser(): Promise<Broker[]> {
+  const supabaseServer = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabaseServer.auth.getUser();
+
+  if (userError || !user) {
+    if (userError) console.error("❌ Error loading user for brokers:", userError);
+    return [];
+  }
+
+  const { data, error } = await supabaseServer
+    .from("broker_profiles")
+    .select("id, name, firm, email")
+    .eq("user_id", user.id)
+    .order("name");
+
+  if (error) {
+    console.error("❌ Error loading brokers:", error);
+    return [];
+  }
+
+  return data ?? [];
 }
 
 // Reusable fetch for lender contexts; narrowed to fields the lender page consumes.
@@ -270,10 +323,22 @@ export async function deleteSite(id: string) {
 export default async function SiteDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const site = await getSite(id);
+  const brokers = await getBrokersForCurrentUser();
   const resolvedSearchParams = await searchParams;
   const uploadStatus = resolvedSearchParams?.upload;
   const nextMove = site ? getNextMove(site.ai_outcome, site.eligibility_results ?? []) : null;
   const units = site ? site.proposed_units ?? site.ai_units_estimate ?? null : null;
+  const viability = site
+    ? {
+        gdv: site.gdv ?? null,
+        totalCost: site.total_cost ?? null,
+        profitOnCostPct: site.profit_on_cost_percent ?? null,
+        loanAmount: site.loan_amount ?? null,
+        ltcPercent: site.ltc_percent ?? null,
+        ltgdvPercent: site.ltgdv_percent ?? null,
+        downsideProfitOnCostPct: computeDownsideProfit(site.gdv, site.total_cost),
+      }
+    : null;
 
   if (!site) {
     return (
@@ -531,6 +596,56 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
           </div>
         </section>
 
+        {viability && (
+          <section className="mt-6 rounded-lg border border-zinc-200 bg-white p-4 text-xs">
+            <p className="mb-2 font-semibold text-zinc-800">Viability snapshot</p>
+            <div className="grid gap-x-6 gap-y-1 sm:grid-cols-3">
+              <p>
+                GDV:{" "}
+                <span className="font-medium">
+                  {viability.gdv != null ? `£${Number(viability.gdv).toLocaleString()}` : "—"}
+                </span>
+              </p>
+              <p>
+                Total cost:{" "}
+                <span className="font-medium">
+                  {viability.totalCost != null
+                    ? `£${Number(viability.totalCost).toLocaleString()}`
+                    : "—"}
+                </span>
+              </p>
+              <p className={viabilityFlagClass(viability.profitOnCostPct, [18, 25])}>
+                Profit on cost:{" "}
+                <span className="font-medium">
+                  {viability.profitOnCostPct != null
+                    ? `${viability.profitOnCostPct.toFixed(1)}%`
+                    : "—"}
+                </span>
+              </p>
+              <p className={viabilityFlagClass(viability.ltcPercent, [70, 85])}>
+                LTC:{" "}
+                <span className="font-medium">
+                  {viability.ltcPercent != null ? `${viability.ltcPercent.toFixed(1)}%` : "—"}
+                </span>
+              </p>
+              <p className={viabilityFlagClass(viability.ltgdvPercent, [55, 70])}>
+                LTGDV:{" "}
+                <span className="font-medium">
+                  {viability.ltgdvPercent != null ? `${viability.ltgdvPercent.toFixed(1)}%` : "—"}
+                </span>
+              </p>
+              <p className={viabilityFlagClass(viability.downsideProfitOnCostPct, [12, 20])}>
+                Downside profit (cost +10%, GDV -10%):{" "}
+                <span className="font-medium">
+                  {viability.downsideProfitOnCostPct != null
+                    ? `${viability.downsideProfitOnCostPct.toFixed(1)}%`
+                    : "—"}
+                </span>
+              </p>
+            </div>
+          </section>
+        )}
+
         {site.eligibility_results && site.eligibility_results.length > 0 && (
           <section className="space-y-4">
             {site.eligibility_results.map((result) => (
@@ -602,6 +717,9 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             <FinancePackButton siteId={site.id} siteName={site.site_name} />
             <FinancePackPdfButton siteId={site.id} siteName={site.site_name} />
           </div>
+          {brokers.length > 0 && (
+            <BrokerSendForm brokers={brokers} siteName={site.site_name} />
+          )}
 
           <form action={uploadSitePdf} className="space-y-2">
             <input type="hidden" name="id" value={site.id} />

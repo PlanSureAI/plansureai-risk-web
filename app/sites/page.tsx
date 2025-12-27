@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SignOutButton } from "../components/SignOutButton";
 import { supabase } from "../lib/supabaseClient";
+import { getNextMove, type NextMove } from "../types/siteFinance";
 
 
 type SiteRow = {
@@ -11,7 +12,43 @@ type SiteRow = {
   status: string | null;
   planning_outcome: string | null;
   planning_summary: string | null;
+  ai_outcome: string | null;
+  eligibility_results:
+    | {
+        productId:
+          | "homeBuildingFund"
+          | "smeAccelerator"
+          | "greenerHomesAlliance"
+          | "housingGrowthPartnership";
+        status: "Eligible" | "Borderline" | "NotEligible";
+        passedCriteria: string[];
+        failedCriteria: string[];
+      }[]
+    | null;
 };
+
+const MOVE_LABEL: Record<NextMove, string> = {
+  proceed: "Proceed",
+  hold: "Hold & clarify",
+  walk_away: "Walk away",
+};
+
+const MOVE_CLASS: Record<NextMove, string> = {
+  proceed: "bg-emerald-100 text-emerald-800",
+  hold: "bg-amber-100 text-amber-800",
+  walk_away: "bg-rose-100 text-rose-800",
+};
+
+function getHeadlineFundingStatus(results: SiteRow["eligibility_results"]): string {
+  const r = (results ?? []).find(
+    (x) =>
+      x.productId === "homeBuildingFund" ||
+      x.productId === "greenerHomesAlliance"
+  );
+  if (!r) return "—";
+  const prefix = r.productId === "homeBuildingFund" ? "HBF" : "GHA";
+  return `${prefix}: ${r.status}`;
+}
 
 async function getSites(): Promise<SiteRow[]> {
   const { data, error } = await supabase
@@ -23,7 +60,9 @@ async function getSites(): Promise<SiteRow[]> {
       local_planning_authority,
       status,
       planning_outcome,
-      planning_summary
+      planning_summary,
+      ai_outcome,
+      eligibility_results
     `)
     .order("submitted_at", { ascending: false });
 
@@ -76,6 +115,12 @@ export default async function SitesPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
                   Summary
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Next move
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Funding
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -114,6 +159,25 @@ export default async function SitesPage() {
                   <td className="px-4 py-3 text-zinc-700">
                     {site.planning_summary || "—"}
                   </td>
+                  {(() => {
+                    const next = getNextMove(site.ai_outcome, site.eligibility_results ?? []);
+                    return (
+                      <>
+                        <td className="px-4 py-3 text-xs">
+                          <span className="inline-flex rounded-full bg-zinc-100 px-2 py-0.5 font-medium">
+                            {next.move === "proceed"
+                              ? "Proceed"
+                              : next.move === "hold"
+                              ? "Hold & clarify"
+                              : "Walk away"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-zinc-700">
+                          {getHeadlineFundingStatus(site.eligibility_results)}
+                        </td>
+                      </>
+                    );
+                  })()}
                 </tr>
               ))}
             </tbody>
