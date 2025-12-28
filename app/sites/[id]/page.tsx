@@ -27,8 +27,6 @@ type Site = {
   ai_risk_summary: string | null;
   ai_report: string | null;
   risk_rationale: string | null;
-  proposed_units: number | null | undefined;
-  ai_units_estimate: number | null | undefined;
   site_killers:
     | {
         risk: string;
@@ -46,18 +44,58 @@ type Site = {
   interest_cover: number | null | undefined;
   planning_confidence_score: number | null;
   confidence_reasons: string[] | null;
-  eligibility_results:
-    | {
-        productId:
-          | "homeBuildingFund"
-          | "smeAccelerator"
-          | "greenerHomesAlliance"
-          | "housingGrowthPartnership";
-        status: "Eligible" | "Borderline" | "NotEligible";
-        passedCriteria: string[];
-        failedCriteria: string[];
-      }[]
-    | null;
+
+  // ADD THESE MISSING FIELDS:
+  settlement: string | null;
+  site_area_ha: number | null;
+  green_belt: boolean | null;
+  submitted_at: string | null; // timestamp
+  decision_outcome: string | null;
+  decision_reasoning: string | null;
+  reviewed_by: string | null;
+  planning_justification: string | null;
+  proposed_units: number | null;
+  policy_unit_threshold: number | null;
+  highway_access: string | null;
+  visibility_splay_ok: number | null;
+  access_width_ok: number | null;
+  school_capacity: string | null;
+  gp_capacity: string | null;
+  utilities_capacity: string | null;
+  planning_risk: string | null;
+  planning_score: number | null;
+  rural_exception_site: boolean | null;
+  affordable_housing: boolean | null;
+  affordable_percentage: number | null;
+  previously_developed: boolean | null;
+  decision_reason: string | null;
+  user_id: string | null;
+  risk_status: string | null;
+  ai_last_run_at: string | null; // timestamp
+  ai_units_estimate: number | null;
+  ai_net_site_area_ha: number | null;
+  ai_density_dph: number | null;
+  ai_access_notes: string | null;
+  country: string | null;
+  units_total: number | null;
+  sponsor_entity_type: string | null;
+  sponsor_uk_registered: boolean | null;
+  sponsor_sme_housebuilder: boolean | null;
+  sponsor_completed_units: number | null;
+  sponsor_years_active: number | null;
+  land_control: string | null;
+  majority_control: boolean | null;
+  would_stall_without_funding: boolean | null;
+  fossil_fuel_free: boolean | null;
+  target_sap: number | null;
+  target_epc_band: string | null;
+  mmc_used: boolean | null;
+  real_living_wage: boolean | null;
+  lighthouse_charity_support: boolean | null;
+  follow_on_site_appetite: boolean | null;
+  growth_horizon_years: number | null;
+  eligibility_results: any | null; // jsonb
+  asking_price: number | null;
 };
 
 type Broker = {
