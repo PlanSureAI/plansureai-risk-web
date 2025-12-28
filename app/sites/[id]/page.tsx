@@ -237,7 +237,7 @@ async function getSite(id: string): Promise<Site | null> {
     eligibility_results: (data as any).eligibility_results ?? null,
   };
 
-  return site;
+  return site as Site;
 }
 
 async function getBrokersForCurrentUser(): Promise<Broker[]> {
