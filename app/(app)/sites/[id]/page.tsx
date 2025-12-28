@@ -696,7 +696,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
                   {PRODUCT_LABELS[result.productId as keyof typeof PRODUCT_LABELS] ?? result.productId}
                   </h3>
                   <span
-                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[result.status]}`}
+                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[result.status as keyof typeof STATUS_CLASS]}`}
                   >
                     {result.status}
                   </span>
@@ -706,23 +706,23 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
                   <div className="mb-2">
                     <p className="text-xs font-medium text-zinc-600">Strengths</p>
                     <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs text-zinc-700">
-                      {result.passedCriteria.map((c) => (
+                    {result.passedCriteria.map((c: string) => (
                         <li key={c}>{c}</li>
                       ))}
-                    </ul>
-                  </div>
-                )}
+                  </ul>
+                </div>
+              )}
 
                 {result.failedCriteria.length > 0 && (
                   <div>
                     <p className="text-xs font-medium text-zinc-600">Gaps</p>
                     <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs text-zinc-700">
-                      {result.failedCriteria.map((c) => (
+                    {result.failedCriteria.map((c: string) => (
                         <li key={c}>{c}</li>
                       ))}
-                    </ul>
-                  </div>
-                )}
+                  </ul>
+                </div>
+              )}
               </div>
             ))}
           </section>
