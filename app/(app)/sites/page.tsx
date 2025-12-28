@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { SignOutButton } from "../components/SignOutButton";
-import { supabase } from "../lib/supabaseClient";
-import { getNextMove, type NextMove } from "../types/siteFinance";
+import { SignOutButton } from "@/app/components/SignOutButton";
+import { supabase } from "@/app/lib/supabaseClient";
+import { getNextMove, type NextMove } from "@/app/types/siteFinance";
 
 
 type SiteRow = {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { createSupabaseBrowserClient } from "../../lib/supabaseBrowser"
+import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser"
 
 type RiskRationaleSectionProps = {
   siteId: string

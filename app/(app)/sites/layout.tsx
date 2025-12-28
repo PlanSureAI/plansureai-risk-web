@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "../lib/supabaseServer";
+import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 
 export default async function SitesLayout({ children }: { children: ReactNode }) {
   const supabase = await createSupabaseServerClient();

@@ -1,15 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { createSupabaseBrowserClient } from "../../lib/supabaseBrowser"
+import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser"
 
-type Killer = {
-  risk: string
-  impact: string
-  mitigation: string
-}
-
-type SiteKillersSectionProps = {
+type ConfidenceScoreSectionProps = {
   siteId: string
   siteName: string | null
   address: string | null
@@ -20,7 +14,7 @@ type SiteKillersSectionProps = {
   objectionLikelihood: string | null
 }
 
-export function SiteKillersSection({
+export function ConfidenceScoreSection({
   siteId,
   siteName,
   address,
@@ -29,11 +23,12 @@ export function SiteKillersSection({
   aiRiskSummary,
   keyPlanningConsiderations,
   objectionLikelihood,
-}: SiteKillersSectionProps) {
-  const [killers, setKillers] = useState<Killer[]>([])
+}: ConfidenceScoreSectionProps) {
+  const [score, setScore] = useState<number | null>(null)
+  const [reasons, setReasons] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
 
-  async function handleGenerateSiteKillers() {
+  async function handleGenerateConfidenceScore() {
     try {
       setIsGenerating(true)
 
@@ -58,7 +53,7 @@ export function SiteKillersSection({
       }
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-site-killers`,
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-confidence-score`,
         {
           method: "POST",
           headers: {
@@ -71,66 +66,76 @@ export function SiteKillersSection({
       )
 
       if (!res.ok) {
-        console.error("Failed to generate site killers", await res.text())
+        console.error("Failed to generate confidence score", await res.text())
         return
       }
 
       const data = await res.json()
-      if (data?.killers) {
-        setKillers(data.killers)
+      if (data?.score !== undefined && data?.reasons) {
+        setScore(data.score)
+        setReasons(data.reasons)
       }
     } catch (error) {
-      console.error("Error calling generate-site-killers", error)
+      console.error("Error calling generate-confidence-score", error)
     } finally {
       setIsGenerating(false)
     }
+  }
+
+  function getConfidenceBand(score: number) {
+    if (score >= 80) return { label: "High", color: "text-green-700 bg-green-50" }
+    if (score >= 55) return { label: "Moderate", color: "text-amber-700 bg-amber-50" }
+    return { label: "Low", color: "text-red-700 bg-red-50" }
   }
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-          What Kills This Site?
+          Planning Confidence Score
         </p>
         <button
           type="button"
-          onClick={handleGenerateSiteKillers}
+          onClick={handleGenerateConfidenceScore}
           disabled={isGenerating}
           className="inline-flex items-center rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
         >
-          {isGenerating ? "Analyzing..." : "Analyze Risks"}
+          {isGenerating ? "Generating..." : "Generate Score"}
         </button>
       </div>
 
-      {killers.length > 0 && (
-        <div className="space-y-4">
-          {killers.map((killer, idx) => (
-            <div
-              key={idx}
-              className="rounded-lg border border-red-100 bg-red-50 p-3 space-y-2"
+      {score !== null && (
+        <div className="space-y-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-zinc-900">{score}%</span>
+            <span
+              className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                getConfidenceBand(score).color
+              }`}
             >
-              <div className="flex items-start gap-2">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
-                  {idx + 1}
-                </span>
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold text-red-900">{killer.risk}</p>
-                  <p className="text-sm text-red-800">
-                    <span className="font-medium">Impact:</span> {killer.impact}
-                  </p>
-                  <p className="text-sm text-red-700">
-                    <span className="font-medium">Mitigation:</span> {killer.mitigation}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
+              {getConfidenceBand(score).label} confidence
+            </span>
+          </div>
+
+          <ul className="space-y-2">
+            {reasons.map((reason, idx) => (
+              <li key={idx} className="flex gap-2 text-sm text-zinc-700">
+                <span className="text-zinc-400">•</span>
+                <span>{reason}</span>
+              </li>
+            ))}
+          </ul>
+
+          <p className="text-xs text-zinc-500 italic">
+            Confidence reflects planning policy alignment, access constraints, and known objections
+            from similar schemes.
+          </p>
         </div>
       )}
 
-      {killers.length === 0 && !isGenerating && (
+      {score === null && !isGenerating && (
         <p className="text-sm text-zinc-500">
-          Click 'Analyze Risks' to identify the top 3 planning risks that could block consent.
+          Click 'Generate Score' to calculate planning confidence based on site analysis.
         </p>
       )}
     </section>

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createSupabaseServerClient } from "../../lib/supabaseServer";
+import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { runSiteAnalysis, uploadSitePdf, updateSite } from "./actions";
 import { RunAnalysisButton } from "./RunAnalysisButton";
 import { ConfidenceScoreSection } from "./ConfidenceScoreSection";
