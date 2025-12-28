@@ -1,12 +1,12 @@
 "use server";
 
-import { LandTechClient } from "@/lib/landtechClient";
+import { LandTechClient } from "./landtechClient";
 import {
   mapParcelDetails,
   mapPlanningApplication,
   buildGridContext,
   mapRepdSite,
-} from "@/lib/landtechMappers";
+} from "./landtechMappers";
 
 const apiKey = process.env.LANDTECH_API_KEY;
 if (!apiKey) {
