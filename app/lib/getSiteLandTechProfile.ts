@@ -1,4 +1,4 @@
-\"use server\";
+"use server";
 
 import { LandTechClient } from \"@/lib/landtechClient\";
 import {
