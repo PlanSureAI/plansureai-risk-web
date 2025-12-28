@@ -129,6 +129,7 @@ export type FinancePack = {
     loanAmount: number | null;
     ltcPercent: number | null;
     ltgdvPercent: number | null;
+    downsideProfitOnCostPct: number | null;
   };
   sustainability: {
     fossilFuelFree: boolean | null;
