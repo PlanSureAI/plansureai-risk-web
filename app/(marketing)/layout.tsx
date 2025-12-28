@@ -4,7 +4,7 @@ import { Header } from "@/app/components/Header";
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>
+      <body className="bg-neutral-50">
         <Header size="large" />
         {children}
       </body>
