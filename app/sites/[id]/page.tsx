@@ -343,7 +343,7 @@ export async function getSiteForLender(id: string): Promise<Site | null> {
     eligibility_results: (data as any).eligibility_results ?? null,
   };
 
-  return site;
+  return site as Site;
 }
 
 export async function deleteSite(id: string) {
