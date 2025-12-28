@@ -112,7 +112,7 @@ const PRODUCT_LABELS = {
   housingGrowthPartnership: "Housing Growth Partnership",
 } as const;
 
-const STATUS_CLASS = {
+const STATUS_CLASS: Record<"Eligible" | "Borderline" | "NotEligible", string> = {
   Eligible: "bg-emerald-100 text-emerald-800",
   Borderline: "bg-amber-100 text-amber-800",
   NotEligible: "bg-rose-100 text-rose-800",
@@ -693,12 +693,12 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
               >
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="text-sm font-semibold">
-                  {PRODUCT_LABELS[result.productId as keyof typeof PRODUCT_LABELS] ?? result.productId}
+                    {PRODUCT_LABELS[result.productId as keyof typeof PRODUCT_LABELS] ?? result.productId}
                   </h3>
                   <span
-                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[result.status as keyof typeof STATUS_CLASS]}`}
+                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[(result.status ?? "NotEligible") as keyof typeof STATUS_CLASS]}`}
                   >
-                    {result.status}
+                    {(result.status ?? "NotEligible") as keyof typeof STATUS_CLASS}
                   </span>
                 </div>
 
