@@ -315,7 +315,7 @@ export async function getSiteForLender(id: string): Promise<Site | null> {
     return null;
   }
 
-  const site: Site = {
+  const site = {
     id: data.id,
     site_name: data.site_name,
     address: data.address,
