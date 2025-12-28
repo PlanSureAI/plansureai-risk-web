@@ -74,8 +74,7 @@ export async function runSiteAnalysis(formData: FormData) {
         objection_likelihood,
         key_planning_considerations,
         planning_summary,
-        decision_summary,
-        geometry
+        decision_summary
       `
     )
     .eq("id", id)
