@@ -117,6 +117,7 @@ const STATUS_CLASS: Record<"Eligible" | "Borderline" | "NotEligible", string> = 
   Borderline: "bg-amber-100 text-amber-800",
   NotEligible: "bg-rose-100 text-rose-800",
 } as const;
+type StatusKey = keyof typeof STATUS_CLASS;
 
 const MOVE_LABEL: Record<NextMove, string> = {
   proceed: "Proceed",
@@ -692,14 +693,21 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
                 className="rounded-lg border border-zinc-200 bg-white p-4"
               >
                 <div className="mb-2 flex items-center justify-between">
+                  {(() => {
+                    const status = (result.status ?? "NotEligible") as StatusKey;
+                    return (
+                      <>
                   <h3 className="text-sm font-semibold">
                     {PRODUCT_LABELS[result.productId as keyof typeof PRODUCT_LABELS] ?? result.productId}
                   </h3>
                   <span
-                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[(result.status ?? "NotEligible") as keyof typeof STATUS_CLASS]}`}
+                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[status]}`}
                   >
-                    {(result.status ?? "NotEligible") as keyof typeof STATUS_CLASS}
+                    {status}
                   </span>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {result.passedCriteria.length > 0 && (
