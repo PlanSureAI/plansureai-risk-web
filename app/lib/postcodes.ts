@@ -23,10 +23,11 @@ async function fetchPostcodesIo<T>(path: string): Promise<T> {
   const data = (await res.json()) as PostcodesIoSuccess<T> | PostcodesIoError;
 
   if (data.status !== 200) {
-    throw new Error(data.error || "Postcode lookup failed");
+    const errorData = data as PostcodesIoError;
+    throw new Error(errorData.error || "Postcode lookup failed");
   }
 
-  return data.result;
+  return (data as PostcodesIoSuccess<T>).result;
 }
 
 /**
