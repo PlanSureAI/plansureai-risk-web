@@ -686,7 +686,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
 
         {site.eligibility_results && site.eligibility_results.length > 0 && (
           <section className="space-y-4">
-            {site.eligibility_results.map((result) => (
+            {site.eligibility_results.map((result: any) => (
               <div
                 key={result.productId}
                 className="rounded-lg border border-zinc-200 bg-white p-4"
