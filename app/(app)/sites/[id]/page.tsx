@@ -687,52 +687,48 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
 
         {site.eligibility_results && site.eligibility_results.length > 0 && (
           <section className="space-y-4">
-            {site.eligibility_results.map((result: any) => (
-              <div
-                key={result.productId}
-                className="rounded-lg border border-zinc-200 bg-white p-4"
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  {(() => {
-                    const status = (result.status ?? "NotEligible") as StatusKey;
-                    return (
-                      <>
-                  <h3 className="text-sm font-semibold">
-                    {PRODUCT_LABELS[result.productId as keyof typeof PRODUCT_LABELS] ?? result.productId}
-                  </h3>
-                  <span
-                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[status]}`}
-                  >
-                    {status}
-                  </span>
-                      </>
-                    );
-                  })()}
-                </div>
+            {site.eligibility_results.map((result: any) => {
+              const status: StatusKey = (result.status ?? "NotEligible") as StatusKey;
+              return (
+                <div
+                  key={result.productId}
+                  className="rounded-lg border border-zinc-200 bg-white p-4"
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold">
+                      {PRODUCT_LABELS[result.productId as keyof typeof PRODUCT_LABELS] ?? result.productId}
+                    </h3>
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[status]}`}
+                    >
+                      {status}
+                    </span>
+                  </div>
 
-                {result.passedCriteria.length > 0 && (
-                  <div className="mb-2">
-                    <p className="text-xs font-medium text-zinc-600">Strengths</p>
-                    <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs text-zinc-700">
-                    {result.passedCriteria.map((c: string) => (
-                        <li key={c}>{c}</li>
-                      ))}
-                  </ul>
-                </div>
-              )}
+                  {result.passedCriteria.length > 0 && (
+                    <div className="mb-2">
+                      <p className="text-xs font-medium text-zinc-600">Strengths</p>
+                      <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs text-zinc-700">
+                        {result.passedCriteria.map((c: string) => (
+                          <li key={c}>{c}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                {result.failedCriteria.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-zinc-600">Gaps</p>
-                    <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs text-zinc-700">
-                    {result.failedCriteria.map((c: string) => (
-                        <li key={c}>{c}</li>
-                      ))}
-                  </ul>
+                  {result.failedCriteria.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-zinc-600">Gaps</p>
+                      <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs text-zinc-700">
+                        {result.failedCriteria.map((c: string) => (
+                          <li key={c}>{c}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
-              )}
-              </div>
-            ))}
+              );
+            })}
           </section>
         )}
 
