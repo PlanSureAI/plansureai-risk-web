@@ -1,16 +1,16 @@
 "use server";
 
-import { LandTechClient } from \"@/lib/landtechClient\";
+import { LandTechClient } from "@/lib/landtechClient";
 import {
   mapParcelDetails,
   mapPlanningApplication,
   buildGridContext,
   mapRepdSite,
-} from \"@/lib/landtechMappers\";
+} from "@/lib/landtechMappers";
 
 const apiKey = process.env.LANDTECH_API_KEY;
 if (!apiKey) {
-  throw new Error(\"LANDTECH_API_KEY not set\");
+  throw new Error("LANDTECH_API_KEY not set");
 }
 
 const client = new LandTechClient(apiKey);
@@ -22,7 +22,7 @@ const client = new LandTechClient(apiKey);
 export async function getSiteLandTechProfile(sitePolygonOrPoint: unknown) {
   // 1) Make sure auth is good
   const auth = await client.getAuthStatus();
-  if (auth.user.state !== \"active\") {
+  if (auth.user.state !== "active") {
     throw new Error(`LandTech user state is ${auth.user.state}`);
   }
 
@@ -31,9 +31,9 @@ export async function getSiteLandTechProfile(sitePolygonOrPoint: unknown) {
     search_filter: {
       ALL: [
         {
-          id: \"search-location-id\",
+          id: "search-location-id",
           location: sitePolygonOrPoint,
-          must: \"INTERSECT\",
+          must: "INTERSECT",
         },
       ],
     },
