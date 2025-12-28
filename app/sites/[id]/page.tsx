@@ -207,7 +207,7 @@ async function getSite(id: string): Promise<Site | null> {
 
   console.log("✅ Site loaded successfully:", data?.site_name);
   // Explicit type-safe return with nullish fallbacks
-  const site: Site = {
+  const site = {
     id: data.id,
     site_name: data.site_name,
     address: data.address,
