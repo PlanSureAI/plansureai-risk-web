@@ -693,7 +693,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
               >
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="text-sm font-semibold">
-                    {PRODUCT_LABELS[result.productId] ?? result.productId}
+                  {PRODUCT_LABELS[result.productId as keyof typeof PRODUCT_LABELS] ?? result.productId}
                   </h3>
                   <span
                     className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[result.status]}`}
