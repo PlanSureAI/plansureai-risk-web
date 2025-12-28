@@ -23,9 +23,8 @@ export function Header({ size = "small" }: HeaderProps) {
         </Link>
 
         <nav className="flex items-center gap-4 text-sm text-neutral-700">
-          <Link href="/about">About</Link>
-          <Link href="/pricing">Pricing</Link>
-          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/sites">Sites</Link>
+          <Link href="/login">Login</Link>
         </nav>
       </div>
     </header>

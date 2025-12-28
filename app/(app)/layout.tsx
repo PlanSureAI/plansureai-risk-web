@@ -3,9 +3,11 @@ import { Header } from "@/app/components/Header";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <>
-      <Header size="small" />
-      {children}
-    </>
+    <html lang="en">
+      <body>
+        <Header size="small" />
+        {children}
+      </body>
+    </html>
   );
 }
