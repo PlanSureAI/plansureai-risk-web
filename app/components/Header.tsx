@@ -11,7 +11,7 @@ export function Header({ size = "small" }: HeaderProps) {
 
   return (
     <header className="w-full border-b border-neutral-200">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+      <div className="mx-auto flex max-w-6xl items-center px-4 py-3">
         <Link href="/" className="flex items-center">
           <Image
             src="/plansureai-wordmark.png"
@@ -22,10 +22,6 @@ export function Header({ size = "small" }: HeaderProps) {
           />
         </Link>
 
-        <nav className="flex items-center gap-4 text-sm text-neutral-700">
-          <Link href="/sites">Sites</Link>
-          <Link href="/login">Login</Link>
-        </nav>
       </div>
     </header>
   );
