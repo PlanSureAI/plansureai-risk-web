@@ -11,6 +11,7 @@ import { FinancePackButton } from "./FinancePackButton";
 import { FinancePackPdfButton } from "./FinancePackPdfButton";
 import { getNextMove, getFrictionHint, type NextMove } from "@/app/types/siteFinance";
 import { BrokerSendForm } from "./BrokerSendForm";
+import { getPlanningForPostcode, type LandTechPlanningApplication } from "@/app/lib/landtech";
 
 type Site = {
   id: string;
@@ -130,6 +131,12 @@ const MOVE_CLASS: Record<NextMove, string> = {
   hold: "border-amber-200 bg-amber-50 text-amber-900",
   walk_away: "border-rose-200 bg-rose-50 text-rose-900",
 };
+
+function extractPostcodeFromAddress(address?: string | null): string | null {
+  if (!address) return null;
+  const match = address.match(/\b([A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2})\b/i);
+  return match ? match[1].toUpperCase() : null;
+}
 
 function computeDownsideProfit(
   gdv: number | null | undefined,
@@ -378,6 +385,16 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
         downsideProfitOnCostPct: computeDownsideProfit(site.gdv, site.total_cost),
       }
     : null;
+  const postcode = site ? extractPostcodeFromAddress(site.address) : null;
+  let planningApplications: LandTechPlanningApplication[] = [];
+
+  if (site && postcode) {
+    try {
+      planningApplications = (await getPlanningForPostcode(postcode)).slice(0, 3);
+    } catch (err) {
+      console.error("Failed to fetch planning applications for postcode", err);
+    }
+  }
 
   if (!site) {
     return (
@@ -461,6 +478,48 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             </p>
           </div>
         </section>
+
+        {planningApplications.length > 0 && (
+          <section className="rounded-xl border border-zinc-200 bg-white p-4">
+            <h2 className="text-sm font-semibold text-zinc-900">Recent planning in this postcode</h2>
+            <ul className="mt-3 space-y-3">
+              {planningApplications.map((app, idx) => {
+                const ref =
+                  (app as any).reference ??
+                  (app as any).application_number ??
+                  (app as any).id ??
+                  `Application ${idx + 1}`;
+                const decision =
+                  (app as any).decision ??
+                  (app as any).status ??
+                  (app as any).current_status ??
+                  "Status unknown";
+                const decisionDate =
+                  (app as any).decision_date ??
+                  (app as any).determination_date ??
+                  (app as any).received_date ??
+                  null;
+                const description =
+                  (app as any).proposal ?? (app as any).description ?? "No description available.";
+                const address = (app as any).address ?? (app as any).site_address ?? "";
+
+                return (
+                  <li key={`${ref}-${idx}`} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+                    <p className="text-sm font-medium text-zinc-900">
+                      {ref}{" "}
+                      <span className="text-xs font-normal text-zinc-600">
+                        {decision}
+                        {decisionDate ? ` · ${decisionDate}` : ""}
+                      </span>
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-700">{description}</p>
+                    {address ? <p className="mt-1 text-xs text-zinc-500">{address}</p> : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
 
         {(site.ai_outcome || site.ai_risk_summary || site.ai_report) && (
           <section className="rounded-xl border border-zinc-200 bg-white p-4 space-y-2">
