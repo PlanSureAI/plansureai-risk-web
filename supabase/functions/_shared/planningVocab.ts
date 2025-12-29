@@ -71,3 +71,19 @@ export function mergeSiteKillers(
   });
   return Array.from(set);
 }
+
+export type GeographySource = "dataset:built-up-area";
+
+export function mapGeographyToSiteFields(entity: any): {
+  settlement: string | null;
+  extra_site_killers: string[];
+} {
+  const dataset = entity?.dataset;
+  if (dataset === "built-up-area") {
+    return {
+      settlement: entity?.name ?? null,
+      extra_site_killers: ["within_settlement_boundary"],
+    };
+  }
+  return { settlement: null, extra_site_killers: [] };
+}
