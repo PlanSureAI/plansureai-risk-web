@@ -36,7 +36,7 @@ export function FinancePackPdfButton({ siteId, siteName }: Props) {
       type="button"
       onClick={handleClick}
       disabled={isPending}
-      className="inline-flex items-center rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
+      className="inline-flex items-center rounded-full border border-neutral-800 bg-white px-5 py-2 text-sm font-medium text-neutral-800 hover:bg-neutral-50 disabled:opacity-60"
     >
       {isPending ? "Generating PDF…" : "Download PDF pack"}
     </button>

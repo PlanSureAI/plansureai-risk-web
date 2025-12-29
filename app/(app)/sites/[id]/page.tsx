@@ -732,7 +732,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
           </section>
         )}
 
-        <div className="space-y-4">
+        <div className="mt-8 space-y-4">
           {uploadStatus === "success" && (
             <p className="text-sm text-green-600">PDF uploaded successfully.</p>
           )}
@@ -740,22 +740,24 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             <p className="text-sm text-red-600">There was a problem uploading the PDF.</p>
           )}
 
-          <form action={runSiteAnalysis}>
-            <input type="hidden" name="id" value={site.id} />
-            <RunAnalysisButton />
-          </form>
+          <div className="flex flex-wrap gap-3">
+            <form action={runSiteAnalysis}>
+              <input type="hidden" name="id" value={site.id} />
+              <RunAnalysisButton />
+            </form>
 
-          <form action={runFundingEligibility}>
-            <input type="hidden" name="id" value={site.id} />
-            <button
-              type="submit"
-              className="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
-            >
-              Run funding fit-check
-            </button>
-          </form>
+            <form action={runFundingEligibility}>
+              <input type="hidden" name="id" value={site.id} />
+              <button
+                type="submit"
+                className="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+              >
+                Run funding fit-check
+              </button>
+            </form>
+          </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-3">
             <FinancePackButton siteId={site.id} siteName={site.site_name} />
             <FinancePackPdfButton siteId={site.id} siteName={site.site_name} />
           </div>
