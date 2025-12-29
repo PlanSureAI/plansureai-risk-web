@@ -1,12 +1,11 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
-import { runSiteAnalysis, uploadSitePdf, updateSite } from "./actions";
+import { runFullAnalysis, uploadSitePdf, updateSite } from "./actions";
 import { RunAnalysisButton } from "./RunAnalysisButton";
 import { ConfidenceScoreSection } from "./ConfidenceScoreSection";
 import { RiskRationaleSection } from "./RiskRationaleSection";
 import { SiteKillersSection } from "./SiteKillersSection";
-import { runFundingEligibility } from "./actions";
 import { FinancePackButton } from "./FinancePackButton";
 import { FinancePackPdfButton } from "./FinancePackPdfButton";
 import { getNextMove, getFrictionHint, type NextMove } from "@/app/types/siteFinance";
@@ -791,7 +790,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
           </section>
         )}
 
-        <div className="mt-8 space-y-4">
+        <section className="mt-8 space-y-8">
           {uploadStatus === "success" && (
             <p className="text-sm text-green-600">PDF uploaded successfully.</p>
           )}
@@ -799,50 +798,49 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             <p className="text-sm text-red-600">There was a problem uploading the PDF.</p>
           )}
 
-          <div className="flex flex-wrap gap-3">
-            <form action={runSiteAnalysis}>
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <form action={runFullAnalysis}>
               <input type="hidden" name="id" value={site.id} />
               <RunAnalysisButton />
             </form>
 
-            <form action={runFundingEligibility}>
-              <input type="hidden" name="id" value={site.id} />
-              <button
-                type="submit"
-                className="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
-              >
-                Run funding fit-check
-              </button>
-            </form>
+            <FinancePackPdfButton siteId={site.id} siteName={site.site_name} />
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div>
             <FinancePackButton siteId={site.id} siteName={site.site_name} />
-            <FinancePackPdfButton siteId={site.id} siteName={site.site_name} />
           </div>
           {brokers.length > 0 && (
             <BrokerSendForm brokers={brokers} siteName={site.site_name} />
           )}
 
-          <form action={uploadSitePdf} className="space-y-2">
-            <input type="hidden" name="id" value={site.id} />
-            <label className="block text-sm font-medium text-zinc-800">
-              Upload site plan (PDF)
-            </label>
-            <input
-              type="file"
-              name="file"
-              accept="application/pdf"
-              className="block text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border file:border-zinc-200 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-zinc-800 hover:file:border-zinc-300"
-            />
-            <button
-              type="submit"
-              className="rounded-full bg-white px-4 py-2 text-sm font-medium text-zinc-900 ring-1 ring-inset ring-zinc-200 hover:bg-zinc-50"
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-zinc-800">Upload site plan (PDF)</p>
+            <form
+              action={uploadSitePdf}
+              className="flex flex-col items-start gap-3 sm:flex-row sm:items-center"
             >
-              Upload PDF
-            </button>
-          </form>
-        </div>
+              <input type="hidden" name="id" value={site.id} />
+              <label className="inline-flex cursor-pointer items-center rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-50">
+                Choose file
+                <input
+                  type="file"
+                  name="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  required
+                />
+              </label>
+              <button
+                type="submit"
+                className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-900 ring-1 ring-inset ring-zinc-200 hover:bg-zinc-50"
+              >
+                Upload PDF
+              </button>
+              <p className="text-xs text-zinc-500 sm:ml-2">PDF only. Max 10 MB.</p>
+            </form>
+          </div>
+        </section>
 
         <a
           href="/sites"

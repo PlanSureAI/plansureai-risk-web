@@ -9,9 +9,9 @@ export function RunAnalysisButton() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-70"
+      className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-neutral-400 disabled:opacity-80"
     >
-      {pending ? "Running analysis..." : "Run AI planning analysis"}
+      {pending ? "Running full analysis..." : "Run full analysis"}
     </button>
   );
 }

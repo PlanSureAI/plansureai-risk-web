@@ -158,6 +158,12 @@ export async function runSiteAnalysis(formData: FormData) {
   revalidatePath("/sites");
 }
 
+export async function runFullAnalysis(formData: FormData) {
+  "use server";
+  await runSiteAnalysis(formData);
+  await runFundingEligibility(formData);
+}
+
 export async function runFundingEligibility(formData: FormData) {
   const id = formData.get("id") as string;
   if (!id) throw new Error("Missing site id");
