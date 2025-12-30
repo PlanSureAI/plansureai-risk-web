@@ -39,7 +39,18 @@ export default async function EPCListingPage() {
 
   if (error) {
     console.error('Error fetching properties:', error)
-    return <div>Error loading properties</div>
+    return (
+      <div className="page-shell">
+        <div className="page">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-6">
+            <h2 className="text-h2 text-red-900">Unable to load properties</h2>
+            <p className="text-body text-red-700 mt-2">
+              {error?.message || 'Database connection error. Please check your Supabase configuration.'}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -50,7 +61,12 @@ export default async function EPCListingPage() {
           <p className="text-body">Browse properties and their energy ratings.</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {!properties || properties.length === 0 ? (
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-6">
+            <p className="text-body text-zinc-600">No properties found.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {properties?.map((property) => {
             const epc = property.epc_certificates?.[0]
             
@@ -92,7 +108,8 @@ export default async function EPCListingPage() {
               </Link>
             )
           })}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
