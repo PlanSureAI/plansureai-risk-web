@@ -53,9 +53,15 @@ export default async function ZeroBillHomesPage({ params }: PageProps) {
     .single();
 
   if (error || !data) {
+    console.error("Zero-Bill page error:", error);
     return (
-      <main className="mx-auto max-w-4xl px-4 py-10 text-sm text-zinc-700">
-        Unable to load site for Zero-Bill Homes.
+      <main className="mx-auto max-w-4xl px-4 py-10">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-semibold text-red-900">Unable to load site</p>
+          <p className="text-xs text-red-700 mt-1">
+            {error?.message || "Site not found or access denied."}
+          </p>
+        </div>
       </main>
     );
   }
