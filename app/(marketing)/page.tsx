@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 
 export const metadata = {
   title: "PlanSureAI – planning risk, clearly explained",
@@ -7,7 +9,18 @@ export const metadata = {
     "PlanSureAI helps landowners, developers and lenders see planning risk in seconds, not weeks.",
 };
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (session) {
+    redirect("/sites");
+  }
+
   return (
     <main className="text-zinc-900 min-h-screen flex flex-col justify-center">
       <section className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-24 lg:flex-row lg:items-center lg:gap-16">
