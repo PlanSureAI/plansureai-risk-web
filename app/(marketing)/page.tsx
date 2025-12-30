@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function Home() {
   return (
-    <main className="bg-neutral-50 text-zinc-900">
+    <main className="text-zinc-900">
       <section className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-12 lg:flex-row lg:items-center lg:gap-16">
         {/* Left column – logo + headline + copy + primary actions */}
         <div className="max-w-xl">
