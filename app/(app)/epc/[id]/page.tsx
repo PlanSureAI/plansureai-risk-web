@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 
+export const dynamic = 'force-dynamic';
+
 function getRatingColor(rating: string) {
   const colors = {
     'A': 'bg-green-600',

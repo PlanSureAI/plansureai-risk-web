@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 
+export const dynamic = 'force-dynamic';
+
 // Helper function to get rating color
 function getRatingColor(rating: string) {
   const colors = {
