@@ -38,27 +38,19 @@ export default function Home() {
             context into clear, actionable insight you can share with your team.
           </p>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link href="/login?next=/sites">
-              <button className="flex h-11 items-center justify-center rounded-full bg-zinc-900 px-6 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800">
-                Sign in to analyse a site
+              <button className="flex h-11 items-center justify-center rounded-full bg-zinc-900 px-8 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800">
+                Sign in
               </button>
             </Link>
-            <Link href="/login?next=/sites/new">
-              <button className="flex h-11 items-center justify-center rounded-full border border-zinc-300 px-6 text-sm font-semibold text-zinc-900 hover:border-zinc-900 hover:bg-zinc-100">
-                Create new site
-              </button>
-            </Link>
-            <Link href="/zero-bill-homes">
-              <button className="flex h-11 items-center justify-center rounded-full border border-emerald-200 bg-white px-6 text-sm font-semibold text-emerald-800 hover:border-emerald-400 hover:bg-emerald-50">
-                See the Zero-Bill flow
-              </button>
+            <Link href="/zero-bill-homes" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800 underline">
+              Zero-Bill Homes
             </Link>
           </div>
 
           <p className="mt-4 text-sm text-zinc-500">
-            Use the dashboard to explore planning insights, track sites over time, and export
-            lender‑ready summaries.
+            Analyse existing sites or create new ones once signed in.
           </p>
         </div>
 
