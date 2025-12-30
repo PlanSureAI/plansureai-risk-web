@@ -44,13 +44,10 @@ export default function Home() {
                 Sign in
               </button>
             </Link>
-            <Link href="/zero-bill-homes" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800 underline">
-              Zero-Bill Homes
-            </Link>
           </div>
 
           <p className="mt-4 text-sm text-zinc-500">
-            Analyse existing sites or create new ones once signed in.
+            Analyse existing sites or create new ones once signed in. We have EPC, Zero-Bill Homes, and beyond.
           </p>
         </div>
 
