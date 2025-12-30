@@ -177,15 +177,6 @@ function ZeroBillWorkflowTeaser() {
             </li>
           ))}
         </ol>
-
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Link
-            href="/login?next=/sites"
-            className="inline-flex items-center rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow hover:bg-emerald-700"
-          >
-            Sign in to launch
-          </Link>
-        </div>
       </div>
     </section>
   );
