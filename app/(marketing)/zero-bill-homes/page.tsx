@@ -9,6 +9,11 @@ export const metadata = {
 export default function ZeroBillHomesPage() {
   return (
     <div className="bg-neutral-50 text-zinc-900">
+      <div className="mx-auto max-w-6xl px-4 py-4">
+        <Link href="/" className="text-sm font-semibold text-zinc-600 hover:text-zinc-900">
+          ← Back
+        </Link>
+      </div>
       <ZeroBillHero />
       <ZeroBillExplainer />
       <ZeroBillWorkflowTeaser />
