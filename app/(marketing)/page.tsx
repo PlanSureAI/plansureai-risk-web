@@ -51,24 +51,42 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Right column – card with typical outputs */}
+        {/* Right column – card with features */}
         <aside
-          id="dashboard"
+          id="features"
           className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm lg:mt-0"
         >
           <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">
-            Typical outputs include
+            What's included
           </h2>
-          <ul className="mt-4 space-y-3 text-sm text-zinc-700">
-            <li>-  Planning policy alignment</li>
-            <li>-  Settlement boundary and density analysis</li>
-            <li>-  Precedent, appeal, and local character context</li>
-            <li>-  Clear Proceed / Conditional / Do Not Proceed outcome</li>
-            <li>-  PDF‑ready lender and investment summaries</li>
-          </ul>
-          <div className="mt-6 rounded-xl bg-zinc-50 p-4 text-xs text-zinc-600">
-            Sign in to unlock interactive dashboards, scenario testing, and exportable reports
-            built from your latest planning intelligence.
+          
+          <div className="mt-4 space-y-4">
+            <div className="border-b pb-3">
+              <h3 className="text-sm font-semibold text-zinc-900">Planning Risk Analysis</h3>
+              <ul className="mt-2 space-y-1 text-xs text-zinc-600">
+                <li>• Policy alignment</li>
+                <li>• Precedent & local context</li>
+                <li>• Clear outcomes</li>
+              </ul>
+            </div>
+            
+            <div className="border-b pb-3">
+              <h3 className="text-sm font-semibold text-zinc-900">EPC Explorer</h3>
+              <ul className="mt-2 space-y-1 text-xs text-zinc-600">
+                <li>• Energy ratings A-G</li>
+                <li>• Efficiency scores</li>
+                <li>• Certificate management</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-900">Zero-Bill Homes</h3>
+              <ul className="mt-2 space-y-1 text-xs text-zinc-600">
+                <li>• Net-zero workflows</li>
+                <li>• Heat pump & solar planning</li>
+                <li>• Lender narratives</li>
+              </ul>
+            </div>
           </div>
         </aside>
       </section>
