@@ -17,7 +17,7 @@ export function Header({
   const logoWidth = size === "large" ? 150 : 110;
   const logoHeight = Math.round(logoWidth * 0.25);
 
-  const zeroBillHref = navVariant === "app" ? "/sites" : "/zero-bill-homes";
+  const zeroBillHref = "/zero-bill-homes";
   const epcHref = navVariant === "app" ? "/epc" : "/epc";
   const dashboardHref = navVariant === "app" ? "/sites" : "/sites";
 
