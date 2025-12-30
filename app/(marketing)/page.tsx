@@ -39,17 +39,20 @@ export default function Home() {
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/sites"
-              className="flex h-11 items-center justify-center rounded-full bg-zinc-900 px-6 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800"
-            >
-              Analyse a site
+            <Link href="/login?next=/sites">
+              <button className="flex h-11 items-center justify-center rounded-full bg-zinc-900 px-6 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800">
+                Sign in to analyse a site
+              </button>
             </Link>
-            <Link
-              href="/sites"
-              className="flex h-11 items-center justify-center rounded-full border border-zinc-300 px-6 text-sm font-semibold text-zinc-900 hover:border-zinc-900 hover:bg-zinc-100"
-            >
-              Sign in to view dashboard
+            <Link href="/login?next=/sites">
+              <button className="flex h-11 items-center justify-center rounded-full border border-zinc-300 px-6 text-sm font-semibold text-zinc-900 hover:border-zinc-900 hover:bg-zinc-100">
+                View dashboard
+              </button>
+            </Link>
+            <Link href="/zero-bill-homes">
+              <button className="flex h-11 items-center justify-center rounded-full border border-emerald-200 bg-white px-6 text-sm font-semibold text-emerald-800 hover:border-emerald-400 hover:bg-emerald-50">
+                See the Zero-Bill flow
+              </button>
             </Link>
           </div>
 

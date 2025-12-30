@@ -93,6 +93,13 @@ export default async function SitesPage() {
           </div>
         </div>
 
+        <div className="mb-4 rounded-lg border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
+          <p className="font-semibold">Zero-Bill preset</p>
+          <p className="text-emerald-800">
+            Choose a site, then open the Zero-Bill view to run EPC A analysis and lender packs.
+          </p>
+        </div>
+
         <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
           <table className="min-w-full divide-y divide-zinc-200 text-sm">
             <thead className="bg-zinc-50">
@@ -121,13 +128,16 @@ export default async function SitesPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
                   Funding
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Zero-Bill
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
               {sites.length === 0 && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={9}
                     className="px-4 py-6 text-center text-sm text-zinc-500"
                   >
                     No sites found yet.
@@ -174,6 +184,14 @@ export default async function SitesPage() {
                         </td>
                         <td className="px-4 py-3 text-xs text-zinc-700">
                           {getHeadlineFundingStatus(site.eligibility_results)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/sites/${site.id}/zero-bill`}
+                            className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-inset ring-emerald-200 hover:bg-emerald-100"
+                          >
+                            Open Zero-Bill view
+                          </Link>
                         </td>
                       </>
                     );

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import Link from "next/link";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { runFullAnalysis, uploadSitePdf, updateSite } from "./actions";
 import { RunAnalysisButton } from "./RunAnalysisButton";
@@ -447,6 +448,15 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
               This scheme is larger than PlanSureAI’s core 3–40 home focus; treat planning and funding outputs as high-level only.
             </p>
           )}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/sites/${site.id}/zero-bill`}
+            className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 ring-1 ring-inset ring-emerald-200 hover:bg-emerald-100"
+          >
+            Open Zero-Bill view
+          </Link>
         </div>
 
         <section className="grid gap-4 md:grid-cols-3">

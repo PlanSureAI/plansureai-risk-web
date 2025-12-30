@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
+import { Header } from "@/app/components/Header";
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className="min-h-screen bg-neutral-50 text-neutral-900">
         <main className="flex min-h-screen flex-col">
+          <Header size="large" hideNav />
           <div className="flex-1">{children}</div>
 
           <footer className="px-4 pb-8 pt-4 text-xs text-neutral-500">
