@@ -37,7 +37,26 @@ function ZeroBillHero() {
             narratives. Run the Zero-Bill preset to see how fabric-first, heat pumps, and solar
             combine for net-operational energy.
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center" />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link
+              href="/zero-bill-homes"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-emerald-600 px-6 text-sm font-semibold text-white shadow hover:bg-emerald-700"
+            >
+              Zero-Bill Homes
+            </Link>
+            <Link
+              href="/epc"
+              className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-300 px-6 text-sm font-semibold text-zinc-900 hover:border-zinc-900 hover:bg-zinc-100"
+            >
+              EPC explorer
+            </Link>
+            <Link
+              href="/login?next=/sites"
+              className="inline-flex h-11 items-center justify-center rounded-full border border-emerald-200 bg-white px-6 text-sm font-semibold text-emerald-800 hover:border-emerald-400 hover:bg-emerald-50"
+            >
+              Dashboard
+            </Link>
+          </div>
           <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
             Planning risk · EPC A · lender ready
           </p>
