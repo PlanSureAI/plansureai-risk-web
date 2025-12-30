@@ -44,9 +44,9 @@ export default function Home() {
                 Sign in to analyse a site
               </button>
             </Link>
-            <Link href="/login?next=/sites">
+            <Link href="/login?next=/sites/new">
               <button className="flex h-11 items-center justify-center rounded-full border border-zinc-300 px-6 text-sm font-semibold text-zinc-900 hover:border-zinc-900 hover:bg-zinc-100">
-                View dashboard
+                Create new site
               </button>
             </Link>
             <Link href="/zero-bill-homes">
