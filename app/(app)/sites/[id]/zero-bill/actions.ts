@@ -57,7 +57,7 @@ function normaliseAssessment(raw: Partial<ZeroBillAssessment>): ZeroBillAssessme
   };
 }
 
-export async function runZeroBillAnalysis(formData: FormData): Promise<ZeroBillAssessment> {
+export async function runZeroBillAnalysis(formData: FormData): Promise<void> {
   const id = formData.get("id") as string;
 
   if (!id) throw new Error("Missing site id");
@@ -162,8 +162,6 @@ export async function runZeroBillAnalysis(formData: FormData): Promise<ZeroBillA
 
   revalidatePath(`/sites/${id}`);
   revalidatePath(`/sites/${id}/zero-bill`);
-
-  return assessment;
 }
 
 export async function generateZeroBillPdf(formData: FormData): Promise<string> {
