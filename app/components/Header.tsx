@@ -5,11 +5,21 @@ type HeaderProps = {
   size?: "large" | "small";
   hideNav?: boolean;
   homeHref?: string;
+  navVariant?: "app" | "marketing";
 };
 
-export function Header({ size = "small", hideNav = false, homeHref = "/" }: HeaderProps) {
+export function Header({
+  size = "small",
+  hideNav = false,
+  homeHref = "/",
+  navVariant = "marketing",
+}: HeaderProps) {
   const logoWidth = size === "large" ? 150 : 110;
   const logoHeight = Math.round(logoWidth * 0.25);
+
+  const zeroBillHref = navVariant === "app" ? "/sites" : "/zero-bill-homes";
+  const epcHref = navVariant === "app" ? "/epc" : "/epc";
+  const dashboardHref = navVariant === "app" ? "/sites" : "/sites";
 
   return (
     <header className="w-full">
@@ -26,13 +36,13 @@ export function Header({ size = "small", hideNav = false, homeHref = "/" }: Head
 
         {!hideNav && (
           <nav className="flex items-center gap-6 text-sm font-medium text-zinc-700">
-            <Link href="/zero-bill-homes" className="hover:text-zinc-900">
+            <Link href={zeroBillHref} className="hover:text-zinc-900">
               Zero-Bill Homes
             </Link>
-            <Link href="/epc" className="hover:text-zinc-900">
+            <Link href={epcHref} className="hover:text-zinc-900">
               EPC explorer
             </Link>
-            <Link href="/sites" className="hover:text-zinc-900">
+            <Link href={dashboardHref} className="hover:text-zinc-900">
               Dashboard
             </Link>
           </nav>
