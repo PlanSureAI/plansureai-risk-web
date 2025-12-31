@@ -15,6 +15,12 @@ import {
   type SiteFinanceProfile,
   type FinancePack,
 } from "@/app/types/siteFinance";
+import {
+  buildRiskEngineInput,
+  saveRiskEngineOutput,
+  type RiskEngineOutput,
+  type BrokerPackPayload,
+} from "@/app/types/riskEngine";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -52,6 +58,63 @@ function extractPostcode(address?: string | null): string | null {
     /\b([A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2})\b/i,
   );
   return match ? match[1].toUpperCase() : null;
+}
+
+async function runRiskEngineForSite(args: {
+  siteId: string;
+  financeProfileId?: string;
+  planningData?: SitePlanningData | null;
+  landtechKey?: string | null;
+}): Promise<RiskEngineOutput> {
+  const riskInput = await buildRiskEngineInput({
+    siteId: args.siteId,
+    financeProfileId: args.financeProfileId,
+    planningData: args.planningData ?? null,
+    landtechApiKey: args.landtechKey ?? null,
+  });
+
+  const riskPrompt = {
+    instruction:
+      'Score the scheme. Return JSON exactly like {"overallRiskBand":"low|medium|high","planningRiskScore":1-5,"deliveryRiskScore":1-5,"salesRiskScore":1-5,"costRiskScore":1-5,"sponsorRiskScore":1-5,"energyRiskScore":1-5,"keyRisks":["..."],"keyMitigations":["..."],"summaryParagraph":"3-4 sentences."}. 1 = low risk, 5 = high risk.',
+    input: riskInput,
+  };
+
+  const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+
+  const completion = await openai.chat.completions.create({
+    model,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a UK real-estate credit analyst producing concise risk ratings for small residential schemes.",
+      },
+      {
+        role: "user",
+        content: JSON.stringify(riskPrompt),
+      },
+    ],
+    response_format: { type: "json_object" } as const,
+  });
+
+  const raw = completion.choices[0]?.message?.content?.trim() ?? "";
+  let parsed: RiskEngineOutput;
+
+  try {
+    parsed = JSON.parse(raw) as RiskEngineOutput;
+  } catch (err) {
+    console.error("Risk engine parse failed. Raw:", raw);
+    throw err;
+  }
+
+  await saveRiskEngineOutput({
+    siteId: args.siteId,
+    output: parsed,
+    snapshotLabel: "Latest",
+    modelName: model,
+  });
+
+  return parsed;
 }
 
 export async function runSiteAnalysis(formData: FormData) {
@@ -153,6 +216,12 @@ export async function runSiteAnalysis(formData: FormData) {
     .eq("id", id);
 
   if (updateError) throw updateError;
+
+  await runRiskEngineForSite({
+    siteId: id,
+    planningData: landtechPlanning,
+    landtechKey: landtechKey ?? null,
+  });
 
   revalidatePath(`/sites/${id}`);
   revalidatePath("/sites");
@@ -550,4 +619,220 @@ export async function uploadSitePdf(formData: FormData) {
   }
 
   redirect(`/sites/${id}?upload=success`);
+}
+
+function formatCurrency(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return "—";
+  return `£${Math.round(value).toLocaleString()}`;
+}
+
+function splitLines(value: string | null | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(/\r?\n/)
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
+export async function generateBrokerPackAction(
+  formData: FormData
+): Promise<{ pdfUrl: string; csvUrl?: string; packVersion: number }> {
+  const siteId = formData.get("id") as string;
+  const brokerId = (formData.get("broker_id") as string | null) ?? null;
+  const headlineAskInput = toNullableString(formData.get("headline_ask"));
+  const lenderTarget = toNullableString(formData.get("lender_target"));
+  const notesToBroker = toNullableString(formData.get("notes_to_broker"));
+
+  if (!siteId) throw new Error("Missing site id");
+
+  const supabase = await createSupabaseServerClient();
+
+  const { data: riskRow, error: riskError } = await supabase
+    .from("site_risks")
+    .select("*")
+    .eq("site_id", siteId)
+    .order("ai_run_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (riskError) throw riskError;
+  if (!riskRow) throw new Error("No risk snapshot found for this site. Run analysis first.");
+
+  const riskOutput: RiskEngineOutput = {
+    overallRiskBand: riskRow.overall_risk_band,
+    planningRiskScore: riskRow.planning_risk_score,
+    deliveryRiskScore: riskRow.delivery_risk_score,
+    salesRiskScore: riskRow.sales_risk_score,
+    costRiskScore: riskRow.cost_risk_score,
+    sponsorRiskScore: riskRow.sponsor_risk_score,
+    energyRiskScore: riskRow.energy_risk_score,
+    keyRisks: splitLines(riskRow.key_risks),
+    keyMitigations: splitLines(riskRow.key_mitigations),
+    summaryParagraph: riskRow.summary_paragraph ?? "",
+  };
+
+  const riskInput = await buildRiskEngineInput({
+    siteId,
+    landtechApiKey: process.env.LANDTECH_API_KEY ?? null,
+  });
+
+  let broker: BrokerPackPayload["broker"] = {};
+  if (brokerId) {
+    const { data: brokerRow } = await supabase
+      .from("broker_contacts")
+      .select("name, firm, email")
+      .eq("id", brokerId)
+      .maybeSingle();
+    if (brokerRow) {
+      broker = {
+        name: brokerRow.name ?? undefined,
+        firm: brokerRow.firm ?? undefined,
+        email: brokerRow.email ?? undefined,
+      };
+    }
+  }
+
+  const { data: latestPack } = await supabase
+    .from("broker_packs")
+    .select("pack_version")
+    .eq("site_id", siteId)
+    .order("pack_version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const nextVersion = latestPack?.pack_version ? latestPack.pack_version + 1 : 1;
+
+  const derivedHeadline =
+    headlineAskInput ??
+    `£${Math.round(riskInput.financeProfile.seniorLoanAmount || 0).toLocaleString()} senior at ${
+      riskInput.financeMetrics.ltcPercent?.toFixed(0) ?? "—"
+    }% LTC`;
+
+  const payload: BrokerPackPayload = {
+    site: riskInput.site,
+    planningContext: riskInput.planningContext,
+    financeProfile: riskInput.financeProfile,
+    financeMetrics: riskInput.financeMetrics,
+    sponsor: riskInput.sponsor,
+    energy: riskInput.energy,
+    risk: riskOutput,
+    broker,
+    meta: {
+      lenderTarget: lenderTarget ?? undefined,
+      headlineAsk: derivedHeadline,
+      packVersion: nextVersion,
+      generatedAt: new Date().toISOString(),
+    },
+  };
+
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([595, 842]);
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const { height } = page.getSize();
+  let y = height - 40;
+
+  const draw = (text: string, opts: { size?: number; bold?: boolean } = {}) => {
+    const size = opts.size ?? 10;
+    const f = opts.bold ? bold : font;
+    page.drawText(text, { x: 40, y, size, font: f });
+    y -= size + 4;
+  };
+
+  draw("PlanSureAI – Broker Pack Snapshot", { bold: true, size: 12 });
+  draw(`Site: ${payload.site.address} | Postcode: ${payload.site.postcode}`);
+  draw(
+    `Planning: ${payload.site.planningStatus} (${payload.site.planningRef ?? "N/A"}) | LPA: ${
+      payload.site.lpaName
+    }`
+  );
+  y -= 6;
+  draw("Risk summary", { bold: true });
+  draw(
+    `Band: ${payload.risk.overallRiskBand.toUpperCase()} | Scores (1-5 high risk) P${payload.risk.planningRiskScore}/D${payload.risk.deliveryRiskScore}/S${payload.risk.salesRiskScore}/C${payload.risk.costRiskScore}/Sponsor${payload.risk.sponsorRiskScore}/Energy${payload.risk.energyRiskScore}`
+  );
+  draw(`Summary: ${payload.risk.summaryParagraph || payload.risk.keyRisks.join("; ")}`);
+  y -= 4;
+  draw("Finance snapshot", { bold: true });
+  draw(
+    `GDV ${formatCurrency(payload.financeProfile.gdv)} | Total cost ${formatCurrency(
+      payload.financeProfile.totalCost
+    )} | Profit on cost ${payload.financeMetrics.profitOnCostPct.toFixed(1)}%`
+  );
+  draw(
+    `Senior loan ${formatCurrency(payload.financeProfile.seniorLoanAmount)} | LTC ${
+      payload.financeMetrics.ltcPercent?.toFixed(1) ?? "—"
+    }% | LTGDV ${payload.financeMetrics.ltgdvPercent?.toFixed(1) ?? "—"}%`
+  );
+  y -= 4;
+  draw("Key risks", { bold: true });
+  for (const r of payload.risk.keyRisks.slice(0, 5)) {
+    draw(`• ${r}`);
+  }
+  y -= 4;
+  draw("Mitigations", { bold: true });
+  for (const m of payload.risk.keyMitigations.slice(0, 5)) {
+    draw(`• ${m}`);
+  }
+
+  const pdfBytes = await doc.save();
+  const csvLines = [
+    "site_id,address,postcode,lpa,overall_risk_band,ltc_percent,ltgdv_percent,profit_on_cost_pct,headline_ask,broker_name",
+    [
+      payload.site.id,
+      `"${payload.site.address}"`,
+      payload.site.postcode,
+      `"${payload.site.lpaName}"`,
+      payload.risk.overallRiskBand,
+      payload.financeMetrics.ltcPercent.toFixed(2),
+      payload.financeMetrics.ltgdvPercent.toFixed(2),
+      payload.financeMetrics.profitOnCostPct.toFixed(2),
+      `"${payload.meta.headlineAsk}"`,
+      `"${payload.broker.name ?? ""}"`,
+    ].join(","),
+  ].join("\n");
+
+  const bucket = "broker-packs";
+  const pdfPath = `${siteId}/pack-v${nextVersion}.pdf`;
+  const csvPath = `${siteId}/pack-v${nextVersion}.csv`;
+
+  const { error: pdfError } = await supabase.storage
+    .from(bucket)
+    .upload(pdfPath, Buffer.from(pdfBytes), {
+      contentType: "application/pdf",
+      upsert: true,
+    });
+
+  if (pdfError) throw pdfError;
+
+  const { error: csvError } = await supabase.storage
+    .from(bucket)
+    .upload(csvPath, Buffer.from(csvLines), {
+      contentType: "text/csv",
+      upsert: true,
+    });
+
+  if (csvError) throw csvError;
+
+  const { data: pdfPublic } = supabase.storage.from(bucket).getPublicUrl(pdfPath);
+  const { data: csvPublic } = supabase.storage.from(bucket).getPublicUrl(csvPath);
+
+  const { error: insertError } = await supabase.from("broker_packs").insert({
+    site_id: siteId,
+    broker_id: brokerId,
+    finance_profile_id: riskInput.financeProfileId,
+    risk_snapshot_id: riskRow.id,
+    pack_version: nextVersion,
+    pack_url: pdfPath,
+    csv_url: csvPath,
+    lender_target: lenderTarget,
+    headline_ask: derivedHeadline,
+    notes_to_broker: notesToBroker,
+  });
+
+  if (insertError) throw insertError;
+
+  revalidatePath(`/sites/${siteId}`);
+
+  return { pdfUrl: pdfPublic.publicUrl, csvUrl: csvPublic.publicUrl, packVersion: nextVersion };
 }

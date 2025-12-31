@@ -4,7 +4,7 @@ type Broker = {
   id: string;
   name: string;
   firm: string | null;
-  email: string;
+  email: string | null;
 };
 
 export function BrokerSendForm({
@@ -24,11 +24,11 @@ export function BrokerSendForm({
         onChange={(e) => {
           const brokerId = e.target.value;
           if (brokerId === "__add") {
-            window.location.href = "/brokers/new";
+            window.location.href = "/brokers";
             return;
           }
           const broker = brokers.find((b) => b.id === brokerId);
-          if (!broker) return;
+          if (!broker || !broker.email) return;
           const body = encodeURIComponent(
             `Hi ${broker.name},\n\nI've attached the PlanSureAI finance pack for this small site. Could we discuss funding options?\n\nThanks.`
           );

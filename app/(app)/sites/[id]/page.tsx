@@ -12,6 +12,7 @@ import { FinancePackPdfButton } from "./FinancePackPdfButton";
 import { getNextMove, getFrictionHint, type NextMove } from "@/app/types/siteFinance";
 import { BrokerSendForm } from "./BrokerSendForm";
 import { getPlanningForPostcode, type LandTechPlanningApplication } from "@/app/lib/landtech";
+import { GenerateBrokerPackButton } from "./GenerateBrokerPackButton";
 
 type Site = {
   id: string;
@@ -103,7 +104,19 @@ type Broker = {
   id: string;
   name: string;
   firm: string | null;
-  email: string;
+  email: string | null;
+  phone: string | null;
+};
+
+type BrokerPack = {
+  id: string;
+  pack_version: number;
+  pack_url: string;
+  csv_url: string | null;
+  created_at: string;
+  headline_ask: string | null;
+  broker_name: string | null;
+  broker_firm: string | null;
 };
 
 const PRODUCT_LABELS = {
@@ -261,8 +274,8 @@ async function getBrokersForCurrentUser(): Promise<Broker[]> {
   }
 
   const { data, error } = await supabaseServer
-    .from("broker_profiles")
-    .select("id, name, firm, email")
+    .from("broker_contacts")
+    .select("id, name, firm, email, phone")
     .eq("user_id", user.id)
     .order("name");
 
@@ -272,6 +285,41 @@ async function getBrokersForCurrentUser(): Promise<Broker[]> {
   }
 
   return data ?? [];
+}
+
+async function getLatestBrokerPack(siteId: string): Promise<BrokerPack | null> {
+  const supabaseServer = await createSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from("broker_packs")
+    .select("id, pack_version, pack_url, csv_url, created_at, headline_ask, broker:broker_contacts(name, firm)")
+    .eq("site_id", siteId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("❌ Error loading broker pack:", error);
+    return null;
+  }
+
+  if (!data) return null;
+
+  const pdfUrl = supabaseServer.storage.from("broker-packs").getPublicUrl(data.pack_url).data
+    .publicUrl;
+  const csvUrl = data.csv_url
+    ? supabaseServer.storage.from("broker-packs").getPublicUrl(data.csv_url).data.publicUrl
+    : null;
+
+  return {
+    id: data.id,
+    pack_version: data.pack_version,
+    pack_url: pdfUrl,
+    csv_url: csvUrl,
+    created_at: data.created_at,
+    headline_ask: data.headline_ask,
+    broker_name: (data as any).broker?.name ?? null,
+    broker_firm: (data as any).broker?.firm ?? null,
+  };
 }
 
 // Reusable fetch for lender contexts; narrowed to fields the lender page consumes.
@@ -370,6 +418,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
   const { id } = await params;
   const site = await getSite(id);
   const brokers = await getBrokersForCurrentUser();
+  const brokerPack = await getLatestBrokerPack(id);
   const resolvedSearchParams = await searchParams;
   const uploadStatus = resolvedSearchParams?.upload;
   const nextMove = site ? getNextMove(site.ai_outcome, site.eligibility_results ?? []) : null;
@@ -817,12 +866,66 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             <FinancePackPdfButton siteId={site.id} siteName={site.site_name} />
           </div>
 
-          <div>
+          <div className="space-y-4">
             <FinancePackButton siteId={site.id} siteName={site.site_name} />
+
+            <GenerateBrokerPackButton siteId={site.id} brokers={brokers} />
+
+            <div className="rounded-lg border border-zinc-200 bg-white p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900">Latest broker pack</p>
+                  <p className="text-xs text-zinc-600">
+                    {brokerPack
+                      ? `v${brokerPack.pack_version} • ${new Date(
+                          brokerPack.created_at
+                        ).toLocaleString()}`
+                      : "No broker pack generated yet."}
+                  </p>
+                </div>
+                {brokerPack && (
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={brokerPack.pack_url}
+                      className="text-sm font-semibold text-emerald-700 hover:underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Download PDF
+                    </a>
+                    {brokerPack.csv_url && (
+                      <a
+                        href={brokerPack.csv_url}
+                        className="text-sm text-zinc-700 hover:underline"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        CSV
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+              {brokerPack && (
+                <div className="mt-2 text-sm text-zinc-700">
+                  <p>Headline ask: {brokerPack.headline_ask ?? "—"}</p>
+                  <p>
+                    Broker: {brokerPack.broker_name ?? "—"}
+                    {brokerPack.broker_firm ? ` (${brokerPack.broker_firm})` : ""}
+                  </p>
+                </div>
+              )}
+              {!brokerPack && (
+                <p className="mt-2 text-sm text-zinc-700">
+                  Run risk analysis and generate a pack to populate this section.
+                </p>
+              )}
+            </div>
+
+            {brokers.length > 0 && (
+              <BrokerSendForm brokers={brokers} siteName={site.site_name} />
+            )}
           </div>
-          {brokers.length > 0 && (
-            <BrokerSendForm brokers={brokers} siteName={site.site_name} />
-          )}
 
           <div className="space-y-2">
             <p className="text-sm font-medium text-zinc-800">Upload site plan (PDF)</p>
