@@ -1,108 +1,126 @@
-import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 
-export const metadata = {
-  title: "PlanSureAI – planning risk, clearly explained",
-  description:
-    "PlanSureAI helps landowners, developers and lenders see planning risk in seconds, not weeks.",
-};
-
-export const dynamic = "force-dynamic";
-
-export default async function Home() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (session) {
-    redirect("/sites");
-  }
-
+export default function HomePage() {
   return (
-    <main className="text-zinc-900 min-h-screen flex flex-col justify-center">
-      <section className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-24 lg:flex-row lg:items-center lg:gap-16">
-        {/* Left column – logo + headline + copy + primary actions */}
-        <div className="max-w-xl">
-          <Image
-            src="/plansureai-wordmark.png"
-            alt="PlanSureAI"
-            width={200}
-            height={50}
-            className="mb-6"
-            priority
-          />
-
-          <p className="text-xs font-medium tracking-[0.2em] text-zinc-500">
-            PlanSureAI · PLANNING RISK, CLEARLY EXPLAINED
-          </p>
-
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-zinc-950 sm:text-5xl">
-            Understand planning risk
-            <br />
-            before time and money are wasted.
-          </h1>
-
-          <p className="mt-4 max-w-xl text-sm text-zinc-600">
-            <span className="font-semibold">PlanSureAI</span> helps landowners, developers, and
-            lenders see planning risk in seconds, not weeks. Turn complex policy, precedent, and
-            context into clear, actionable insight you can share with your team.
-          </p>
-
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link href="/login?next=/sites">
-              <button className="flex h-11 items-center justify-center rounded-full bg-zinc-900 px-8 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800">
-                Sign in
-              </button>
-            </Link>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center max-w-3xl mx-auto">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">PlanSureAI</h1>
+            <p className="text-xl text-gray-600 mb-8">
+              AI-powered planning intelligence for SME developers and property professionals
+            </p>
+            <p className="text-lg text-gray-700 leading-relaxed">
+              We help small and medium-sized developers navigate the complexities of UK planning by
+              providing instant access to planning constraints, risk analysis, and viability
+              assessments—turning weeks of research into minutes of clarity.
+            </p>
           </div>
+        </div>
+      </div>
 
-          <p className="mt-4 text-sm text-zinc-500">
-            Analyse existing sites or create new ones once signed in. We have EPC, Zero-Bill Homes, and beyond.
-          </p>
+      {/* Main Features Grid */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Tools & Features</h2>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Sites */}
+          <Link
+            href="/sites"
+            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 hover:shadow-lg transition-all"
+          >
+            <h3 className="text-xl font-bold text-gray-900 mb-3">Sites</h3>
+            <p className="text-gray-600 text-sm mb-4">
+              Manage your development sites, run EPC A analysis, and generate lender packs for
+              Zero-Bill residential developments.
+            </p>
+            <div className="inline-flex items-center text-blue-600 font-medium text-sm">
+              View your sites →
+            </div>
+          </Link>
+
+          {/* Constraints Checker */}
+          <Link
+            href="/constraints"
+            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 hover:shadow-lg transition-all"
+          >
+            <h3 className="text-xl font-bold text-gray-900 mb-3">Planning Constraints</h3>
+            <p className="text-gray-600 text-sm mb-4">
+              Instantly check planning constraints for any UK location including conservation
+              areas, listed buildings, flood zones, and more.
+            </p>
+            <div className="inline-flex items-center text-blue-600 font-medium text-sm">
+              Check constraints →
+            </div>
+          </Link>
+
+          {/* Zero-Bill Homes */}
+          <Link
+            href="/zero-bill-homes"
+            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 hover:shadow-lg transition-all"
+          >
+            <h3 className="text-xl font-bold text-gray-900 mb-3">Zero-Bill Homes</h3>
+            <p className="text-gray-600 text-sm mb-4">
+              Explore zero-bill residential development opportunities with EPC A compliance and
+              energy performance analysis.
+            </p>
+            <div className="inline-flex items-center text-blue-600 font-medium text-sm">
+              Explore homes →
+            </div>
+          </Link>
+
+          {/* EPC Explorer */}
+          <Link
+            href="/epc-explorer"
+            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 hover:shadow-lg transition-all"
+          >
+            <h3 className="text-xl font-bold text-gray-900 mb-3">EPC Explorer</h3>
+            <p className="text-gray-600 text-sm mb-4">
+              Search and analyze Energy Performance Certificate data across the UK to identify
+              retrofit and development opportunities.
+            </p>
+            <div className="inline-flex items-center text-blue-600 font-medium text-sm">
+              Explore EPCs →
+            </div>
+          </Link>
+
+          {/* Dashboard */}
+          <Link
+            href="/dashboard"
+            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 hover:shadow-lg transition-all"
+          >
+            <h3 className="text-xl font-bold text-gray-900 mb-3">Dashboard</h3>
+            <p className="text-gray-600 text-sm mb-4">
+              View your project portfolio, track progress, and access all your planning
+              intelligence in one place.
+            </p>
+            <div className="inline-flex items-center text-blue-600 font-medium text-sm">
+              Go to dashboard →
+            </div>
+          </Link>
+
+          {/* Coming Soon placeholder to complete grid */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 opacity-60">
+            <h3 className="text-xl font-bold text-gray-900 mb-3">Viability Calculator</h3>
+            <p className="text-gray-600 text-sm mb-4">
+              Assess development viability with AI-powered cost estimation and financial modeling.
+            </p>
+            <div className="inline-flex items-center text-gray-400 font-medium text-sm">
+              Coming soon
+            </div>
+          </div>
         </div>
 
-        {/* Right column – card with features */}
-        <aside
-          id="features"
-          className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm lg:mt-0"
-        >
-          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">
-            What's included
-          </h2>
-          
-          <div className="mt-4 space-y-4">
-            <div className="border-b pb-3">
-              <h3 className="text-sm font-semibold text-zinc-900">Planning Risk Analysis</h3>
-              <ul className="mt-2 space-y-1 text-xs text-zinc-600">
-                <li>• Policy alignment</li>
-                <li>• Precedent & local context</li>
-                <li>• Clear outcomes</li>
-              </ul>
-            </div>
-            
-            <div className="border-b pb-3">
-              <h3 className="text-sm font-semibold text-zinc-900">EPC Explorer</h3>
-              <ul className="mt-2 space-y-1 text-xs text-zinc-600">
-                <li>• Energy ratings A-G</li>
-                <li>• Efficiency scores</li>
-                <li>• Certificate management</li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-semibold text-zinc-900">Zero-Bill Homes</h3>
-              <ul className="mt-2 space-y-1 text-xs text-zinc-600">
-                <li>• Net-zero workflows</li>
-                <li>• Heat pump & solar planning</li>
-                <li>• Lender narratives</li>
-              </ul>
-            </div>
-          </div>
-        </aside>
-      </section>
-    </main>
+        {/* Additional Info Section */}
+        <div className="mt-16 bg-blue-50 rounded-lg p-8 text-center">
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">Built for SME Developers</h3>
+          <p className="text-gray-700 max-w-2xl mx-auto">
+            PlanSureAI streamlines the planning process for small and medium developers, giving you
+            the tools to compete with larger firms while saving time and reducing risk.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -1,28 +1,69 @@
-"use client";
-
 import "./globals.css";
-import { usePathname } from "next/navigation";
+import { Inter } from "next/font/google";
+import Link from "next/link";
+import Image from "next/image";
 
-function Footer() {
-  return (
-    <footer className="w-full border-t border-neutral-200 px-8 py-4 text-xs text-neutral-500">
-      <span>Contact: plansureai@gmail.com</span>
-    </footer>
-  );
-}
+const inter = Inter({ subsets: ["latin"] });
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const pathname = usePathname();
-  const isHome = pathname === "/";
+export const metadata = {
+  title: "PlanSureAI - Planning Intelligence for Developers",
+  description: "AI-powered planning intelligence for SME developers and property professionals",
+};
 
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-50">
-        <main className="py-6 px-4 md:px-8">{children}</main>
+      <body className={inter.className}>
+        <nav className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16 items-center">
+              {/* Logo */}
+              <Link href="/" className="flex items-center space-x-3">
+                <div className="relative w-10 h-10">
+                  <Image
+                    src="/logo.png"
+                    alt="PlanSureAI"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <span className="text-lg font-semibold text-gray-900">PlanSureAI</span>
+              </Link>
+
+              {/* Navigation Links */}
+              <div className="flex space-x-6 items-center">
+                <Link href="/sites" className="text-sm text-gray-700 hover:text-blue-600 font-medium">
+                  Sites
+                </Link>
+                <Link
+                  href="/constraints"
+                  className="text-sm text-gray-700 hover:text-blue-600 font-medium"
+                >
+                  Constraints
+                </Link>
+                <Link
+                  href="/zero-bill-homes"
+                  className="text-sm text-gray-700 hover:text-blue-600 font-medium"
+                >
+                  Zero-Bill Homes
+                </Link>
+                <Link
+                  href="/epc-explorer"
+                  className="text-sm text-gray-700 hover:text-blue-600 font-medium"
+                >
+                  EPC explorer
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className="text-sm text-gray-700 hover:text-blue-600 font-medium"
+                >
+                  Dashboard
+                </Link>
+              </div>
+            </div>
+          </div>
+        </nav>
+        {children}
       </body>
     </html>
   );
