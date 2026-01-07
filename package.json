@@ -6,11 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build:scripts": "tsc -p tsconfig.scripts.json",
+    "fetch:cornwall": "npm run build:scripts && node dist-scripts/fetch-cornwall.js",
+    "fetch:birmingham": "npm run build:scripts && node dist-scripts/fetch-birmingham.js",
+    "fetch:constraints:birmingham": "npm run build:scripts && node dist-scripts/fetch-constraints-birmingham.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.89.0",
+    "csv-parse": "^5.6.0",
     "next": "16.1.1",
     "openai": "^6.15.0",
     "pdf-lib": "^1.17.1",

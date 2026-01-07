@@ -35,6 +35,83 @@ LANDTECH_API_KEY=...
 NEXT_PUBLIC_APP_URL=https://plansure.ai
 ```
 
+## Planning constraints API
+
+Quick reference:
+
+```text
+GET /api/planning-constraints?lat={latitude}&lng={longitude}
+```
+
+Parameters:
+
+- `lat` (required): Latitude (UK bounds: 49.9 to 60.9)
+- `lng` (required): Longitude (UK bounds: -8.2 to 1.8)
+- `dataset`: Single dataset filter (e.g., `conservation-area`)
+- `datasets`: Multiple datasets, comma-separated (e.g., `listed-building,ancient-woodland`)
+- `defaults`: Set to `false` to disable default dataset filtering (slow)
+- `limit`: Max results per dataset (default: 50)
+- `offset`: Pagination offset
+- `geometry_relation`: Spatial relationship (default: `within`)
+
+Response format:
+
+```json
+{
+  "location": { "lat": 51.5074, "lng": -0.1278 },
+  "datasets": ["conservation-area", "listed-building"],
+  "limit": 50,
+  "offset": 0,
+  "count": 3,
+  "constraints": [
+    {
+      "entity": 7010000744,
+      "dataset": "article-4-direction-area",
+      "name": "Canterbury and surrounding area",
+      "reference": "73412",
+      "description": null,
+      "geometry": "MULTIPOLYGON(...)",
+      "point": "POINT (1.076439 51.294709)",
+      "organisation_entity": "75",
+      "entry_date": "2024-01-01",
+      "start_date": "2024-01-01",
+      "end_date": null
+    }
+  ],
+  "sources": [
+    {
+      "dataset": "article-4-direction-area",
+      "url": "https://www.planning.data.gov.uk/entity.json?...",
+      "count": 5943,
+      "links": { "first": "http://...", "last": "http://..." }
+    }
+  ],
+  "metadata": {
+    "query_time_ms": 147,
+    "warning": "Unfiltered query (defaults=false) may be slow. Consider specifying datasets for better performance."
+  }
+}
+```
+
+Notes:
+
+- Cache status is returned via the `X-Cache` response header (`HIT` or `MISS`).
+- `defaults=false` removes dataset filtering and can be significantly slower.
+
+Status codes:
+
+- `200`: Success
+- `400`: Invalid parameters (e.g., out-of-UK coordinates)
+- `504`: Upstream timeout (Planning Data API took >10s)
+
+Tier-1 default datasets:
+
+- `conservation-area`
+- `listed-building`
+- `article-4-direction-area`
+- `tree-preservation-zone`
+- `flood-risk-zone`
+
 ## Core user flows
 
 - **Create or import a site**  
