@@ -100,16 +100,19 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Coming Soon placeholder to complete grid */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 opacity-60">
+          {/* Viability Calculator - now active */}
+          <Link
+            href="/viability"
+            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 hover:shadow-lg transition-all"
+          >
             <h3 className="text-xl font-bold text-gray-900 mb-3">Viability Calculator</h3>
             <p className="text-gray-600 text-sm mb-4">
               Assess development viability with AI-powered cost estimation and financial modeling.
             </p>
-            <div className="inline-flex items-center text-gray-400 font-medium text-sm">
-              Coming soon
+            <div className="inline-flex items-center text-blue-600 font-medium text-sm">
+              Calculate viability →
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Additional Info Section */}
