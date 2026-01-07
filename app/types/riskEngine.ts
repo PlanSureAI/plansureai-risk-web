@@ -255,10 +255,14 @@ export async function buildRiskEngineInput({
       netGiaM2: site.net_residential_gia_m2 ?? undefined,
     },
     planningContext: {
-      keyPolicies: splitToLines(site.key_planning_considerations),
+      keyPolicies: splitToLines(site.key_planning_considerations).filter(
+        (line): line is string => line !== null
+      ),
       constraints:
         planning?.planningApplications?.map((p) => p.classification).filter(Boolean) ??
-        splitToLines(site.planning_summary),
+        splitToLines(site.planning_summary).filter(
+          (line): line is string => line !== null
+        ),
       history: site.decision_summary ?? "",
     },
     financeProfile: {
