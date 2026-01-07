@@ -99,9 +99,9 @@ type BuildRiskEngineInputArgs = {
   planningData?: SitePlanningData | null;
 };
 
-function splitToLines(value?: string | null): string[] {
-  if (!value) return [];
-  return value
+function splitToLines(text: string | null | undefined): string[] {
+  if (!text) return [];
+  return text
     .split(/\r?\n|•|-/)
     .map((v) => v.trim())
     .filter(Boolean);
