@@ -111,20 +111,23 @@ export default function ConstraintsPage() {
       const data = await response.json();
 
       // Group by dataset
-      const grouped = data.features.reduce((acc: Record<string, Constraint[]>, feature: any) => {
-        const dataset = feature.properties.dataset;
-        if (!acc[dataset]) {
-          acc[dataset] = [];
-        }
-        acc[dataset].push({
-          dataset,
-          name: feature.properties.name || 'Unnamed',
-          reference: feature.properties.reference || feature.properties.entity,
-          entity: feature.properties.entity,
-          geometry: feature.geometry,
-        });
-        return acc;
-      }, {});
+      const grouped: Record<string, Constraint[]> = data.features.reduce(
+        (acc: Record<string, Constraint[]>, feature: any) => {
+          const dataset = feature.properties.dataset;
+          if (!acc[dataset]) {
+            acc[dataset] = [];
+          }
+          acc[dataset].push({
+            dataset,
+            name: feature.properties.name || 'Unnamed',
+            reference: feature.properties.reference || feature.properties.entity,
+            entity: feature.properties.entity,
+            geometry: feature.geometry,
+          });
+          return acc;
+        },
+        {}
+      );
 
       const groupedResults: ConstraintGroup[] = Object.entries(grouped).map(
         ([dataset, constraints]) => ({
