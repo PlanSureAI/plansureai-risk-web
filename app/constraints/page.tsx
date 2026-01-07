@@ -46,28 +46,18 @@ export default function ConstraintsPage() {
     query: string
   ): Promise<{ lat: number; lng: number } | null> => {
     try {
-      // Use Nominatim geocoding API (free, no API key required)
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?` +
-          `q=${encodeURIComponent(query)}&` +
-          `countrycodes=gb&` +
-          `format=json&` +
-          `limit=1`,
-        {
-          headers: {
-            'User-Agent': 'PlanSureAI/1.0',
-          },
-        }
-      );
+      // Use our API endpoint instead of calling Nominatim directly
+      const response = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
 
-      if (!response.ok) throw new Error('Geocoding failed');
+      if (!response.ok) {
+        return null;
+      }
 
       const data = await response.json();
-      if (data.length === 0) return null;
 
       return {
-        lat: parseFloat(data[0].lat),
-        lng: parseFloat(data[0].lon),
+        lat: data.lat,
+        lng: data.lng,
       };
     } catch (err) {
       console.error('Geocoding error:', err);
