@@ -42,6 +42,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   Constraints
                 </Link>
                 <Link
+                  href="/viability"
+                  className="text-sm text-gray-700 hover:text-blue-600 font-medium"
+                >
+                  Viability
+                </Link>
+                <Link
                   href="/zero-bill-homes"
                   className="text-sm text-gray-700 hover:text-blue-600 font-medium"
                 >
