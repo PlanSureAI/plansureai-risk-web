@@ -191,7 +191,7 @@ function ProjectDetailsForm({
           value={inputs.siteName}
           onChange={(e) => onChange({ ...inputs, siteName: e.target.value })}
           placeholder="e.g., Riverside Development"
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
         />
       </div>
 
@@ -202,7 +202,7 @@ function ProjectDetailsForm({
           value={inputs.address}
           onChange={(e) => onChange({ ...inputs, address: e.target.value })}
           placeholder="e.g., 10 Downing Street, London"
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
         />
       </div>
 
@@ -217,7 +217,7 @@ function ProjectDetailsForm({
             value={inputs.siteArea || ''}
             onChange={(e) => onChange({ ...inputs, siteArea: parseFloat(e.target.value) || 0 })}
             placeholder="0.5"
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           />
         </div>
 
@@ -228,7 +228,7 @@ function ProjectDetailsForm({
           <select
             value={inputs.developmentType}
             onChange={(e) => onChange({ ...inputs, developmentType: e.target.value as any })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           >
             <option value="residential">Residential</option>
             <option value="commercial">Commercial</option>
@@ -245,7 +245,7 @@ function ProjectDetailsForm({
             value={inputs.units || ''}
             onChange={(e) => onChange({ ...inputs, units: parseInt(e.target.value) || 0 })}
             placeholder="10"
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           />
         </div>
 
@@ -258,7 +258,7 @@ function ProjectDetailsForm({
               onChange({ ...inputs, grossInternalArea: parseInt(e.target.value) || 0 })
             }
             placeholder="1000"
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           />
         </div>
       </div>
@@ -273,7 +273,7 @@ function ProjectDetailsForm({
           max="100"
           value={inputs.affordableHousing}
           onChange={(e) => onChange({ ...inputs, affordableHousing: parseInt(e.target.value) || 0 })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
         />
       </div>
 
