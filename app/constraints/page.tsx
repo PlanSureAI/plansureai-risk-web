@@ -49,11 +49,13 @@ export default function ConstraintsPage() {
       // Use our API endpoint instead of calling Nominatim directly
       const response = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
 
+      const data = await response.json();
+      console.log('Geocode response:', data);
+
       if (!response.ok) {
+        console.error('Geocode error:', data);
         return null;
       }
-
-      const data = await response.json();
 
       return {
         lat: data.lat,
@@ -94,11 +96,13 @@ export default function ConstraintsPage() {
         `/api/planning-constraints?lat=${coords.lat}&lng=${coords.lng}&limit=100`
       );
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch constraints');
-      }
-
       const data = await response.json();
+      console.log('Constraints response:', data);
+
+      if (!response.ok) {
+        console.error('Constraints error:', data);
+        throw new Error(data.error || 'Failed to fetch constraints');
+      }
 
       // Group by dataset
       const grouped: Record<string, Constraint[]> = data.features.reduce(
@@ -131,8 +135,8 @@ export default function ConstraintsPage() {
       setResults(groupedResults);
       setSearchedAddress(address);
     } catch (err) {
-      setError('An error occurred while searching. Please try again.');
-      console.error(err);
+      console.error('Full error details:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred while searching.');
     } finally {
       setLoading(false);
     }
