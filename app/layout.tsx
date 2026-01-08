@@ -53,10 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 >
                   Zero-Bill Homes
                 </Link>
-                <Link
-                  href="/epc-explorer"
-                  className="text-sm text-gray-700 hover:text-blue-600 font-medium"
-                >
+                <Link href="/epc" className="text-sm text-gray-700 hover:text-blue-600 font-medium">
                   EPC explorer
                 </Link>
                 <Link

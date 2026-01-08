@@ -72,7 +72,7 @@ export default function HomePage() {
 
           {/* EPC Explorer */}
           <Link
-            href="/epc-explorer"
+            href="/epc"
             className="bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 hover:shadow-lg transition-all"
           >
             <h3 className="text-xl font-bold text-gray-900 mb-3">EPC Explorer</h3>

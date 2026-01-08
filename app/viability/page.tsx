@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Calculator, Building2, PoundSterling, FileText, AlertCircle } from 'lucide-react';
 
 interface ProjectInputs {
@@ -227,8 +227,41 @@ function ProjectDetailsForm({
   onChange: (inputs: ProjectInputs) => void;
   onNext: () => void;
 }) {
-  const canProceed =
-    inputs.siteName && inputs.address && inputs.units > 0 && inputs.grossInternalArea > 0;
+  const [validationErrors, setValidationErrors] = useState<{
+    siteName?: string;
+    address?: string;
+    siteArea?: string;
+    units?: string;
+    grossInternalArea?: string;
+  }>({});
+
+  const computedErrors = useMemo(() => {
+    const errors: typeof validationErrors = {};
+
+    if (!inputs.siteName.trim()) {
+      errors.siteName = 'Site name is required';
+    }
+    if (!inputs.address.trim()) {
+      errors.address = 'Site address is required';
+    }
+    if (!inputs.siteArea || inputs.siteArea <= 0) {
+      errors.siteArea = 'Site area must be greater than 0';
+    }
+    if (!inputs.units || inputs.units <= 0) {
+      errors.units = 'Number of units must be greater than 0';
+    }
+    if (!inputs.grossInternalArea || inputs.grossInternalArea <= 0) {
+      errors.grossInternalArea = 'Total GIA must be greater than 0';
+    }
+
+    return errors;
+  }, [inputs.address, inputs.grossInternalArea, inputs.siteArea, inputs.siteName, inputs.units]);
+
+  useEffect(() => {
+    setValidationErrors(computedErrors);
+  }, [computedErrors]);
+
+  const canProceed = Object.keys(computedErrors).length === 0;
 
   return (
     <div className="space-y-6">
@@ -243,6 +276,9 @@ function ProjectDetailsForm({
           placeholder="e.g., Riverside Development"
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
         />
+        {validationErrors.siteName && (
+          <p className="text-sm text-red-600 mt-1">⚠️ {validationErrors.siteName}</p>
+        )}
       </div>
 
       <div>
@@ -254,6 +290,9 @@ function ProjectDetailsForm({
           placeholder="e.g., 10 Downing Street, London"
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
         />
+        {validationErrors.address && (
+          <p className="text-sm text-red-600 mt-1">⚠️ {validationErrors.address}</p>
+        )}
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -269,6 +308,9 @@ function ProjectDetailsForm({
             placeholder="0.5"
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           />
+          {validationErrors.siteArea && (
+            <p className="text-sm text-red-600 mt-1">⚠️ {validationErrors.siteArea}</p>
+          )}
         </div>
 
         <div>
@@ -297,6 +339,9 @@ function ProjectDetailsForm({
             placeholder="10"
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           />
+          {validationErrors.units && (
+            <p className="text-sm text-red-600 mt-1">⚠️ {validationErrors.units}</p>
+          )}
         </div>
 
         <div>
@@ -310,6 +355,9 @@ function ProjectDetailsForm({
             placeholder="1000"
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           />
+          {validationErrors.grossInternalArea && (
+            <p className="text-sm text-red-600 mt-1">⚠️ {validationErrors.grossInternalArea}</p>
+          )}
         </div>
       </div>
 
@@ -364,6 +412,21 @@ function ProjectDetailsForm({
           <p className="text-xs text-gray-500 mt-1">May unlock additional grant funding</p>
         </div>
       </div>
+
+      {!canProceed && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800 font-medium mb-1">
+            ⚠️ Please complete the following required fields:
+          </p>
+          <ul className="text-sm text-yellow-700 list-disc list-inside space-y-1">
+            {validationErrors.siteName && <li>{validationErrors.siteName}</li>}
+            {validationErrors.address && <li>{validationErrors.address}</li>}
+            {validationErrors.siteArea && <li>{validationErrors.siteArea}</li>}
+            {validationErrors.units && <li>{validationErrors.units}</li>}
+            {validationErrors.grossInternalArea && <li>{validationErrors.grossInternalArea}</li>}
+          </ul>
+        </div>
+      )}
 
       <button
         onClick={onNext}
