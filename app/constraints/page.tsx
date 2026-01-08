@@ -105,7 +105,7 @@ export default function ConstraintsPage() {
       }
 
       // Group by dataset
-      const grouped: Record<string, Constraint[]> = data.features.reduce(
+      const grouped: Record<string, Constraint[]> = (data?.features || []).reduce(
         (acc: Record<string, Constraint[]>, feature: any) => {
           const dataset = feature.properties.dataset;
           if (!acc[dataset]) {
