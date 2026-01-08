@@ -87,7 +87,12 @@ export default function ViabilityCalculator() {
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-center space-x-4">
-            <StepIndicator number={1} label="Project Details" active={step === 1} completed={step > 1} />
+            <StepIndicator
+              number={1}
+              label="Project Details"
+              active={step === 1}
+              completed={step > 1}
+            />
             <div className="w-16 h-0.5 bg-gray-300"></div>
             <StepIndicator number={2} label="Cost Inputs" active={step === 2} completed={step > 2} />
             <div className="w-16 h-0.5 bg-gray-300"></div>
@@ -147,10 +152,16 @@ function StepIndicator({
       <div
         className={`
         w-10 h-10 rounded-full flex items-center justify-center font-semibold
-        ${active ? 'bg-blue-600 text-white' : completed ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}
+        ${
+          active
+            ? 'bg-blue-600 text-white'
+            : completed
+              ? 'bg-green-500 text-white'
+              : 'bg-gray-200 text-gray-600'
+        }
       `}
       >
-        {completed ? 'OK' : number}
+        {completed ? '✓' : number}
       </div>
       <span className="text-xs text-gray-600 mt-1">{label}</span>
     </div>
@@ -166,7 +177,8 @@ function ProjectDetailsForm({
   onChange: (inputs: ProjectInputs) => void;
   onNext: () => void;
 }) {
-  const canProceed = inputs.siteName && inputs.address && inputs.units > 0 && inputs.grossInternalArea > 0;
+  const canProceed =
+    inputs.siteName && inputs.address && inputs.units > 0 && inputs.grossInternalArea > 0;
 
   return (
     <div className="space-y-6">
@@ -210,7 +222,9 @@ function ProjectDetailsForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Development Type</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Development Type
+          </label>
           <select
             value={inputs.developmentType}
             onChange={(e) => onChange({ ...inputs, developmentType: e.target.value as any })}
@@ -268,7 +282,7 @@ function ProjectDetailsForm({
         disabled={!canProceed}
         className="w-full bg-blue-600 text-white py-3 px-4 rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
       >
-        Continue to Cost Inputs ->
+        Continue to Cost Inputs
       </button>
     </div>
   );
@@ -332,14 +346,14 @@ function CostInputsForm({
           onClick={onBack}
           className="flex-1 bg-white text-gray-700 py-3 px-4 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
         >
-          <- Back
+          Back
         </button>
         <button
           onClick={onCalculate}
           disabled={loading}
           className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-300 transition-colors"
         >
-          {loading ? 'Calculating...' : 'Calculate Viability ->'}
+          {loading ? 'Calculating...' : 'Calculate Viability'}
         </button>
       </div>
     </div>
@@ -379,20 +393,6 @@ function ResultsView({
     }).format(value);
   };
 
-  const statusLabel =
-    result.viabilityStatus === 'viable'
-      ? 'Viable'
-      : result.viabilityStatus === 'marginal'
-        ? 'Marginal'
-        : 'Unviable';
-
-  const statusDescription =
-    result.viabilityStatus === 'viable'
-      ? 'meets'
-      : result.viabilityStatus === 'marginal'
-        ? 'marginally meets'
-        : 'does not meet';
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -403,9 +403,19 @@ function ResultsView({
 
       {/* Status Badge */}
       <div className={`border rounded-lg p-6 text-center ${getStatusColor(result.viabilityStatus)}`}>
-        <div className="text-4xl font-bold mb-2">{statusLabel}</div>
+        <div className="text-4xl font-bold mb-2">
+          {result.viabilityStatus === 'viable' && '✓ Viable'}
+          {result.viabilityStatus === 'marginal' && '⚠ Marginal'}
+          {result.viabilityStatus === 'unviable' && '✗ Unviable'}
+        </div>
         <div className="text-sm opacity-80">
-          This development {statusDescription} typical viability thresholds
+          This development{' '}
+          {result.viabilityStatus === 'viable'
+            ? 'meets'
+            : result.viabilityStatus === 'marginal'
+              ? 'marginally meets'
+              : 'does not meet'}{' '}
+          typical viability thresholds
         </div>
       </div>
 
@@ -475,13 +485,14 @@ function ResultsView({
         </h3>
         <ul className="text-sm text-blue-900 space-y-2">
           <li>
-            * Construction costs based on BCIS Q4 2025 data for {inputs.developmentType} developments
+            • Construction costs based on BCIS Q4 2025 data for {inputs.developmentType}
+            developments
           </li>
-          <li>* Market values estimated using local comparable transactions</li>
-          <li>* Professional fees calculated at 12% of construction costs</li>
-          <li>* Finance costs assume 6.5% interest rate over 24-month development period</li>
-          <li>* S106/CIL obligations estimated based on local authority requirements</li>
-          <li>* Target profit margin: 20% on GDV for viability</li>
+          <li>• Market values estimated using local comparable transactions</li>
+          <li>• Professional fees calculated at 12% of construction costs</li>
+          <li>• Finance costs assume 6.5% interest rate over 24-month development period</li>
+          <li>• S106/CIL obligations estimated based on local authority requirements</li>
+          <li>• Target profit margin: 20% on GDV for viability</li>
         </ul>
       </div>
 
