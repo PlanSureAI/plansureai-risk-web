@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     schemes.push({
       ...financingData.helpToBuildEquityLoan,
       eligible: true,
-      estimatedAmount: null,
+      estimatedAmount: undefined,
       reason: 'Eligible for self-build equity loan (up to 20% of value)',
     });
   }
@@ -74,7 +74,7 @@ export async function GET(request: Request) {
     schemes.push({
       ...financingData.affordableHomesGuaranteeScheme,
       eligible: true,
-      estimatedAmount: null,
+      estimatedAmount: undefined,
       reason: `Eligible as registered provider with ${affordablePercentage}% affordable housing`,
     });
   }
