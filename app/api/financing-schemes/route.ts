@@ -1,13 +1,23 @@
 import { NextResponse } from 'next/server';
 import financingData from '@/data/financing-schemes.json';
 
+interface FinancingScheme {
+  name: string;
+  description: string;
+  maxAmount: number;
+  eligible: boolean;
+  estimatedAmount?: number;
+  reason: string;
+  [key: string]: any;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const projectType = searchParams.get('projectType') || 'residential';
   const units = parseInt(searchParams.get('units') || '0');
   const isSME = searchParams.get('isSME') === 'true';
 
-  const schemes = [];
+  const schemes: FinancingScheme[] = [];
 
   // Check Greener Homes Grant eligibility
   if (projectType === 'residential') {
@@ -39,6 +49,6 @@ export async function GET(request: Request) {
     schemes,
     totalPotentialFunding: schemes
       .filter((s) => s.eligible)
-      .reduce((sum, s) => sum + (s.estimatedAmount || 0), 0),
+      .reduce((sum, s) => sum + (s.estimatedAmount ?? 0), 0),
   });
 }
