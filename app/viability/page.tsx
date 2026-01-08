@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Calculator, Building2, PoundSterling, FileText, AlertCircle } from 'lucide-react';
 
 interface ProjectInputs {
   siteName: string;
   address: string;
   siteArea: number;
+  siteType: 'greenfield' | 'brownfield' | 'self-build';
+  developerType: 'sme' | 'housing-association' | 'local-authority' | 'self-builder';
   developmentType: 'residential' | 'commercial' | 'mixed';
   units: number;
   grossInternalArea: number;
@@ -45,12 +47,58 @@ export default function ViabilityCalculator() {
     siteName: '',
     address: '',
     siteArea: 0,
+    siteType: 'greenfield',
+    developerType: 'sme',
     developmentType: 'residential',
     units: 0,
     grossInternalArea: 0,
     affordableHousing: 30,
   });
   const [result, setResult] = useState<ViabilityResult | null>(null);
+  const [financingSchemes, setFinancingSchemes] = useState<any>(null);
+  const [loadingFinancing, setLoadingFinancing] = useState(false);
+
+  useEffect(() => {
+    if (!result || !projectInputs.units) {
+      return;
+    }
+
+    const fetchFinancingSchemes = async () => {
+      setLoadingFinancing(true);
+      try {
+        const isSME = projectInputs.developerType === 'sme';
+        const isRegisteredProvider =
+          projectInputs.developerType === 'housing-association' ||
+          projectInputs.developerType === 'local-authority';
+        const params = new URLSearchParams({
+          projectType: projectInputs.developmentType || 'residential',
+          units: projectInputs.units.toString(),
+          isSME: isSME.toString(),
+          isBrownfield: projectInputs.siteType === 'brownfield' ? 'true' : 'false',
+          isSelfBuild: projectInputs.siteType === 'self-build' ? 'true' : 'false',
+          affordablePercentage: projectInputs.affordableHousing.toString(),
+          isRegisteredProvider: isRegisteredProvider.toString(),
+        });
+
+        const response = await fetch(`/api/financing-schemes?${params}`);
+        const data = await response.json();
+        setFinancingSchemes(data);
+      } catch (error) {
+        console.error('Error fetching financing schemes:', error);
+      } finally {
+        setLoadingFinancing(false);
+      }
+    };
+
+    fetchFinancingSchemes();
+  }, [
+    result,
+    projectInputs.units,
+    projectInputs.developmentType,
+    projectInputs.siteType,
+    projectInputs.developerType,
+    projectInputs.affordableHousing,
+  ]);
 
   const calculateViability = async () => {
     setLoading(true);
@@ -124,6 +172,8 @@ export default function ViabilityCalculator() {
             <ResultsView
               result={result}
               inputs={projectInputs}
+              financingSchemes={financingSchemes}
+              loadingFinancing={loadingFinancing}
               onReset={() => {
                 setStep(1);
                 setResult(null);
@@ -277,6 +327,44 @@ function ProjectDetailsForm({
         />
       </div>
 
+      <div className="grid md:grid-cols-2 gap-4 mt-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Developer Type</label>
+          <select
+            className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            value={inputs.developerType}
+            onChange={(e) =>
+              onChange({
+                ...inputs,
+                developerType: e.target.value as ProjectInputs['developerType'],
+              })
+            }
+          >
+            <option value="sme">SME Developer</option>
+            <option value="housing-association">Housing Association</option>
+            <option value="local-authority">Local Authority</option>
+            <option value="self-builder">Self Builder</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">Determines available financing schemes</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Site Type</label>
+          <select
+            className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            value={inputs.siteType}
+            onChange={(e) =>
+              onChange({ ...inputs, siteType: e.target.value as ProjectInputs['siteType'] })
+            }
+          >
+            <option value="greenfield">Greenfield</option>
+            <option value="brownfield">Brownfield</option>
+            <option value="self-build">Self/Custom Build</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">May unlock additional grant funding</p>
+        </div>
+      </div>
+
       <button
         onClick={onNext}
         disabled={!canProceed}
@@ -363,10 +451,14 @@ function CostInputsForm({
 function ResultsView({
   result,
   inputs,
+  financingSchemes,
+  loadingFinancing,
   onReset,
 }: {
   result: ViabilityResult;
   inputs: ProjectInputs;
+  financingSchemes: any;
+  loadingFinancing: boolean;
   onReset: () => void;
 }) {
   const totalCosts = Object.values(result.costs).reduce((sum, cost) => sum + cost, 0);
@@ -443,104 +535,133 @@ function ResultsView({
       </div>
 
       {/* Financing Opportunities */}
-      <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
-        <h3 className="text-xl font-semibold mb-4 text-gray-900">
-          💰 Available Financing & Grants
-        </h3>
+      {financingSchemes && (
+        <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="text-xl font-semibold mb-4 text-gray-900">
+            💰 Available Financing & Grants
+          </h3>
 
-        <div className="space-y-4">
-          <div className="bg-white p-4 rounded-lg border border-blue-100">
-            <div className="flex items-start justify-between mb-2">
-              <h4 className="font-semibold text-gray-900">Greener Homes Grant</h4>
-              <span className="text-green-600 font-bold">Up to £10,000</span>
+          {loadingFinancing ? (
+            <div className="text-center py-4">
+              <div className="animate-spin inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+              <p className="mt-2 text-gray-600">Loading financing options...</p>
             </div>
-            <p className="text-sm text-gray-600 mb-3">
-              Government grant for energy-efficient home improvements. Covers up to 50% of costs for:
-            </p>
-            <ul className="text-sm text-gray-700 space-y-1 mb-3">
-              <li>• Insulation (loft, wall, floor)</li>
-              <li>• Heat pumps (air source or ground source)</li>
-              <li>• Solar panels</li>
-              <li>• Double/triple glazing</li>
-              <li>• Smart heating controls</li>
-            </ul>
-            <a
-              href="https://www.gov.uk/apply-boiler-upgrade-scheme"
-              target="_blank"
-              rel="noreferrer"
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-            >
-              Learn more →
-            </a>
-          </div>
+          ) : (
+            <div className="space-y-4">
+              {financingSchemes.schemes.map((scheme: any, index: number) => (
+                <div
+                  key={index}
+                  className={`p-4 rounded-lg border ${
+                    scheme.eligible ? 'bg-white border-blue-100' : 'bg-gray-50 border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <h4
+                      className={`font-semibold ${
+                        scheme.eligible ? 'text-gray-900' : 'text-gray-700'
+                      }`}
+                    >
+                      {scheme.eligible ? '✓' : '✗'} {scheme.name}
+                    </h4>
+                    {scheme.eligible && scheme.estimatedAmount && (
+                      <span className="text-green-600 font-bold">
+                        Up to £{scheme.estimatedAmount.toLocaleString()}
+                      </span>
+                    )}
+                    {scheme.eligible && !scheme.estimatedAmount && scheme.maxAmount && (
+                      <span className="text-green-600 font-bold">
+                        Up to £{scheme.maxAmount.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
 
-          {inputs.units >= 5 && (
-            <div className="bg-white p-4 rounded-lg border border-blue-100">
-              <div className="flex items-start justify-between mb-2">
-                <h4 className="font-semibold text-gray-900">Home Building Fund</h4>
-                <span className="text-green-600 font-bold">
-                  Up to £{Math.min(inputs.units * 50000, 250000).toLocaleString()}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 mb-3">
-                Development finance for SME housebuilders (5-500 units)
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mb-3">
-                <div>
-                  <span className="font-medium">Interest Rate:</span> 3.5% - 5.5%
+                  <p className="text-sm text-gray-600 mb-2">{scheme.description}</p>
+
+                  <p
+                    className={`text-sm mb-3 ${
+                      scheme.eligible ? 'text-green-700' : 'text-gray-600'
+                    }`}
+                  >
+                    {scheme.reason}
+                  </p>
+
+                  {scheme.eligible && (
+                    <>
+                      {scheme.terms && (
+                        <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mb-3">
+                          {scheme.terms.interestRate && (
+                            <div>
+                              <span className="font-medium">Interest Rate:</span>{' '}
+                              {scheme.terms.interestRate}
+                            </div>
+                          )}
+                          {scheme.terms.loanToValue && (
+                            <div>
+                              <span className="font-medium">LTV:</span> {scheme.terms.loanToValue}
+                            </div>
+                          )}
+                          {scheme.terms.term && (
+                            <div>
+                              <span className="font-medium">Term:</span> {scheme.terms.term}
+                            </div>
+                          )}
+                          {scheme.terms.equityLoan && (
+                            <div>
+                              <span className="font-medium">Equity Loan:</span>{' '}
+                              {scheme.terms.equityLoan}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {scheme.features && scheme.features.length > 0 && (
+                        <ul className="text-sm text-gray-700 space-y-1 mb-3">
+                          {scheme.features.slice(0, 4).map((feature: string, idx: number) => (
+                            <li key={idx}>✓ {feature}</li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {scheme.eligibility && scheme.eligibility.improvementsRequired && (
+                        <ul className="text-sm text-gray-700 space-y-1 mb-3">
+                          {scheme.eligibility.improvementsRequired
+                            .slice(0, 5)
+                            .map((item: string, idx: number) => (
+                              <li key={idx}>• {item}</li>
+                            ))}
+                        </ul>
+                      )}
+
+                      <a
+                        href={scheme.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        Learn more →
+                      </a>
+                    </>
+                  )}
                 </div>
-                <div>
-                  <span className="font-medium">LTV:</span> Up to 80%
+              ))}
+
+              {financingSchemes.totalPotentialFunding > 0 && (
+                <div className="pt-4 border-t border-blue-200">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-gray-900">Total Potential Funding:</span>
+                    <span className="text-2xl font-bold text-green-600">
+                      £{financingSchemes.totalPotentialFunding.toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    * Subject to eligibility criteria and application approval
+                  </p>
                 </div>
-                <div>
-                  <span className="font-medium">Term:</span> 12-36 months
-                </div>
-                <div>
-                  <span className="font-medium">Decision:</span> 4-6 weeks
-                </div>
-              </div>
-              <ul className="text-sm text-gray-700 space-y-1 mb-3">
-                <li>✓ Flexible drawdown</li>
-                <li>✓ No arrangement fees</li>
-                <li>✓ Repay on sale or refinancing</li>
-              </ul>
-              <a
-                href="https://www.gov.uk/guidance/home-building-fund"
-                target="_blank"
-                rel="noreferrer"
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                Learn more →
-              </a>
+              )}
             </div>
           )}
-
-          {inputs.units > 0 && inputs.units < 5 && (
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <h4 className="font-semibold text-gray-700 mb-2">Home Building Fund</h4>
-              <p className="text-sm text-gray-600">
-                ℹ️ Minimum 5 units required for Home Building Fund eligibility. Your project has{' '}
-                {inputs.units} units.
-              </p>
-            </div>
-          )}
-
-          <div className="pt-4 border-t border-blue-200">
-            <div className="flex justify-between items-center">
-              <span className="font-semibold text-gray-900">Total Potential Funding:</span>
-              <span className="text-2xl font-bold text-green-600">
-                £
-                {(
-                  10000 + (inputs.units >= 5 ? Math.min(inputs.units * 50000, 250000) : 0)
-                ).toLocaleString()}
-              </span>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              * Subject to eligibility criteria and application approval
-            </p>
-          </div>
         </div>
-      </div>
+      )}
 
       {/* Cost Breakdown */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">

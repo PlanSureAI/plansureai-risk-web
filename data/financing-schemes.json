@@ -41,5 +41,88 @@
       "Competitive rates"
     ],
     "url": "https://www.gov.uk/guidance/home-building-fund"
+  },
+  "helpToBuildEquityLoan": {
+    "name": "Help to Build Equity Loan",
+    "description": "Government equity loan for self and custom builders",
+    "maxAmount": null,
+    "eligibility": {
+      "propertyTypes": ["self-build", "custom build"],
+      "ownerOccupied": true,
+      "maxLoanPercentage": 20,
+      "firstTimeBuyers": "preferred"
+    },
+    "terms": {
+      "equityLoan": "Up to 20% of final value",
+      "interestFree": "5 years",
+      "term": "25 years",
+      "repayment": "On sale or at end of term"
+    },
+    "features": [
+      "Interest-free for first 5 years",
+      "Available for England only",
+      "Reduces deposit needed",
+      "No monthly repayments initially"
+    ],
+    "url": "https://www.gov.uk/help-to-build"
+  },
+  "brownfieldLandReleaseFund": {
+    "name": "Brownfield Land Release Fund",
+    "description": "Grant funding for brownfield site remediation",
+    "maxAmount": 5000000,
+    "eligibility": {
+      "siteTypes": ["brownfield"],
+      "minViabilityGap": true,
+      "publicBenefit": true,
+      "localAuthoritySupport": "required"
+    },
+    "coverage": "Remediation, infrastructure, abnormal costs",
+    "features": [
+      "Covers remediation costs",
+      "Infrastructure works",
+      "Site preparation",
+      "Unlock stalled sites"
+    ],
+    "url": "https://www.gov.uk/government/publications/brownfield-land-release-fund"
+  },
+  "affordableHomesGuaranteeScheme": {
+    "name": "Affordable Homes Guarantee Scheme",
+    "description": "Government guarantee for affordable housing borrowing",
+    "maxAmount": null,
+    "eligibility": {
+      "developerTypes": ["housing association", "local authority", "registered provider"],
+      "propertyTypes": ["affordable housing"],
+      "minAffordableHousing": 50
+    },
+    "terms": {
+      "guarantee": "Up to 95% of loan value",
+      "term": "Up to 30 years",
+      "reducedInterest": "Competitive rates"
+    },
+    "features": [
+      "Reduces borrowing costs",
+      "Enables higher LTV",
+      "Long-term funding",
+      "Supports affordable delivery"
+    ],
+    "url": "https://www.gov.uk/guidance/affordable-homes-guarantee-scheme"
+  },
+  "socialHousingDecarbFund": {
+    "name": "Social Housing Decarbonisation Fund",
+    "description": "Grant for energy efficiency improvements in social housing",
+    "maxAmount": 50000,
+    "eligibility": {
+      "propertyTypes": ["social housing"],
+      "energyRating": "Below EPC C",
+      "registeredProviders": true
+    },
+    "coverage": "Average £10k-£50k per property",
+    "features": [
+      "Fabric-first approach",
+      "Low carbon heating",
+      "Whole-house retrofits",
+      "Achieve EPC C minimum"
+    ],
+    "url": "https://www.gov.uk/government/collections/social-housing-decarbonisation-fund"
   }
 }
