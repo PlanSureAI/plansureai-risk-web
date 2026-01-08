@@ -1,0 +1,45 @@
+{
+  "greenerHomesGrant": {
+    "name": "Greener Homes Grant",
+    "description": "Government grant for energy-efficient home improvements",
+    "maxAmount": 10000,
+    "eligibility": {
+      "propertyTypes": ["residential"],
+      "minEnergyRating": "E",
+      "improvementsRequired": [
+        "Insulation (loft, wall, floor)",
+        "Heat pumps (air source or ground source)",
+        "Solar panels",
+        "Double/triple glazing",
+        "Smart heating controls"
+      ]
+    },
+    "coverage": "Covers up to 50% of improvement costs",
+    "applicationProcess": "Apply through approved installer",
+    "url": "https://www.gov.uk/apply-boiler-upgrade-scheme"
+  },
+  "homeBuildingFund": {
+    "name": "Home Building Fund",
+    "description": "Development finance for SME housebuilders",
+    "maxAmount": 250000,
+    "eligibility": {
+      "developerTypes": ["SME"],
+      "minUnits": 5,
+      "maxUnits": 500,
+      "projectTypes": ["new build", "conversion", "brownfield regeneration"]
+    },
+    "terms": {
+      "interestRate": "3.5% - 5.5%",
+      "loanToValue": "up to 80%",
+      "term": "12-36 months",
+      "repayment": "On sale or refinancing"
+    },
+    "features": [
+      "Quick decisions (4-6 weeks)",
+      "Flexible drawdown",
+      "No arrangement fees",
+      "Competitive rates"
+    ],
+    "url": "https://www.gov.uk/guidance/home-building-fund"
+  }
+}

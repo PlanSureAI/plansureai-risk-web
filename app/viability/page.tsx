@@ -442,6 +442,106 @@ function ResultsView({
         </div>
       </div>
 
+      {/* Financing Opportunities */}
+      <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+        <h3 className="text-xl font-semibold mb-4 text-gray-900">
+          💰 Available Financing & Grants
+        </h3>
+
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-lg border border-blue-100">
+            <div className="flex items-start justify-between mb-2">
+              <h4 className="font-semibold text-gray-900">Greener Homes Grant</h4>
+              <span className="text-green-600 font-bold">Up to £10,000</span>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">
+              Government grant for energy-efficient home improvements. Covers up to 50% of costs for:
+            </p>
+            <ul className="text-sm text-gray-700 space-y-1 mb-3">
+              <li>• Insulation (loft, wall, floor)</li>
+              <li>• Heat pumps (air source or ground source)</li>
+              <li>• Solar panels</li>
+              <li>• Double/triple glazing</li>
+              <li>• Smart heating controls</li>
+            </ul>
+            <a
+              href="https://www.gov.uk/apply-boiler-upgrade-scheme"
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              Learn more →
+            </a>
+          </div>
+
+          {inputs.units >= 5 && (
+            <div className="bg-white p-4 rounded-lg border border-blue-100">
+              <div className="flex items-start justify-between mb-2">
+                <h4 className="font-semibold text-gray-900">Home Building Fund</h4>
+                <span className="text-green-600 font-bold">
+                  Up to £{Math.min(inputs.units * 50000, 250000).toLocaleString()}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 mb-3">
+                Development finance for SME housebuilders (5-500 units)
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mb-3">
+                <div>
+                  <span className="font-medium">Interest Rate:</span> 3.5% - 5.5%
+                </div>
+                <div>
+                  <span className="font-medium">LTV:</span> Up to 80%
+                </div>
+                <div>
+                  <span className="font-medium">Term:</span> 12-36 months
+                </div>
+                <div>
+                  <span className="font-medium">Decision:</span> 4-6 weeks
+                </div>
+              </div>
+              <ul className="text-sm text-gray-700 space-y-1 mb-3">
+                <li>✓ Flexible drawdown</li>
+                <li>✓ No arrangement fees</li>
+                <li>✓ Repay on sale or refinancing</li>
+              </ul>
+              <a
+                href="https://www.gov.uk/guidance/home-building-fund"
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                Learn more →
+              </a>
+            </div>
+          )}
+
+          {inputs.units > 0 && inputs.units < 5 && (
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <h4 className="font-semibold text-gray-700 mb-2">Home Building Fund</h4>
+              <p className="text-sm text-gray-600">
+                ℹ️ Minimum 5 units required for Home Building Fund eligibility. Your project has{' '}
+                {inputs.units} units.
+              </p>
+            </div>
+          )}
+
+          <div className="pt-4 border-t border-blue-200">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-gray-900">Total Potential Funding:</span>
+              <span className="text-2xl font-bold text-green-600">
+                £
+                {(
+                  10000 + (inputs.units >= 5 ? Math.min(inputs.units * 50000, 250000) : 0)
+                ).toLocaleString()}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              * Subject to eligibility criteria and application approval
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Cost Breakdown */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
