@@ -303,7 +303,102 @@ function extractPoint(feature: any): { lat: number; lng: number } | null {
     }
   }
 
+  if (geometry?.type === 'Polygon' && Array.isArray(geometry.coordinates)) {
+    const ring = geometry.coordinates[0];
+    const centroid = centroidFromRing(ring);
+    if (centroid) {
+      return centroid;
+    }
+  }
+
+  if (geometry?.type === 'MultiPolygon' && Array.isArray(geometry.coordinates)) {
+    let bestCentroid: { lat: number; lng: number } | null = null;
+    let bestArea = 0;
+    for (const polygon of geometry.coordinates) {
+      const ring = Array.isArray(polygon) ? polygon[0] : null;
+      const centroid = centroidFromRing(ring);
+      if (centroid && centroid.area > bestArea) {
+        bestArea = centroid.area;
+        bestCentroid = { lat: centroid.lat, lng: centroid.lng };
+      }
+    }
+    if (bestCentroid) {
+      return bestCentroid;
+    }
+  }
+
   return null;
+}
+
+function centroidFromRing(
+  ring: any
+): { lat: number; lng: number; area: number } | null {
+  if (!Array.isArray(ring) || ring.length === 0) {
+    return null;
+  }
+
+  let area = 0;
+  let cx = 0;
+  let cy = 0;
+  let validPoints = 0;
+
+  for (let i = 0; i < ring.length; i += 1) {
+    const current = ring[i];
+    const next = ring[(i + 1) % ring.length];
+    if (!Array.isArray(current) || !Array.isArray(next)) {
+      continue;
+    }
+    const [x1, y1] = current;
+    const [x2, y2] = next;
+    if (
+      typeof x1 !== 'number' ||
+      typeof y1 !== 'number' ||
+      typeof x2 !== 'number' ||
+      typeof y2 !== 'number'
+    ) {
+      continue;
+    }
+    const cross = x1 * y2 - x2 * y1;
+    area += cross;
+    cx += (x1 + x2) * cross;
+    cy += (y1 + y2) * cross;
+    validPoints += 1;
+  }
+
+  if (validPoints === 0) {
+    return null;
+  }
+
+  const signedArea = area / 2;
+  const areaMagnitude = Math.abs(signedArea);
+
+  if (areaMagnitude < 1e-12) {
+    let sumLng = 0;
+    let sumLat = 0;
+    let count = 0;
+    for (const point of ring) {
+      if (!Array.isArray(point) || point.length < 2) {
+        continue;
+      }
+      const [lng, lat] = point;
+      if (typeof lat !== 'number' || typeof lng !== 'number') {
+        continue;
+      }
+      sumLng += lng;
+      sumLat += lat;
+      count += 1;
+    }
+    if (count === 0) {
+      return null;
+    }
+    return { lat: sumLat / count, lng: sumLng / count, area: 0 };
+  }
+
+  return {
+    lng: cx / (6 * signedArea),
+    lat: cy / (6 * signedArea),
+    area: areaMagnitude,
+  };
 }
 
 function haversineMeters(
