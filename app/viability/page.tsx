@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Calculator, Building2, PoundSterling, FileText, AlertCircle } from 'lucide-react';
+import { calculateRiskProfile } from '@/lib/risk/calculator';
+import type { PlanningConstraint } from '@/lib/risk/types';
 
 interface ProjectInputs {
   siteName: string;
@@ -57,6 +59,12 @@ export default function ViabilityCalculator() {
   const [result, setResult] = useState<ViabilityResult | null>(null);
   const [financingSchemes, setFinancingSchemes] = useState<any>(null);
   const [loadingFinancing, setLoadingFinancing] = useState(false);
+  const [planningConstraints, setPlanningConstraints] = useState<PlanningConstraint[]>([]);
+  const [planningLocation, setPlanningLocation] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
+  const [loadingPlanning, setLoadingPlanning] = useState(false);
+  const [planningError, setPlanningError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!result || !projectInputs.units) {
@@ -99,6 +107,58 @@ export default function ViabilityCalculator() {
     projectInputs.developerType,
     projectInputs.affordableHousing,
   ]);
+
+  useEffect(() => {
+    if (!result || !projectInputs.address.trim()) {
+      setPlanningConstraints([]);
+      setPlanningLocation(null);
+      setPlanningError(null);
+      return;
+    }
+
+    const fetchPlanningConstraints = async () => {
+      setLoadingPlanning(true);
+      setPlanningError(null);
+      try {
+        const geocodeResponse = await fetch(
+          `/api/geocode?q=${encodeURIComponent(projectInputs.address)}`
+        );
+        const geocodeData = await geocodeResponse.json();
+
+        if (!geocodeResponse.ok) {
+          throw new Error(geocodeData.error || 'Failed to geocode address');
+        }
+
+        const coords = { lat: geocodeData.lat, lng: geocodeData.lng };
+        setPlanningLocation(coords);
+
+        const constraintsResponse = await fetch(
+          `/api/planning-constraints?lat=${coords.lat}&lng=${coords.lng}&limit=100`
+        );
+        const constraintsData = await constraintsResponse.json();
+
+        if (!constraintsResponse.ok) {
+          throw new Error(constraintsData.error || 'Failed to fetch planning constraints');
+        }
+
+        const features = Array.isArray(constraintsData.features)
+          ? constraintsData.features
+          : [];
+        setPlanningConstraints(mapConstraintsFromApi(features, coords));
+      } catch (error) {
+        console.error('Planning constraints fetch error:', error);
+        setPlanningConstraints([]);
+        setPlanningLocation(null);
+        setPlanningError(
+          error instanceof Error ? error.message : 'Unable to load planning datasets.'
+        );
+      } finally {
+        setLoadingPlanning(false);
+      }
+    };
+
+    fetchPlanningConstraints();
+  }, [result, projectInputs.address]);
 
   const calculateViability = async () => {
     setLoading(true);
@@ -174,6 +234,10 @@ export default function ViabilityCalculator() {
               inputs={projectInputs}
               financingSchemes={financingSchemes}
               loadingFinancing={loadingFinancing}
+              planningConstraints={planningConstraints}
+              planningLocation={planningLocation}
+              loadingPlanning={loadingPlanning}
+              planningError={planningError}
               onReset={() => {
                 setStep(1);
                 setResult(null);
@@ -184,6 +248,80 @@ export default function ViabilityCalculator() {
       </div>
     </div>
   );
+}
+
+function mapConstraintsFromApi(
+  features: any[],
+  origin: { lat: number; lng: number }
+): PlanningConstraint[] {
+  const allowedDatasets = new Set([
+    'conservation-area',
+    'listed-building',
+    'article-4-direction-area',
+    'tree-preservation-zone',
+    'flood-risk-zone',
+    'green-belt',
+    'site-of-special-scientific-interest',
+  ]);
+
+  return features
+    .map((feature) => {
+      const dataset = feature?.properties?.dataset;
+      if (!allowedDatasets.has(dataset)) {
+        return null;
+      }
+
+      const point = extractPoint(feature);
+      const distance =
+        point && origin ? haversineMeters(origin, point) : feature?.properties?.distance;
+
+      return {
+        dataset,
+        name: feature?.properties?.name,
+        grade: feature?.properties?.grade || feature?.properties?.listed_building_grade,
+        distance,
+        severity: feature?.properties?.severity,
+      } as PlanningConstraint;
+    })
+    .filter(Boolean) as PlanningConstraint[];
+}
+
+function extractPoint(feature: any): { lat: number; lng: number } | null {
+  const pointString = feature?.properties?.point;
+  if (typeof pointString === 'string' && pointString.startsWith('POINT')) {
+    const match = pointString.match(/POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/);
+    if (match) {
+      return { lng: parseFloat(match[1]), lat: parseFloat(match[2]) };
+    }
+  }
+
+  const geometry = feature?.geometry;
+  if (geometry?.type === 'Point' && Array.isArray(geometry.coordinates)) {
+    const [lng, lat] = geometry.coordinates;
+    if (typeof lat === 'number' && typeof lng === 'number') {
+      return { lat, lng };
+    }
+  }
+
+  return null;
+}
+
+function haversineMeters(
+  from: { lat: number; lng: number },
+  to: { lat: number; lng: number }
+): number {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const earthRadius = 6371000;
+  const deltaLat = toRad(to.lat - from.lat);
+  const deltaLng = toRad(to.lng - from.lng);
+  const lat1 = toRad(from.lat);
+  const lat2 = toRad(to.lat);
+
+  const a =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2) * Math.cos(lat1) * Math.cos(lat2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadius * c;
 }
 
 function StepIndicator({
@@ -516,15 +654,53 @@ function ResultsView({
   inputs,
   financingSchemes,
   loadingFinancing,
+  planningConstraints,
+  planningLocation,
+  loadingPlanning,
+  planningError,
   onReset,
 }: {
   result: ViabilityResult;
   inputs: ProjectInputs;
   financingSchemes: any;
   loadingFinancing: boolean;
+  planningConstraints: PlanningConstraint[];
+  planningLocation: { lat: number; lng: number } | null;
+  loadingPlanning: boolean;
+  planningError: string | null;
   onReset: () => void;
 }) {
   const totalCosts = Object.values(result.costs).reduce((sum, cost) => sum + cost, 0);
+  const riskProfile = calculateRiskProfile({
+    constraints: planningConstraints,
+    viability: {
+      developmentProfit: result.profit,
+      profitMargin: result.profitMargin,
+      returnOnInvestment: result.roi,
+      totalRevenue: result.revenue.totalRevenue,
+      totalCosts,
+      isViable: result.viabilityStatus === 'viable' || result.viabilityStatus === 'marginal',
+      contingencyPercentage:
+        result.costs.constructionCost > 0
+          ? (result.costs.contingency / result.costs.constructionCost) * 100
+          : undefined,
+      totalDevelopmentCost: totalCosts,
+    },
+    project: {
+      developmentType:
+        inputs.developmentType === 'mixed' ? 'mixed-use' : inputs.developmentType,
+      units: inputs.units,
+      hasAffordableHousing: inputs.affordableHousing > 0,
+      affordableHousingPercentage: inputs.affordableHousing,
+    },
+    location: planningLocation ?? { lat: 0, lng: 0 },
+  });
+  const riskLevelStyles: Record<string, string> = {
+    LOW: 'bg-green-50 text-green-700 border-green-200',
+    MEDIUM: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    HIGH: 'bg-orange-50 text-orange-700 border-orange-200',
+    EXTREME: 'bg-red-50 text-red-700 border-red-200',
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -594,6 +770,53 @@ function ResultsView({
             {formatCurrency(result.revenue.totalRevenue)}
           </div>
           <div className="text-sm text-gray-500 mt-1">{inputs.units} units</div>
+        </div>
+      </div>
+
+      {/* Risk Status */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Risk Status</h3>
+            <p className="text-sm text-gray-600">{riskProfile.summary}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <div className="text-sm text-gray-500">Overall Risk Score</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {riskProfile.overallRiskScore.toFixed(1)}
+              </div>
+            </div>
+            <span
+              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${
+                riskLevelStyles[riskProfile.riskLevel]
+              }`}
+            >
+              {riskProfile.riskLevel}
+            </span>
+          </div>
+        </div>
+        {loadingPlanning && (
+          <p className="mt-3 text-sm text-gray-500">Loading planning constraints...</p>
+        )}
+        {!loadingPlanning && planningError && (
+          <div className="mt-3 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
+            Planning datasets could not be loaded; risk is based on viability inputs only.
+          </div>
+        )}
+        <div className="mt-4 space-y-2">
+          {riskProfile.flags.slice(0, 3).map((flag) => (
+            <div
+              key={flag.id}
+              className="flex flex-col gap-1 rounded-md border border-gray-200 bg-gray-50 p-3"
+            >
+              <div className="flex items-center justify-between text-sm font-semibold text-gray-900">
+                <span>{flag.title}</span>
+                <span className="text-xs text-gray-500">{flag.level}</span>
+              </div>
+              <p className="text-sm text-gray-600">{flag.message}</p>
+            </div>
+          ))}
         </div>
       </div>
 
