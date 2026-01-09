@@ -17,7 +17,7 @@ PlanSureAI is a **site‑level risk and funding engine** for small residential s
 
 ## Environment variables
 
-Create an `.env.local` (for local dev) and configure secrets in your hosting provider for production.[7][8]
+Copy `.env.example` to `.env.local` and fill in real values for local dev. Configure the same secrets in your hosting provider for production.[7][8] Never commit real secrets.
 
 ```bash
 # Supabase
@@ -34,6 +34,16 @@ LANDTECH_API_KEY=...
 # App config
 NEXT_PUBLIC_APP_URL=https://plansure.ai
 ```
+
+## AI Gateway
+
+PlanSureAI can use Vercel AI Gateway for server-side AI calls (AI SDK, route handlers, edge functions). Create a key under Vercel -> AI Gateway -> API Keys and set it in your environment. See Vercel's Getting Started docs: https://vercel.com/docs/ai-gateway/getting-started
+
+```bash
+AI_GATEWAY_API_KEY=***
+```
+
+Never commit, log, or use the AI Gateway key in client-side/browser code. Treat it like the Supabase service role key.
 
 ## Planning constraints API
 
