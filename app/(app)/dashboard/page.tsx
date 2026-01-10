@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 
 type RiskBand = "low" | "medium" | "high";
 type ViabilityBand = "viable" | "marginal" | "not_viable";
@@ -13,7 +14,46 @@ type SiteSummary = {
 };
 
 async function getSites(): Promise<SiteSummary[]> {
-  return [];
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("sites")
+    .select(
+      `
+      id,
+      site_name,
+      local_planning_authority,
+      risk_profile,
+      viability_assessment,
+      last_assessed_at
+    `
+    )
+    .limit(500);
+
+  if (error) {
+    console.error("Error fetching sites for dashboard", error);
+    return [];
+  }
+
+  return (data ?? []).map((row: any) => {
+    const riskLevel = row.risk_profile?.riskLevel as string | undefined;
+    let riskBand: RiskBand | null = null;
+    if (riskLevel === "LOW") riskBand = "low";
+    else if (riskLevel === "MEDIUM") riskBand = "medium";
+    else if (riskLevel === "HIGH" || riskLevel === "EXTREME") riskBand = "high";
+
+    const isViable = row.viability_assessment?.isViable;
+    const viabilityBand: ViabilityBand | null =
+      typeof isViable === "boolean" ? (isViable ? "viable" : "not_viable") : null;
+
+    return {
+      id: row.id,
+      name: row.site_name ?? "Untitled site",
+      council: row.local_planning_authority ?? null,
+      riskBand,
+      viabilityBand,
+      lastAssessmentAt: row.last_assessed_at ?? null,
+    };
+  });
 }
 
 function countBy<T extends string>(
