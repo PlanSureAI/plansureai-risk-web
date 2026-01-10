@@ -17,12 +17,14 @@ type DashboardFiltersBarProps = {
   councilOptions: FilterOption[];
   statusOptions: FilterOption[];
   initialFilters: DashboardFilters;
+  showCouncilHint?: boolean;
 };
 
 export default function DashboardFiltersBar({
   councilOptions,
   statusOptions,
   initialFilters,
+  showCouncilHint,
 }: DashboardFiltersBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,32 +48,40 @@ export default function DashboardFiltersBar({
   };
 
   return (
-    <div className="flex flex-wrap gap-3">
-      <select
-        className="h-8 rounded border border-slate-200 bg-white px-2 text-xs text-slate-700"
-        value={current.council}
-        onChange={(event) => updateParam("council", event.target.value)}
-      >
-        <option value="">All councils</option>
-        {councilOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+    <div className="space-y-1">
+      <div className="flex flex-wrap gap-3">
+        <select
+          className="h-8 rounded border border-slate-200 bg-white px-2 text-xs text-slate-700"
+          value={current.council}
+          onChange={(event) => updateParam("council", event.target.value)}
+        >
+          <option value="">All councils</option>
+          {councilOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
 
-      <select
-        className="h-8 rounded border border-slate-200 bg-white px-2 text-xs text-slate-700"
-        value={current.status}
-        onChange={(event) => updateParam("status", event.target.value)}
-      >
-        <option value="">All statuses</option>
-        {statusOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        <select
+          className="h-8 rounded border border-slate-200 bg-white px-2 text-xs text-slate-700"
+          value={current.status}
+          onChange={(event) => updateParam("status", event.target.value)}
+        >
+          <option value="">All statuses</option>
+          {statusOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      {showCouncilHint ? (
+        <p className="text-[11px] text-slate-500">
+          Only Cornwall councils loaded so far. Birmingham and Leeds will appear here as soon as
+          their sites are added.
+        </p>
+      ) : null}
     </div>
   );
 }

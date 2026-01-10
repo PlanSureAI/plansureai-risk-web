@@ -138,6 +138,7 @@ export default async function DashboardPage({
     getSites({ council, status }),
     getFilterOptions(),
   ]);
+  const showCouncilHint = filterOptions.councils.length <= 3;
 
   const riskCounts = countBy<RiskBand>(sites, (site) => site.riskBand, ["low", "medium", "high"]);
 
@@ -215,6 +216,7 @@ export default async function DashboardPage({
           councilOptions={filterOptions.councils}
           statusOptions={filterOptions.statuses}
           initialFilters={{ council, status }}
+          showCouncilHint={showCouncilHint}
         />
 
         <div className="grid gap-4 md:grid-cols-3">
