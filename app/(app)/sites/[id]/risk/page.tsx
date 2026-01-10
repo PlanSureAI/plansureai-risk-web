@@ -34,7 +34,7 @@ export default async function SiteRiskPage({ params }: { params: { id: string } 
     return (
       <div className="mx-auto max-w-5xl px-4 py-10">
         <Link href="/sites" className="text-sm text-blue-600 hover:text-blue-800">
-          <- Back to Sites
+          {'<- Back to Sites'}
         </Link>
         <h1 className="mt-4 text-2xl font-semibold text-zinc-900">
           {site.site_name || "Site"} - Risk Assessment
@@ -72,7 +72,7 @@ export default async function SiteRiskPage({ params }: { params: { id: string } 
   return (
       <div className="mx-auto max-w-5xl px-4 py-10">
         <Link href="/sites" className="text-sm text-blue-600 hover:text-blue-800">
-        <- Back to Sites
+        {'<- Back to Sites'}
         </Link>
       <div className="mt-4">
         <h1 className="text-3xl font-semibold text-zinc-900">
