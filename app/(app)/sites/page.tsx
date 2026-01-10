@@ -14,6 +14,7 @@ type SiteRow = {
   planning_outcome: string | null;
   planning_summary: string | null;
   ai_outcome: string | null;
+  risk_level: RiskLevel | null;
   risk_profile: {
     overallRiskScore?: number;
     riskLevel?: RiskLevel;
@@ -69,6 +70,7 @@ async function getSites(): Promise<SiteRow[]> {
       planning_summary,
       ai_outcome,
       eligibility_results,
+      risk_level,
       risk_profile,
       last_assessed_at
     `)
@@ -175,10 +177,11 @@ export default async function SitesPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs">
-                    {site.risk_profile?.riskLevel && site.risk_profile?.overallRiskScore != null ? (
+                    {(site.risk_profile?.overallRiskScore != null &&
+                      (site.risk_profile?.riskLevel || site.risk_level)) ? (
                       <Link href={`/sites/${site.id}/risk`} className="inline-flex">
                         <RiskBadge
-                          riskLevel={site.risk_profile.riskLevel}
+                          riskLevel={(site.risk_profile?.riskLevel ?? site.risk_level) as RiskLevel}
                           riskScore={site.risk_profile.overallRiskScore}
                         />
                       </Link>

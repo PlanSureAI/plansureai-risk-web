@@ -948,6 +948,7 @@ function ResultsView({
         project_details: projectDetails,
         planning_route: planningRoute.route,
         planning_route_status: planningRoute.status,
+        risk_level: riskProfile.riskLevel,
         risk_profile: {
           overallRiskScore: riskProfile.overallRiskScore,
           riskLevel: riskProfile.riskLevel,
