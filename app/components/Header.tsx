@@ -14,7 +14,7 @@ export function Header({
   homeHref = "/",
   navVariant = "marketing",
 }: HeaderProps) {
-  const logoWidth = size === "large" ? 150 : 110;
+  const logoWidth = size === "large" ? 160 : 140;
   const logoHeight = Math.round(logoWidth * 0.25);
 
   const zeroBillHref = "/zero-bill-homes";
@@ -26,7 +26,7 @@ export function Header({
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-1">
         <Link href={homeHref} className="flex items-center">
           <Image
-            src="/plansureai-wordmark.png"
+            src="/plansureai-logo.jpg"
             alt="PlanSureAI"
             width={logoWidth}
             height={logoHeight}
