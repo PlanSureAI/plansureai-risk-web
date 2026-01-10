@@ -4,15 +4,16 @@ import type { PlanningDocumentSummary } from "@/app/types/planning";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const viewType = req.nextUrl.searchParams.get("viewType") ?? "summary";
+  const { id } = await params;
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase
     .from("planning_documents")
     .select("summary_json")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (error || !data) {
