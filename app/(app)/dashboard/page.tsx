@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 import DashboardChartsClient from "./DashboardChartsClient";
+import DashboardFiltersBar from "./DashboardFiltersBar";
 
 type RiskBand = "low" | "medium" | "high";
 type ViabilityBand = "viable" | "marginal" | "not_viable";
@@ -14,9 +15,14 @@ type SiteSummary = {
   lastAssessmentAt: string | null;
 };
 
-async function getSites(): Promise<SiteSummary[]> {
+type DashboardFilters = {
+  council?: string;
+  status?: string;
+};
+
+async function getSites(filters: DashboardFilters): Promise<SiteSummary[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("sites")
     .select(
       `
@@ -25,10 +31,20 @@ async function getSites(): Promise<SiteSummary[]> {
       local_planning_authority,
       risk_profile,
       viability_assessment,
-      last_assessed_at
+      last_assessed_at,
+      status
     `
-    )
-    .limit(500);
+    );
+
+  if (filters.council) {
+    query = query.eq("local_planning_authority", filters.council);
+  }
+
+  if (filters.status) {
+    query = query.eq("status", filters.status);
+  }
+
+  const { data, error } = await query.limit(500);
 
   if (error) {
     console.error("Error fetching sites for dashboard", error);
@@ -57,6 +73,36 @@ async function getSites(): Promise<SiteSummary[]> {
   });
 }
 
+async function getFilterOptions() {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("sites")
+    .select("local_planning_authority, status")
+    .limit(500);
+
+  if (error) {
+    console.error("Error fetching dashboard filters", error);
+    return { councils: [], statuses: [] };
+  }
+
+  const councils = new Set<string>();
+  const statuses = new Set<string>();
+
+  (data ?? []).forEach((row: any) => {
+    if (row.local_planning_authority) {
+      councils.add(row.local_planning_authority);
+    }
+    if (row.status) {
+      statuses.add(row.status);
+    }
+  });
+
+  return {
+    councils: Array.from(councils).sort((a, b) => a.localeCompare(b)),
+    statuses: Array.from(statuses).sort((a, b) => a.localeCompare(b)),
+  };
+}
+
 function countBy<T extends string>(
   items: SiteSummary[],
   key: (s: SiteSummary) => T | null,
@@ -76,8 +122,18 @@ export const metadata = {
   title: "Dashboard | PlanSureAI",
 };
 
-export default async function DashboardPage() {
-  const sites = await getSites();
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}) {
+  const council =
+    typeof searchParams?.council === "string" ? searchParams.council : undefined;
+  const status = typeof searchParams?.status === "string" ? searchParams.status : undefined;
+  const [sites, filterOptions] = await Promise.all([
+    getSites({ council, status }),
+    getFilterOptions(),
+  ]);
 
   const riskCounts = countBy<RiskBand>(sites, (site) => site.riskBand, ["low", "medium", "high"]);
 
@@ -131,6 +187,12 @@ export default async function DashboardPage() {
             </Link>
           </div>
         </div>
+
+        <DashboardFiltersBar
+          councilOptions={filterOptions.councils}
+          statusOptions={filterOptions.statuses}
+          initialFilters={{ council, status }}
+        />
 
         <div className="grid gap-4 md:grid-cols-3">
           <SummaryTile label="Total sites" value={totalSites} />
