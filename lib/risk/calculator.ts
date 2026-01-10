@@ -109,7 +109,7 @@ function calculatePlanningRisk(constraints: PlanningConstraint[], project: Proje
       id: 'conservation-area',
       category: 'planning',
       name: 'Conservation Area',
-      impact: 'HIGH',
+      impact: 'MEDIUM',
       probability: 0.85,
       score: impact,
       description:
