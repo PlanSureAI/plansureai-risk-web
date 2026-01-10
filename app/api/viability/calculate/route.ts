@@ -8,6 +8,8 @@ interface ProjectInputs {
   units: number;
   grossInternalArea: number;
   affordableHousing: number;
+  ownsLand: boolean;
+  landPrice?: number | null;
 }
 
 export async function POST(request: NextRequest) {
@@ -18,15 +20,16 @@ export async function POST(request: NextRequest) {
     const costPerSqm = getCostPerSqm(inputs.developmentType);
     const constructionCost = inputs.grossInternalArea * costPerSqm;
 
-    const landCost = estimateLandCost(inputs);
+    const imputedLandValue = estimateLandCost(inputs);
+    const cashLandCost = inputs.ownsLand ? 0 : Math.max(inputs.landPrice ?? 0, 0);
     const professionalFees = constructionCost * 0.12; // 12% of construction
     const s106CIL = inputs.units * 15000; // £15k per unit estimate
-    const finance = (constructionCost + landCost) * 0.065 * 2; // 6.5% over 2 years
+    const finance = (constructionCost + imputedLandValue) * 0.065 * 2; // 6.5% over 2 years
     const contingency = constructionCost * 0.05; // 5% contingency
     const marketing = constructionCost * 0.03; // 3% marketing
 
     const costs = {
-      landCost,
+      landCost: imputedLandValue,
       constructionCost,
       professionalFees,
       s106CIL,
@@ -52,15 +55,26 @@ export async function POST(request: NextRequest) {
 
     // Calculate metrics
     const totalCosts = Object.values(costs).reduce((sum, cost) => sum + cost, 0);
-    const profit = totalRevenue - totalCosts;
-    const profitMargin = (profit / totalRevenue) * 100;
-    const roi = (profit / totalCosts) * 100;
+    const profitIncludingLand = totalRevenue - totalCosts;
+    const profitIncludingLandMargin =
+      totalRevenue > 0 ? (profitIncludingLand / totalRevenue) * 100 : 0;
+    const cashSurplusToUser =
+      totalRevenue -
+      (constructionCost +
+        professionalFees +
+        s106CIL +
+        finance +
+        contingency +
+        marketing +
+        cashLandCost);
+    const cashSurplusMargin = totalRevenue > 0 ? (cashSurplusToUser / totalRevenue) * 100 : 0;
+    const roi = totalCosts > 0 ? (profitIncludingLand / totalCosts) * 100 : 0;
 
     // Determine viability status
     let viabilityStatus: 'viable' | 'marginal' | 'unviable';
-    if (profitMargin >= 20 && roi >= 15) {
+    if (profitIncludingLandMargin >= 20 && roi >= 15) {
       viabilityStatus = 'viable';
-    } else if (profitMargin >= 15 && roi >= 10) {
+    } else if (profitIncludingLandMargin >= 15 && roi >= 10) {
       viabilityStatus = 'marginal';
     } else {
       viabilityStatus = 'unviable';
@@ -69,8 +83,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       costs,
       revenue,
-      profit,
-      profitMargin,
+      profit: profitIncludingLand,
+      profitMargin: profitIncludingLandMargin,
+      profitIncludingLand,
+      profitIncludingLandMargin,
+      cashSurplusToUser,
+      cashSurplusMargin,
+      imputedLandValue,
+      cashLandCost,
       roi,
       viabilityStatus,
     });

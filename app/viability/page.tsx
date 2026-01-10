@@ -1,9 +1,19 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Calculator, Building2, PoundSterling, FileText, AlertCircle } from 'lucide-react';
 import { calculateRiskProfile } from '@/lib/risk/calculator';
-import type { PlanningConstraint, PlanningRoute, PlanningRouteInfo, PlanningStatus } from '@/lib/risk/types';
+import type {
+  PlanningConstraint,
+  PlanningRoute,
+  PlanningRouteInfo,
+  PlanningStatus,
+  ProjectDetails,
+  RiskProfile,
+  ViabilityMetrics,
+} from '@/lib/risk/types';
+import { supabase } from '@/app/lib/supabaseClient';
 
 interface ProjectInputs {
   siteName: string;
@@ -15,6 +25,8 @@ interface ProjectInputs {
   units: number;
   grossInternalArea: number;
   affordableHousing: number;
+  ownsLand: boolean;
+  landPrice: number;
 }
 
 interface CostBreakdown {
@@ -38,11 +50,19 @@ interface ViabilityResult {
   revenue: RevenueBreakdown;
   profit: number;
   profitMargin: number;
+  profitIncludingLand: number;
+  profitIncludingLandMargin: number;
+  cashSurplusToUser: number;
+  cashSurplusMargin: number;
+  imputedLandValue: number;
+  cashLandCost: number;
   roi: number;
   viabilityStatus: 'viable' | 'marginal' | 'unviable';
 }
 
 export default function ViabilityCalculator() {
+  const searchParams = useSearchParams();
+  const siteId = searchParams.get('siteId');
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
   const [projectInputs, setProjectInputs] = useState<ProjectInputs>({
@@ -55,6 +75,8 @@ export default function ViabilityCalculator() {
     units: 0,
     grossInternalArea: 0,
     affordableHousing: 30,
+    ownsLand: false,
+    landPrice: 0,
   });
   const [result, setResult] = useState<ViabilityResult | null>(null);
   const [financingSchemes, setFinancingSchemes] = useState<any>(null);
@@ -244,6 +266,7 @@ export default function ViabilityCalculator() {
               planningError={planningError}
               planningRoute={planningRoute}
               setPlanningRoute={setPlanningRoute}
+              siteId={siteId}
               onReset={() => {
                 setStep(1);
                 setResult(null);
@@ -504,6 +527,7 @@ function ProjectDetailsForm({
     siteArea?: string;
     units?: string;
     grossInternalArea?: string;
+    landPrice?: string;
   }>({});
 
   const computedErrors = useMemo(() => {
@@ -524,9 +548,20 @@ function ProjectDetailsForm({
     if (!inputs.grossInternalArea || inputs.grossInternalArea <= 0) {
       errors.grossInternalArea = 'Total GIA must be greater than 0';
     }
+    if (!inputs.ownsLand && (!inputs.landPrice || inputs.landPrice <= 0)) {
+      errors.landPrice = 'Land purchase price must be greater than 0';
+    }
 
     return errors;
-  }, [inputs.address, inputs.grossInternalArea, inputs.siteArea, inputs.siteName, inputs.units]);
+  }, [
+    inputs.address,
+    inputs.grossInternalArea,
+    inputs.landPrice,
+    inputs.ownsLand,
+    inputs.siteArea,
+    inputs.siteName,
+    inputs.units,
+  ]);
 
   useEffect(() => {
     setValidationErrors(computedErrors);
@@ -646,6 +681,49 @@ function ProjectDetailsForm({
         />
       </div>
 
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Do you already own the land?
+        </label>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => onChange({ ...inputs, ownsLand: true })}
+            className={`px-3 py-1.5 text-xs rounded-md border ${
+              inputs.ownsLand ? 'bg-blue-600 text-white border-blue-600' : 'bg-white'
+            }`}
+          >
+            Yes - I or my company already own it
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange({ ...inputs, ownsLand: false })}
+            className={`px-3 py-1.5 text-xs rounded-md border ${
+              !inputs.ownsLand ? 'bg-blue-600 text-white border-blue-600' : 'bg-white'
+            }`}
+          >
+            No - I am buying it for this project
+          </button>
+        </div>
+        {!inputs.ownsLand && (
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Land purchase price (GBP)
+            </label>
+            <input
+              type="number"
+              value={inputs.landPrice || ''}
+              onChange={(e) => onChange({ ...inputs, landPrice: parseFloat(e.target.value) || 0 })}
+              placeholder="e.g., 500000"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+            />
+            {validationErrors.landPrice && (
+              <p className="text-sm text-red-600 mt-1">⚠️ {validationErrors.landPrice}</p>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="grid md:grid-cols-2 gap-4 mt-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Developer Type</label>
@@ -695,6 +773,7 @@ function ProjectDetailsForm({
             {validationErrors.siteArea && <li>{validationErrors.siteArea}</li>}
             {validationErrors.units && <li>{validationErrors.units}</li>}
             {validationErrors.grossInternalArea && <li>{validationErrors.grossInternalArea}</li>}
+            {validationErrors.landPrice && <li>{validationErrors.landPrice}</li>}
           </ul>
         </div>
       )}
@@ -793,6 +872,7 @@ function ResultsView({
   planningError,
   planningRoute,
   setPlanningRoute,
+  siteId,
   onReset,
 }: {
   result: ViabilityResult;
@@ -805,37 +885,103 @@ function ResultsView({
   planningError: string | null;
   planningRoute: PlanningRouteInfo;
   setPlanningRoute: React.Dispatch<React.SetStateAction<PlanningRouteInfo>>;
+  siteId: string | null;
   onReset: () => void;
 }) {
   const totalCosts = Object.values(result.costs).reduce((sum, cost) => sum + cost, 0);
-  const [openFlagId, setOpenFlagId] = useState<string | null>(null);
-  const riskProfile = calculateRiskProfile(
-    {
-      constraints: planningConstraints,
-      viability: {
-        developmentProfit: result.profit,
-        profitMargin: result.profitMargin,
-        returnOnInvestment: result.roi,
-        totalRevenue: result.revenue.totalRevenue,
-        totalCosts,
-        isViable: result.viabilityStatus === 'viable' || result.viabilityStatus === 'marginal',
-        contingencyPercentage:
-          result.costs.constructionCost > 0
-            ? (result.costs.contingency / result.costs.constructionCost) * 100
-            : undefined,
-        totalDevelopmentCost: totalCosts,
-      },
-      project: {
-        developmentType:
-          inputs.developmentType === 'mixed' ? 'mixed-use' : inputs.developmentType,
-        units: inputs.units,
-        hasAffordableHousing: inputs.affordableHousing > 0,
-        affordableHousingPercentage: inputs.affordableHousing,
-      },
-      location: planningLocation ?? { lat: 0, lng: 0 },
-    },
-    planningRoute
+  const viabilityMetrics: ViabilityMetrics = useMemo(
+    () => ({
+      developmentProfit: result.profitIncludingLand,
+      profitMargin: result.profitIncludingLandMargin,
+      returnOnInvestment: result.roi,
+      totalRevenue: result.revenue.totalRevenue,
+      totalCosts,
+      isViable: result.viabilityStatus === 'viable' || result.viabilityStatus === 'marginal',
+      contingencyPercentage:
+        result.costs.constructionCost > 0
+          ? (result.costs.contingency / result.costs.constructionCost) * 100
+          : undefined,
+      totalDevelopmentCost: totalCosts,
+    }),
+    [result, totalCosts]
   );
+  const projectDetails: ProjectDetails = useMemo(
+    () => ({
+      developmentType: inputs.developmentType === 'mixed' ? 'mixed-use' : inputs.developmentType,
+      units: inputs.units,
+      floorArea: inputs.grossInternalArea,
+      hasAffordableHousing: inputs.affordableHousing > 0,
+      affordableHousingPercentage: inputs.affordableHousing,
+      ownsLand: inputs.ownsLand,
+      landPrice: inputs.landPrice,
+    }),
+    [inputs]
+  );
+  const [openFlagId, setOpenFlagId] = useState<string | null>(null);
+  const riskProfile = useMemo(
+    () =>
+      calculateRiskProfile(
+        {
+          constraints: planningConstraints,
+          viability: viabilityMetrics,
+          project: projectDetails,
+          location: planningLocation ?? { lat: 0, lng: 0 },
+        },
+        planningRoute
+      ),
+    [planningConstraints, planningLocation, planningRoute, projectDetails, viabilityMetrics]
+  );
+  const [savingRisk, setSavingRisk] = useState(false);
+  const [saveRiskError, setSaveRiskError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!siteId) {
+      return;
+    }
+
+    let cancelled = false;
+    const saveRiskProfile = async () => {
+      setSavingRisk(true);
+      setSaveRiskError(null);
+      const payload = {
+        viability_assessment: viabilityMetrics,
+        project_details: projectDetails,
+        planning_route: planningRoute.route,
+        planning_route_status: planningRoute.status,
+        risk_profile: {
+          overallRiskScore: riskProfile.overallRiskScore,
+          riskLevel: riskProfile.riskLevel,
+          summary: riskProfile.summary,
+          flags: riskProfile.flags.map((flag) => ({
+            id: flag.id,
+            level: flag.level,
+            title: flag.title,
+            message: flag.message,
+            severity: flag.severity,
+            category: flag.category,
+          })),
+          calculatedAt: riskProfile.calculatedAt.toISOString(),
+        },
+        last_assessed_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase.from('sites').update(payload).eq('id', siteId);
+      if (cancelled) {
+        return;
+      }
+      if (error) {
+        console.error('Error saving viability to site:', error);
+        setSaveRiskError('Unable to save risk profile.');
+      }
+      setSavingRisk(false);
+    };
+
+    saveRiskProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [siteId, planningRoute, projectDetails, riskProfile, viabilityMetrics]);
   const riskLevelStyles: Record<string, string> = {
     LOW: 'bg-green-50 text-green-700 border-green-200',
     MEDIUM: 'bg-yellow-50 text-yellow-700 border-yellow-200',
@@ -892,11 +1038,33 @@ function ResultsView({
       </div>
 
       {/* Key Metrics */}
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="text-sm text-gray-600 mb-1">Development Profit</div>
-          <div className="text-2xl font-bold text-gray-900">{formatCurrency(result.profit)}</div>
-          <div className="text-sm text-gray-500 mt-1">{result.profitMargin.toFixed(1)}% margin</div>
+          <div className="text-sm text-gray-600 mb-1">Developer Profit (Lender View)</div>
+          <div className="text-2xl font-bold text-gray-900">
+            {formatCurrency(result.profitIncludingLand)}
+          </div>
+          <div className="text-sm text-gray-500 mt-1">
+            {result.profitIncludingLandMargin.toFixed(1)}% of GDV
+          </div>
+          <div className="text-xs text-gray-500 mt-2">
+            Includes land value, like a lender or valuer.
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="text-sm text-gray-600 mb-1">Cash Surplus to You</div>
+          <div className="text-2xl font-bold text-gray-900">
+            {formatCurrency(result.cashSurplusToUser)}
+          </div>
+          <div className="text-sm text-gray-500 mt-1">
+            {result.cashSurplusMargin.toFixed(1)}% of GDV
+          </div>
+          <div className="text-xs text-gray-500 mt-2">
+            {inputs.ownsLand
+              ? 'You already own the land, so this is cash after build, fees, finance, and S106/CIL.'
+              : 'Cash left after paying for land and all costs.'}
+          </div>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -1010,6 +1178,14 @@ function ResultsView({
           <div className="mt-3 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
             Planning datasets could not be loaded; risk is based on viability inputs only.
           </div>
+        )}
+        {saveRiskError && (
+          <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+            {saveRiskError}
+          </div>
+        )}
+        {savingRisk && (
+          <p className="mt-3 text-sm text-gray-500">Saving risk assessment...</p>
         )}
         <div className="mt-4 space-y-2">
           {riskProfile.flags.slice(0, 3).map((flag) => {
@@ -1196,7 +1372,20 @@ function ResultsView({
           Cost Breakdown
         </h3>
         <div className="space-y-3">
-          <CostLine label="Land Cost" value={result.costs.landCost} />
+          <CostLine
+            label="Imputed land value (lender view)"
+            value={result.imputedLandValue}
+          />
+          <div className="text-xs text-gray-500 -mt-2">
+            What the land is worth in this appraisal. Used when calculating developer profit and risk.
+          </div>
+          <CostLine label="Cash land cost in this project" value={result.cashLandCost} />
+          <div className="text-xs text-gray-500 -mt-2">
+            {inputs.ownsLand
+              ? '£0 – you already own the land; it’s treated as your equity, not a cash cost.'
+              : 'What you actually pay for the land in this project.'}
+          </div>
+          
           <CostLine label="Construction Cost" value={result.costs.constructionCost} highlight />
           <CostLine label="Professional Fees" value={result.costs.professionalFees} />
           <CostLine label="S106 / CIL" value={result.costs.s106CIL} />

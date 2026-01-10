@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { SignOutButton } from "@/app/components/SignOutButton";
+import { RiskBadge } from "@/app/components/RiskBadge";
 import { supabase } from "@/app/lib/supabaseClient";
 import { getNextMove, type NextMove } from "@/app/types/siteFinance";
-
+import type { RiskLevel } from "@/lib/risk/types";
 
 type SiteRow = {
   id: string;
@@ -13,6 +14,11 @@ type SiteRow = {
   planning_outcome: string | null;
   planning_summary: string | null;
   ai_outcome: string | null;
+  risk_profile: {
+    overallRiskScore?: number;
+    riskLevel?: RiskLevel;
+  } | null;
+  last_assessed_at: string | null;
   eligibility_results:
     | {
         productId:
@@ -62,7 +68,9 @@ async function getSites(): Promise<SiteRow[]> {
       planning_outcome,
       planning_summary,
       ai_outcome,
-      eligibility_results
+      eligibility_results,
+      risk_profile,
+      last_assessed_at
     `)
     .order("submitted_at", { ascending: false });
 
@@ -117,6 +125,9 @@ export default async function SitesPage() {
                   Status
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Risk
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
                   Outcome
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
@@ -137,7 +148,7 @@ export default async function SitesPage() {
               {sites.length === 0 && (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={10}
                     className="px-4 py-6 text-center text-sm text-zinc-500"
                   >
                     No sites found yet.
@@ -162,6 +173,25 @@ export default async function SitesPage() {
                     <span className="inline-flex rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700">
                       {site.status || "—"}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    {site.risk_profile?.riskLevel && site.risk_profile?.overallRiskScore != null ? (
+                      <Link href={`/sites/${site.id}/risk`} className="inline-flex">
+                        <RiskBadge
+                          riskLevel={site.risk_profile.riskLevel}
+                          riskScore={site.risk_profile.overallRiskScore}
+                        />
+                      </Link>
+                    ) : site.address ? (
+                      <Link
+                        href={`/viability?address=${encodeURIComponent(site.address)}&siteId=${site.id}`}
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Assess Risk ->
+                      </Link>
+                    ) : (
+                      <span className="text-zinc-400">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-zinc-700">
                     {site.planning_outcome || "—"}

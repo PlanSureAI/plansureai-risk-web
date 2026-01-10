@@ -66,6 +66,8 @@ export interface ProjectDetails {
   floorArea?: number
   hasAffordableHousing?: boolean
   affordableHousingPercentage?: number
+  ownsLand?: boolean
+  landPrice?: number
 }
 
 export interface RiskFactor {
