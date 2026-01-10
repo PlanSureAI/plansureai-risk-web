@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import DashboardChartsClient from "./DashboardChartsClient";
 
 type RiskBand = "low" | "medium" | "high";
 type ViabilityBand = "viable" | "marginal" | "not_viable";
@@ -85,6 +86,16 @@ export default async function DashboardPage() {
     "marginal",
     "not_viable",
   ]);
+  const riskDistribution = [
+    { label: "Low", value: riskCounts.low },
+    { label: "Medium", value: riskCounts.medium },
+    { label: "High", value: riskCounts.high },
+  ];
+  const viabilityDistribution = [
+    { label: "Viable", value: viabilityCounts.viable },
+    { label: "Marginal", value: viabilityCounts.marginal },
+    { label: "Not viable", value: viabilityCounts.not_viable },
+  ];
 
   const totalSites = sites.length;
   const recent = [...sites]
@@ -127,24 +138,10 @@ export default async function DashboardPage() {
           <SummaryTile label="Viable sites" value={viabilityCounts.viable} />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <ChartPlaceholder
-            title="Risk distribution"
-            data={[
-              { label: "Low", value: riskCounts.low },
-              { label: "Medium", value: riskCounts.medium },
-              { label: "High", value: riskCounts.high },
-            ]}
-          />
-          <ChartPlaceholder
-            title="Viability distribution"
-            data={[
-              { label: "Viable", value: viabilityCounts.viable },
-              { label: "Marginal", value: viabilityCounts.marginal },
-              { label: "Not viable", value: viabilityCounts.not_viable },
-            ]}
-          />
-        </div>
+        <DashboardChartsClient
+          riskDistribution={riskDistribution}
+          viabilityDistribution={viabilityDistribution}
+        />
 
         <div className="rounded-lg border border-slate-200 bg-white px-6 py-5 shadow-sm">
           <h2 className="text-sm font-semibold text-slate-900">Recent activity</h2>
@@ -186,30 +183,6 @@ function SummaryTile({ label, value }: { label: string; value: number }) {
     <div className="rounded-lg border border-sky-100 bg-white px-4 py-4 shadow-sm">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
-    </div>
-  );
-}
-
-function ChartPlaceholder({
-  title,
-  data,
-}: {
-  title: string;
-  data: { label: string; value: number }[];
-}) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white px-4 py-4 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-900">
-        <span className="mr-2 inline-block h-2 w-2 rounded-full bg-sky-500" />
-        {title}
-      </h2>
-      <ul className="mt-3 space-y-1 text-xs text-slate-600">
-        {data.map((item) => (
-          <li key={item.label}>
-            {item.label}: {item.value}
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
