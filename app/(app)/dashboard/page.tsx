@@ -60,7 +60,9 @@ export default async function DashboardPage() {
     <main className="px-6 py-8">
       <section className="mx-auto max-w-6xl space-y-8">
         <div className="rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
-          <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
+          <h1 className="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-700">
+            Dashboard
+          </h1>
           <p className="mt-2 text-sm text-slate-700">
             This dashboard is your portfolio hub, showing planning constraints, risk and viability
             across all your sites in one place.
@@ -72,7 +74,7 @@ export default async function DashboardPage() {
           <div className="mt-6">
             <Link
               href="/sites"
-              className="inline-flex items-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              className="inline-flex items-center rounded-md bg-sky-700 px-4 py-2 text-sm font-medium text-white hover:bg-sky-800"
             >
               Go to Sites
             </Link>
@@ -141,7 +143,7 @@ export default async function DashboardPage() {
 
 function SummaryTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-4 py-4 shadow-sm">
+    <div className="rounded-lg border border-sky-100 bg-white px-4 py-4 shadow-sm">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
     </div>
@@ -157,7 +159,10 @@ function ChartPlaceholder({
 }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-4 py-4 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+      <h2 className="text-sm font-semibold text-slate-900">
+        <span className="mr-2 inline-block h-2 w-2 rounded-full bg-sky-500" />
+        {title}
+      </h2>
       <ul className="mt-3 space-y-1 text-xs text-slate-600">
         {data.map((item) => (
           <li key={item.label}>
