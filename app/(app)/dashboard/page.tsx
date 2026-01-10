@@ -79,11 +79,11 @@ function buildOptions(values: Array<string | null | undefined>): FilterOption[] 
 
   values.forEach((raw) => {
     if (!raw) return;
-    const value = raw;
-    const label = raw.trim();
-    if (seen.has(value)) return;
-    seen.add(value);
-    options.push({ value, label });
+    const cleaned = raw.trim();
+    if (!cleaned) return;
+    if (seen.has(cleaned)) return;
+    seen.add(cleaned);
+    options.push({ value: cleaned, label: cleaned });
   });
 
   return options.sort((a, b) => a.label.localeCompare(b.label));
