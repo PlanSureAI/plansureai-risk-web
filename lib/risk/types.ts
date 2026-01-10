@@ -1,5 +1,28 @@
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME'
 export type ImpactLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+export type PlanningRoute =
+  | 'none'
+  | 'pip'
+  | 'pre-app'
+  | 'outline'
+  | 'full'
+  | 'reserved-matters'
+
+export type PlanningStatus =
+  | 'not-started'
+  | 'in-progress'
+  | 'consented'
+  | 'refused'
+  | 'appealed'
+
+export interface PlanningRouteInfo {
+  route: PlanningRoute
+  status: PlanningStatus
+  applicationReference?: string
+  submittedDate?: Date
+  decidedDate?: Date
+  notes?: string
+}
 export type ConstraintType =
   | 'conservation-area'
   | 'listed-building'

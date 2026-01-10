@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Calculator, Building2, PoundSterling, FileText, AlertCircle } from 'lucide-react';
 import { calculateRiskProfile } from '@/lib/risk/calculator';
-import type { PlanningConstraint } from '@/lib/risk/types';
+import type { PlanningConstraint, PlanningRoute, PlanningRouteInfo, PlanningStatus } from '@/lib/risk/types';
 
 interface ProjectInputs {
   siteName: string;
@@ -65,6 +65,10 @@ export default function ViabilityCalculator() {
   );
   const [loadingPlanning, setLoadingPlanning] = useState(false);
   const [planningError, setPlanningError] = useState<string | null>(null);
+  const [planningRoute, setPlanningRoute] = useState<PlanningRouteInfo>({
+    route: 'none',
+    status: 'not-started',
+  });
 
   useEffect(() => {
     if (!result || !projectInputs.units) {
@@ -238,6 +242,8 @@ export default function ViabilityCalculator() {
               planningLocation={planningLocation}
               loadingPlanning={loadingPlanning}
               planningError={planningError}
+              planningRoute={planningRoute}
+              setPlanningRoute={setPlanningRoute}
               onReset={() => {
                 setStep(1);
                 setResult(null);
@@ -417,6 +423,38 @@ function haversineMeters(
     Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2) * Math.cos(lat1) * Math.cos(lat2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return earthRadius * c;
+}
+
+function getStatusColor(status: PlanningStatus): string {
+  switch (status) {
+    case 'consented':
+      return 'bg-green-100 text-green-800';
+    case 'refused':
+      return 'bg-red-100 text-red-800';
+    case 'appealed':
+      return 'bg-orange-100 text-orange-800';
+    case 'in-progress':
+      return 'bg-blue-100 text-blue-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+}
+
+function getRouteLabel(route: PlanningRoute): string {
+  switch (route) {
+    case 'pip':
+      return 'PiP';
+    case 'pre-app':
+      return 'Pre-App';
+    case 'outline':
+      return 'Outline';
+    case 'full':
+      return 'Full';
+    case 'reserved-matters':
+      return 'Reserved Matters';
+    default:
+      return 'Not Started';
+  }
 }
 
 function StepIndicator({
@@ -753,6 +791,8 @@ function ResultsView({
   planningLocation,
   loadingPlanning,
   planningError,
+  planningRoute,
+  setPlanningRoute,
   onReset,
 }: {
   result: ViabilityResult;
@@ -763,33 +803,39 @@ function ResultsView({
   planningLocation: { lat: number; lng: number } | null;
   loadingPlanning: boolean;
   planningError: string | null;
+  planningRoute: PlanningRouteInfo;
+  setPlanningRoute: React.Dispatch<React.SetStateAction<PlanningRouteInfo>>;
   onReset: () => void;
 }) {
   const totalCosts = Object.values(result.costs).reduce((sum, cost) => sum + cost, 0);
-  const riskProfile = calculateRiskProfile({
-    constraints: planningConstraints,
-    viability: {
-      developmentProfit: result.profit,
-      profitMargin: result.profitMargin,
-      returnOnInvestment: result.roi,
-      totalRevenue: result.revenue.totalRevenue,
-      totalCosts,
-      isViable: result.viabilityStatus === 'viable' || result.viabilityStatus === 'marginal',
-      contingencyPercentage:
-        result.costs.constructionCost > 0
-          ? (result.costs.contingency / result.costs.constructionCost) * 100
-          : undefined,
-      totalDevelopmentCost: totalCosts,
+  const [openFlagId, setOpenFlagId] = useState<string | null>(null);
+  const riskProfile = calculateRiskProfile(
+    {
+      constraints: planningConstraints,
+      viability: {
+        developmentProfit: result.profit,
+        profitMargin: result.profitMargin,
+        returnOnInvestment: result.roi,
+        totalRevenue: result.revenue.totalRevenue,
+        totalCosts,
+        isViable: result.viabilityStatus === 'viable' || result.viabilityStatus === 'marginal',
+        contingencyPercentage:
+          result.costs.constructionCost > 0
+            ? (result.costs.contingency / result.costs.constructionCost) * 100
+            : undefined,
+        totalDevelopmentCost: totalCosts,
+      },
+      project: {
+        developmentType:
+          inputs.developmentType === 'mixed' ? 'mixed-use' : inputs.developmentType,
+        units: inputs.units,
+        hasAffordableHousing: inputs.affordableHousing > 0,
+        affordableHousingPercentage: inputs.affordableHousing,
+      },
+      location: planningLocation ?? { lat: 0, lng: 0 },
     },
-    project: {
-      developmentType:
-        inputs.developmentType === 'mixed' ? 'mixed-use' : inputs.developmentType,
-      units: inputs.units,
-      hasAffordableHousing: inputs.affordableHousing > 0,
-      affordableHousingPercentage: inputs.affordableHousing,
-    },
-    location: planningLocation ?? { lat: 0, lng: 0 },
-  });
+    planningRoute
+  );
   const riskLevelStyles: Record<string, string> = {
     LOW: 'bg-green-50 text-green-700 border-green-200',
     MEDIUM: 'bg-yellow-50 text-yellow-700 border-yellow-200',
@@ -891,6 +937,72 @@ function ResultsView({
             </span>
           </div>
         </div>
+        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <h3 className="text-sm font-semibold mb-3">Planning Route</h3>
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <span className="text-sm text-gray-600">Route:</span>
+            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-md text-sm font-medium">
+              {getRouteLabel(planningRoute.route)}
+            </span>
+            <span className="text-sm text-gray-600">Status:</span>
+            <span
+              className={`px-3 py-1 rounded-md text-sm font-medium ${getStatusColor(
+                planningRoute.status
+              )}`}
+            >
+              {planningRoute.status
+                .replace('-', ' ')
+                .replace(/\b\w/g, (letter) => letter.toUpperCase())}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setPlanningRoute({ ...planningRoute, route: 'pip', status: 'not-started' })}
+              className={`px-3 py-1 text-xs rounded ${
+                planningRoute.route === 'pip' ? 'bg-blue-600 text-white' : 'bg-white border'
+              }`}
+            >
+              PiP
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setPlanningRoute({ ...planningRoute, route: 'pre-app', status: 'not-started' })
+              }
+              className={`px-3 py-1 text-xs rounded ${
+                planningRoute.route === 'pre-app' ? 'bg-blue-600 text-white' : 'bg-white border'
+              }`}
+            >
+              Pre-App
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setPlanningRoute({ ...planningRoute, route: 'outline', status: 'not-started' })
+              }
+              className={`px-3 py-1 text-xs rounded ${
+                planningRoute.route === 'outline' ? 'bg-blue-600 text-white' : 'bg-white border'
+              }`}
+            >
+              Outline
+            </button>
+            <button
+              type="button"
+              onClick={() => setPlanningRoute({ ...planningRoute, route: 'full', status: 'not-started' })}
+              className={`px-3 py-1 text-xs rounded ${
+                planningRoute.route === 'full' ? 'bg-blue-600 text-white' : 'bg-white border'
+              }`}
+            >
+              Full
+            </button>
+          </div>
+          {planningRoute.applicationReference && (
+            <div className="mt-2 text-xs text-gray-600">
+              Application: {planningRoute.applicationReference}
+            </div>
+          )}
+        </div>
         {loadingPlanning && (
           <p className="mt-3 text-sm text-gray-500">Loading planning constraints...</p>
         )}
@@ -900,18 +1012,51 @@ function ResultsView({
           </div>
         )}
         <div className="mt-4 space-y-2">
-          {riskProfile.flags.slice(0, 3).map((flag) => (
-            <div
-              key={flag.id}
-              className="flex flex-col gap-1 rounded-md border border-gray-200 bg-gray-50 p-3"
-            >
-              <div className="flex items-center justify-between text-sm font-semibold text-gray-900">
-                <span>{flag.title}</span>
-                <span className="text-xs text-gray-500">{flag.level}</span>
+          {riskProfile.flags.slice(0, 3).map((flag) => {
+            const isOpen = openFlagId === flag.id;
+
+            return (
+              <div key={flag.id} className="rounded-md border border-gray-200 bg-gray-50 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                      <span>{flag.title}</span>
+                      <span className="text-xs text-gray-500">{flag.level}</span>
+                    </div>
+                    <p className="text-sm text-gray-600">{flag.message}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOpenFlagId(isOpen ? null : flag.id)}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    {isOpen ? 'Hide details' : 'Why this flag?'}
+                  </button>
+                </div>
+
+                {isOpen && (
+                  <div className="mt-2 space-y-2 text-xs text-gray-600">
+                    {flag.evidence && (
+                      <p>
+                        <span className="font-semibold text-gray-700">Evidence: </span>
+                        {flag.evidence}
+                      </p>
+                    )}
+                    {flag.mitigations && flag.mitigations.length > 0 && (
+                      <div>
+                        <span className="font-semibold text-gray-700">Mitigations:</span>
+                        <ul className="mt-1 list-disc list-inside space-y-1">
+                          {flag.mitigations.map((mitigation) => (
+                            <li key={mitigation}>{mitigation}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              <p className="text-sm text-gray-600">{flag.message}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

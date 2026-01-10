@@ -6,12 +6,16 @@ import {
   RiskFlag,
   RiskLevel,
   PlanningConstraint,
+  PlanningRouteInfo,
   ProjectDetails,
   ViabilityMetrics,
 } from './types'
 
 // Main risk assessment function. To keep strict determinism, pass a timestamp in input.
-export function calculateRiskProfile(input: RiskAssessmentInput): RiskProfile {
+export function calculateRiskProfile(
+  input: RiskAssessmentInput,
+  planningRoute?: PlanningRouteInfo
+): RiskProfile {
   const planningRisk = calculatePlanningRisk(input.constraints, input.project)
   const financialRisk = calculateFinancialRisk(input.viability, input.project)
   const deliverabilityRisk = calculateDeliverabilityRisk(
@@ -20,6 +24,10 @@ export function calculateRiskProfile(input: RiskAssessmentInput): RiskProfile {
     input.project
   )
   const marketRisk = calculateMarketRisk(input.project, input.viability)
+
+  if (planningRoute) {
+    adjustRiskForPlanningRoute(planningRisk, deliverabilityRisk, planningRoute)
+  }
 
   const categories = {
     planning: planningRisk,
@@ -38,7 +46,7 @@ export function calculateRiskProfile(input: RiskAssessmentInput): RiskProfile {
     categories,
     flags,
     summary: generateRiskSummary(riskLevel, flags),
-    calculatedAt: (input as any).calculatedAt ? new Date((input as any).calculatedAt) : new Date(),
+    calculatedAt: new Date(),
   }
 }
 
@@ -221,6 +229,235 @@ function calculatePlanningRisk(constraints: PlanningConstraint[], project: Proje
     factors,
     maxPossibleScore: maxScore,
   }
+}
+
+function adjustRiskForPlanningRoute(
+  planningRisk: RiskCategory,
+  deliverabilityRisk: RiskCategory,
+  route: PlanningRouteInfo
+): void {
+  if (route.status === 'consented') {
+    const reduction = 35
+    planningRisk.score = Math.max(0, planningRisk.score - reduction)
+
+    planningRisk.factors.push({
+      id: 'planning-consent',
+      category: 'planning',
+      name: 'Planning Consent Granted',
+      impact: 'LOW',
+      probability: 1.0,
+      score: -reduction,
+      description: `${getRouteDisplayName(route.route)} consent granted${
+        route.applicationReference ? ` (Ref: ${route.applicationReference})` : ''
+      }. Major planning risk removed. Only discharge of conditions and technical compliance remain.`,
+      mitigations: [
+        'Ensure conditions are clearly understood',
+        'Budget for condition discharge fees',
+        'Monitor consent expiry dates',
+        'Consider implementation timeline',
+      ],
+      evidence: route.applicationReference || 'Consented planning application',
+    })
+  }
+
+  if (route.status === 'refused') {
+    const impact = 45
+    deliverabilityRisk.score = Math.min(100, deliverabilityRisk.score + impact)
+
+    deliverabilityRisk.factors.push({
+      id: 'planning-refusal',
+      category: 'deliverability',
+      name: 'Planning Application Refused',
+      impact: 'CRITICAL',
+      probability: 0.95,
+      score: impact,
+      description: `${getRouteDisplayName(route.route)} application refused${
+        route.applicationReference ? ` (Ref: ${route.applicationReference})` : ''
+      }. Requires appeal (6-12 months, GBP 20k-50k+) or fundamental scheme revision.`,
+      mitigations: [
+        'Review decision notice and reasons for refusal in detail',
+        'Assess grounds for planning appeal',
+        'Consider revised application addressing concerns',
+        'Engage planning consultant or barrister for appeal',
+        'Budget GBP 20k-50k+ for appeal costs',
+        'Factor 6-12 month appeal timeline',
+        'Assess commercial viability of delay',
+      ],
+      evidence: route.applicationReference || 'Refused planning application',
+    })
+  }
+
+  if (route.status === 'appealed') {
+    const impact = 40
+    deliverabilityRisk.score = Math.min(100, deliverabilityRisk.score + impact)
+
+    deliverabilityRisk.factors.push({
+      id: 'planning-appeal',
+      category: 'deliverability',
+      name: 'Planning Appeal In Progress',
+      impact: 'CRITICAL',
+      probability: 0.9,
+      score: impact,
+      description: `Planning appeal underway${
+        route.applicationReference ? ` (Ref: ${route.applicationReference})` : ''
+      }. Significant cost and time uncertainty. Appeal success rate varies by case type and inspector.`,
+      mitigations: [
+        'Monitor appeal progress closely',
+        'Maintain budget reserves for additional costs',
+        'Prepare for either outcome',
+        'Consider settlement discussions with LPA',
+        'Review comparable appeal decisions',
+      ],
+      evidence: route.applicationReference || 'Planning appeal in progress',
+    })
+  }
+
+  if (route.status === 'in-progress' && route.route !== 'pre-app') {
+    const impact = 20
+    deliverabilityRisk.score = Math.min(100, deliverabilityRisk.score + impact)
+
+    deliverabilityRisk.factors.push({
+      id: 'planning-pending',
+      category: 'deliverability',
+      name: 'Planning Application Pending',
+      impact: 'MEDIUM',
+      probability: 0.75,
+      score: impact,
+      description: `${getRouteDisplayName(route.route)} application under consideration${
+        route.applicationReference ? ` (Ref: ${route.applicationReference})` : ''
+      }. Determination timeline uncertain. Risk of refusal, additional information requests, or committee deferral.`,
+      mitigations: [
+        'Monitor application progress weekly',
+        'Respond promptly to any officer queries',
+        'Prepare for committee presentation if required',
+        'Maintain dialogue with case officer',
+        'Budget for potential amendments or additional reports',
+      ],
+      evidence: route.applicationReference || 'Planning application pending',
+    })
+  }
+
+  if (route.route === 'pip') {
+    if (route.status === 'consented') {
+      const impact = 18
+      deliverabilityRisk.score = Math.min(100, deliverabilityRisk.score + impact)
+
+      deliverabilityRisk.factors.push({
+        id: 'pip-tdc-required',
+        category: 'deliverability',
+        name: 'Technical Details Consent Required',
+        impact: 'MEDIUM',
+        probability: 0.7,
+        score: impact,
+        description:
+          'Permission in Principle granted but Technical Details Consent (TDC) application still required. TDC can be refused even with PiP consent if technical details are inadequate.',
+        mitigations: [
+          'Commission technical drawings and reports early',
+          'Budget GBP 5k-15k for TDC application fees and consultants',
+          'Ensure compliance with PiP parameters (use, amount, layout)',
+          'Consider pre-submission meeting with planning officer',
+          'Factor 8-13 week TDC determination period',
+        ],
+        evidence: 'PiP consent granted, TDC pending',
+      })
+    } else if (route.status === 'not-started' || route.status === 'in-progress') {
+      const impact = 15
+      deliverabilityRisk.score = Math.min(100, deliverabilityRisk.score + impact)
+
+      deliverabilityRisk.factors.push({
+        id: 'pip-two-stage',
+        category: 'deliverability',
+        name: 'Two-Stage PiP Process',
+        impact: 'MEDIUM',
+        probability: 0.65,
+        score: impact,
+        description:
+          'Permission in Principle is a two-stage process. Both PiP and subsequent TDC can be refused. Total timeline typically 14-18 weeks.',
+        mitigations: [
+          'Ensure PiP application clearly defines use and amount',
+          'Budget for both PiP and TDC stages (GBP 3k-8k plus GBP 5k-15k)',
+          'Prepare indicative technical details early',
+          'Factor ~14-18 week combined timeline into programme',
+        ],
+        evidence: 'PiP route selected',
+      })
+    }
+  }
+
+  if (route.route === 'pre-app') {
+    const impact = 25
+    deliverabilityRisk.score = Math.min(100, deliverabilityRisk.score + impact)
+
+    deliverabilityRisk.factors.push({
+      id: 'pre-app-no-consent',
+      category: 'deliverability',
+      name: 'Pre-Application Stage Only',
+      impact: 'HIGH',
+      probability: 0.8,
+      score: impact,
+      description:
+        'Pre-application advice is not binding. Formal application still required and may receive different assessment. Officer feedback is advisory only.',
+      mitigations: [
+        'Treat pre-app feedback as guidance, not guarantee',
+        'Budget for full application costs (GBP 15k-50k+ depending on scale)',
+        'Factor 8-13 weeks (minor) or 13+ weeks (major) determination',
+        'Consider political or committee risk for major applications',
+        'Prepare for potential refusal and appeal route',
+      ],
+      evidence: 'Pre-application consultation stage',
+    })
+  }
+
+  if (route.route === 'outline' && route.status === 'consented') {
+    const impact = 15
+    deliverabilityRisk.score = Math.min(100, deliverabilityRisk.score + impact)
+
+    deliverabilityRisk.factors.push({
+      id: 'outline-reserved-matters',
+      category: 'deliverability',
+      name: 'Reserved Matters Approval Required',
+      impact: 'MEDIUM',
+      probability: 0.7,
+      score: impact,
+      description:
+        'Outline permission granted but reserved matters (appearance, landscaping, layout, scale, access) require separate approval. Can be refused if details do not accord with outline conditions.',
+      mitigations: [
+        'Review outline consent conditions in detail',
+        'Ensure reserved matters accord with approved parameters',
+        'Budget GBP 8k-20k for reserved matters submission',
+        'Factor 8 week determination period',
+        'Monitor outline consent expiry (typically 3 years to submit reserved matters)',
+      ],
+      evidence: route.applicationReference || 'Outline consent granted',
+    })
+  }
+
+  if (route.route === 'full' && route.status === 'not-started') {
+    const impact = 10
+    deliverabilityRisk.score = Math.min(100, deliverabilityRisk.score + impact)
+
+    deliverabilityRisk.factors.push({
+      id: 'full-application-commitment',
+      category: 'deliverability',
+      name: 'Full Application Preparation',
+      impact: 'MEDIUM',
+      probability: 0.6,
+      score: impact,
+      description:
+        'Full planning application requires detailed design, technical reports, and higher upfront cost (GBP 20k-60k+ for major schemes). Longer determination period but single-stage consent.',
+      mitigations: [
+        'Commission full architectural drawings and reports',
+        'Budget GBP 20k-60k+ for application costs (scale dependent)',
+        'Factor 8-13 weeks (householder or minor) or 13+ weeks (major)',
+        'Consider pre-application consultation to de-risk',
+        'Prepare detailed Design and Access Statement',
+      ],
+      evidence: 'Full planning application route selected',
+    })
+  }
+
+  planningRisk.score = clamp(planningRisk.score, 0, planningRisk.maxPossibleScore)
+  deliverabilityRisk.score = clamp(deliverabilityRisk.score, 0, deliverabilityRisk.maxPossibleScore)
 }
 
 function calculateFinancialRisk(viability: ViabilityMetrics, project: ProjectDetails): RiskCategory {
@@ -811,5 +1048,22 @@ function factorImpactToRiskLevel(impact: RiskFactor['impact']): RiskLevel {
       return 'LOW'
     default:
       return 'MEDIUM'
+  }
+}
+
+function getRouteDisplayName(route: PlanningRouteInfo['route']): string {
+  switch (route) {
+    case 'pip':
+      return 'Permission in Principle'
+    case 'pre-app':
+      return 'Pre-application'
+    case 'outline':
+      return 'Outline planning'
+    case 'full':
+      return 'Full planning'
+    case 'reserved-matters':
+      return 'Reserved Matters'
+    default:
+      return 'Planning'
   }
 }
