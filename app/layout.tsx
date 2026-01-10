@@ -19,15 +19,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="flex justify-between h-16 items-center">
               {/* Logo */}
               <Link href="/" className="flex items-center space-x-3">
-                <div className="relative w-10 h-10">
+                <div className="relative h-8 w-[140px]">
                   <Image
-                    src="/logo.png"
+                    src="/plansureai-wordmark.png"
                     alt="PlanSureAI"
                     fill
                     className="object-contain"
                   />
                 </div>
-                <span className="text-lg font-semibold text-gray-900">PlanSureAI</span>
               </Link>
 
               {/* Navigation Links */}
