@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Calculator, Building2, PoundSterling, FileText, AlertCircle } from 'lucide-react';
 import { calculateRiskProfile } from '@/lib/risk/calculator';
 import type {
@@ -918,6 +918,8 @@ function ResultsView({
     [inputs]
   );
   const [openFlagId, setOpenFlagId] = useState<string | null>(null);
+  const pathname = usePathname();
+  const queryParams = useSearchParams();
   const riskProfile = useMemo(
     () =>
       calculateRiskProfile(
@@ -948,6 +950,7 @@ function ResultsView({
         project_details: projectDetails,
         planning_route: planningRoute.route,
         planning_route_status: planningRoute.status,
+        risk_level: riskProfile.riskLevel,
         risk_profile: {
           overallRiskScore: riskProfile.overallRiskScore,
           riskLevel: riskProfile.riskLevel,
@@ -1084,25 +1087,31 @@ function ResultsView({
 
       {/* Risk Status */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">Risk Status</h3>
-            <p className="text-sm text-gray-600">{riskProfile.summary}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-sm text-gray-500">Overall Risk Score</div>
-              <div className="text-2xl font-bold text-gray-900">
-                {riskProfile.overallRiskScore.toFixed(1)}
-              </div>
+        <div className="flex flex-col gap-4 md:flex-row md:items-start">
+          <div className="flex-1 space-y-2">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Risk Status</h3>
+              <p className="text-sm text-gray-600">{riskProfile.summary}</p>
             </div>
-            <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${
-                riskLevelStyles[riskProfile.riskLevel]
-              }`}
-            >
-              {riskProfile.riskLevel}
-            </span>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="text-sm text-gray-500">Overall Risk Score</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {riskProfile.overallRiskScore.toFixed(1)}
+                </div>
+              </div>
+              <span
+                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${
+                  riskLevelStyles[riskProfile.riskLevel]
+                }`}
+              >
+                {riskProfile.riskLevel}
+              </span>
+            </div>
+            <ShareableLinkButton pathname={pathname} queryParams={queryParams} />
+          </div>
+          <div className="md:w-72">
+            <RiskCategoryTable riskProfile={riskProfile} />
           </div>
         </div>
         <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
@@ -1448,6 +1457,77 @@ function ResultsView({
           Export Report
         </button>
       </div>
+    </div>
+  );
+}
+
+function ShareableLinkButton({
+  pathname,
+  queryParams,
+}: {
+  pathname: string;
+  queryParams: ReturnType<typeof useSearchParams>;
+}) {
+  const handleCopy = async () => {
+    const qs = queryParams.toString();
+    const url = qs
+      ? `${window.location.origin}${pathname}?${qs}`
+      : `${window.location.origin}${pathname}`;
+
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch (error) {
+      console.error('Failed to copy link', error);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
+    >
+      Copy shareable link
+    </button>
+  );
+}
+
+function RiskCategoryTable({ riskProfile }: { riskProfile: RiskProfile }) {
+  const categoryLabels: Record<string, string> = {
+    planning: 'Planning',
+    financial: 'Financial',
+    deliverability: 'Deliverability',
+    market: 'Market',
+  };
+
+  const entries = Object.entries(riskProfile.categories);
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <table className="min-w-full divide-y divide-slate-200 text-xs">
+        <thead className="bg-slate-50">
+          <tr>
+            <th className="px-3 py-2 text-left font-semibold text-slate-700">Category</th>
+            <th className="px-3 py-2 text-right font-semibold text-slate-700">Weight</th>
+            <th className="px-3 py-2 text-right font-semibold text-slate-700">Score</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-200">
+          {entries.map(([key, category]) => (
+            <tr key={key}>
+              <td className="px-3 py-1.5 text-slate-800">
+                {categoryLabels[key] ?? key}
+              </td>
+              <td className="px-3 py-1.5 text-right text-slate-600">
+                {Math.round((category.weight ?? 0) * 100)}%
+              </td>
+              <td className="px-3 py-1.5 text-right text-slate-800">
+                {Math.round(category.score)}/{category.maxPossibleScore}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
