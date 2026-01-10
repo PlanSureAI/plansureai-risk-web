@@ -26,7 +26,7 @@ export function Header({
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-1">
         <Link href={homeHref} className="flex items-center">
           <Image
-            src="/plansureai-logo.jpg"
+            src="/logo.jpg"
             alt="PlanSureAI"
             width={logoWidth}
             height={logoHeight}

@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {/* Logo */}
               <Link href="/" className="flex items-center space-x-3">
                 <Image
-                  src="/plansureai-logo.jpg"
+                  src="/logo.jpg"
                   alt="PlanSureAI"
                   width={160}
                   height={40}
