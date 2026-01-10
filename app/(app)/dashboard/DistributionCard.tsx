@@ -17,9 +17,10 @@ type Bucket = {
 type DistributionCardProps = {
   title: string;
   data: Bucket[];
+  summary?: string | null;
 };
 
-export default function DistributionCard({ title, data }: DistributionCardProps) {
+export default function DistributionCard({ title, data, summary }: DistributionCardProps) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-4 py-4 shadow-sm">
       <div className="flex items-center justify-between">
@@ -55,6 +56,7 @@ export default function DistributionCard({ title, data }: DistributionCardProps)
           </li>
         ))}
       </ul>
+      {summary ? <p className="mt-2 text-[11px] text-slate-500">{summary}</p> : null}
     </div>
   );
 }

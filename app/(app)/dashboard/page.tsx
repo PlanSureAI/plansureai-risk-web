@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 import DashboardChartsClient from "./DashboardChartsClient";
-import DashboardFiltersBar from "./DashboardFiltersBar";
+import DashboardFiltersBar, { type FilterOption } from "./DashboardFiltersBar";
 
 type RiskBand = "low" | "medium" | "high";
 type ViabilityBand = "viable" | "marginal" | "not_viable";
@@ -73,6 +73,22 @@ async function getSites(filters: DashboardFilters): Promise<SiteSummary[]> {
   });
 }
 
+function buildOptions(values: Array<string | null | undefined>): FilterOption[] {
+  const seen = new Set<string>();
+  const options: FilterOption[] = [];
+
+  values.forEach((raw) => {
+    if (!raw) return;
+    const value = raw;
+    const label = raw.trim();
+    if (seen.has(value)) return;
+    seen.add(value);
+    options.push({ value, label });
+  });
+
+  return options.sort((a, b) => a.label.localeCompare(b.label));
+}
+
 async function getFilterOptions() {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
@@ -85,21 +101,9 @@ async function getFilterOptions() {
     return { councils: [], statuses: [] };
   }
 
-  const councils = new Set<string>();
-  const statuses = new Set<string>();
-
-  (data ?? []).forEach((row: any) => {
-    if (row.local_planning_authority) {
-      councils.add(row.local_planning_authority);
-    }
-    if (row.status) {
-      statuses.add(row.status);
-    }
-  });
-
   return {
-    councils: Array.from(councils).sort((a, b) => a.localeCompare(b)),
-    statuses: Array.from(statuses).sort((a, b) => a.localeCompare(b)),
+    councils: buildOptions((data ?? []).map((row: any) => row.local_planning_authority)),
+    statuses: buildOptions((data ?? []).map((row: any) => row.status)),
   };
 }
 
@@ -154,6 +158,25 @@ export default async function DashboardPage({
   ];
 
   const totalSites = sites.length;
+  const summariseBucket = (
+    distribution: { label: string; value: number }[],
+    label: string,
+    total: number
+  ) => {
+    const bucket = distribution.find((item) => item.label === label);
+    if (!bucket || total === 0 || bucket.value === 0) {
+      return null;
+    }
+    return `${bucket.value} of ${total} sites are ${label}`;
+  };
+  const riskSummary =
+    summariseBucket(riskDistribution, "Medium", totalSites) ??
+    summariseBucket(riskDistribution, "High", totalSites) ??
+    summariseBucket(riskDistribution, "Low", totalSites);
+  const viabilitySummary =
+    summariseBucket(viabilityDistribution, "Viable", totalSites) ??
+    summariseBucket(viabilityDistribution, "Marginal", totalSites) ??
+    summariseBucket(viabilityDistribution, "Not viable", totalSites);
   const recent = [...sites]
     .filter((site) => site.lastAssessmentAt)
     .sort(
@@ -203,6 +226,8 @@ export default async function DashboardPage({
         <DashboardChartsClient
           riskDistribution={riskDistribution}
           viabilityDistribution={viabilityDistribution}
+          riskSummary={riskSummary}
+          viabilitySummary={viabilitySummary}
         />
 
         <div className="rounded-lg border border-slate-200 bg-white px-6 py-5 shadow-sm">

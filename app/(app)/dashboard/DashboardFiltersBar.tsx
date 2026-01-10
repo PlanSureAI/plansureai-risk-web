@@ -3,14 +3,19 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 
-type DashboardFilters = {
+export type DashboardFilters = {
   council?: string;
   status?: string;
 };
 
+export type FilterOption = {
+  value: string;
+  label: string;
+};
+
 type DashboardFiltersBarProps = {
-  councilOptions: string[];
-  statusOptions: string[];
+  councilOptions: FilterOption[];
+  statusOptions: FilterOption[];
   initialFilters: DashboardFilters;
 };
 
@@ -48,9 +53,9 @@ export default function DashboardFiltersBar({
         onChange={(event) => updateParam("council", event.target.value)}
       >
         <option value="">All councils</option>
-        {councilOptions.map((council) => (
-          <option key={council} value={council}>
-            {council}
+        {councilOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
           </option>
         ))}
       </select>
@@ -61,9 +66,9 @@ export default function DashboardFiltersBar({
         onChange={(event) => updateParam("status", event.target.value)}
       >
         <option value="">All statuses</option>
-        {statusOptions.map((status) => (
-          <option key={status} value={status}>
-            {status}
+        {statusOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
           </option>
         ))}
       </select>
