@@ -19,7 +19,7 @@ export function Header({
 
   const zeroBillHref = "/zero-bill-homes";
   const epcHref = navVariant === "app" ? "/epc" : "/epc";
-  const dashboardHref = navVariant === "app" ? "/sites" : "/sites";
+  const dashboardHref = "/dashboard";
 
   return (
     <header className="w-full">
@@ -36,6 +36,9 @@ export function Header({
 
         {!hideNav && (
           <nav className="flex items-center gap-6 text-sm font-medium text-zinc-700">
+            <Link href="/" className="hover:text-zinc-900">
+              Home
+            </Link>
             <Link href={zeroBillHref} className="hover:text-zinc-900">
               Zero-Bill Homes
             </Link>

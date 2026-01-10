@@ -16,7 +16,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <Header size="small" homeHref="/sites" navVariant="app" />
+        <Header size="small" homeHref="/" navVariant="app" />
         {children}
       </body>
     </html>
