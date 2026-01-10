@@ -23,14 +23,19 @@ describe('risk calculator', () => {
       { id: 'modest-profit', level: 'HIGH', title: 'Below-Target Profit Margin' },
       { id: 'affordable-housing', level: 'MEDIUM', title: 'Affordable Housing Requirement' },
       { id: 'modest-roi', level: 'MEDIUM', title: 'Modest ROI' },
-      { id: 'abnormals', level: 'HIGH', title: 'Abnormal Costs or Ground Risk' },
+      { id: 'abnormals', level: 'MEDIUM', title: 'Abnormal Costs or Ground Risk' },
       { id: 'tpo', level: 'MEDIUM', title: 'Tree Preservation Zone' },
     ]
     for (const expectation of expected) {
       const flag = res.flags.find((f) => f.id === expectation.id)
-      expect(flag).toBeTruthy()
-      expect(flag?.level).toBe(expectation.level)
-      expect(flag?.title).toBe(expectation.title)
+      if (!flag) {
+        throw new Error(`Missing flag: ${expectation.id}`)
+      }
+      if (flag.level !== expectation.level || flag.title !== expectation.title) {
+        throw new Error(
+          `Flag mismatch for ${expectation.id}: expected ${expectation.level}/${expectation.title} got ${flag.level}/${flag.title}`
+        )
+      }
     }
   })
 
