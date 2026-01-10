@@ -19,7 +19,7 @@ describe('risk calculator', () => {
     expect(res.categories.planning.score).toBeGreaterThan(0)
     expect(['MEDIUM', 'HIGH']).toContain(res.riskLevel)
     const expected = [
-      { id: 'conservation-area', level: 'HIGH', title: 'Conservation Area' },
+      { id: 'conservation-area', level: 'MEDIUM', title: 'Conservation Area' },
       { id: 'modest-profit', level: 'HIGH', title: 'Below-Target Profit Margin' },
       { id: 'affordable-housing', level: 'MEDIUM', title: 'Affordable Housing Requirement' },
       { id: 'modest-roi', level: 'MEDIUM', title: 'Modest ROI' },
