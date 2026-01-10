@@ -187,7 +187,7 @@ export default async function SitesPage() {
                         href={`/viability?address=${encodeURIComponent(site.address)}&siteId=${site.id}`}
                         className="text-blue-600 hover:text-blue-800 underline"
                       >
-                        {'Assess Risk ->'}
+                        {'Assess Risk →'}
                       </Link>
                     ) : (
                       <span className="text-zinc-400">—</span>
