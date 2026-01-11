@@ -27,16 +27,31 @@ type FeesView = {
   };
 };
 
+type AnalysisView = {
+  headlineRisk: string | null;
+  riskLevel: "LOW" | "MEDIUM" | "HIGH" | "EXTREME" | null;
+  keyIssues: string[];
+  policyRefs: string[];
+  recommendedActions: string[];
+  timelineNotes: string | null;
+};
+
 interface PlanningDocumentSummaryCardProps {
   documentId: string;
+  siteId?: string;
 }
 
 export function PlanningDocumentSummaryCard({
   documentId,
+  siteId,
 }: PlanningDocumentSummaryCardProps) {
   const [summary, setSummary] = useState<SummaryView | null>(null);
   const [processView, setProcessView] = useState<ProcessView | null>(null);
   const [feesView, setFeesView] = useState<FeesView | null>(null);
+  const [analysisView, setAnalysisView] = useState<AnalysisView | null>(null);
+  const [analysisStatus, setAnalysisStatus] = useState<"idle" | "loading" | "ready">(
+    "idle"
+  );
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"summary" | "process" | "fees">(
     "summary"
@@ -49,7 +64,9 @@ export function PlanningDocumentSummaryCard({
       setLoading(true);
       try {
         const response = await fetch(
-          `/api/planning-documents/${documentId}/view?viewType=summary`
+          `/api/planning-documents/${documentId}/view?viewType=summary${
+            siteId ? `&siteId=${encodeURIComponent(siteId)}` : ""
+          }`
         );
         if (!response.ok) {
           return;
@@ -72,10 +89,47 @@ export function PlanningDocumentSummaryCard({
     };
   }, [documentId]);
 
+  useEffect(() => {
+    let cancelled = false;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+
+    async function fetchAnalysis() {
+      setAnalysisStatus("loading");
+      try {
+        const response = await fetch(
+          `/api/planning-documents/${documentId}/view?viewType=analysis${
+            siteId ? `&siteId=${encodeURIComponent(siteId)}` : ""
+          }`
+        );
+        if (response.status === 404) {
+          timeout = setTimeout(fetchAnalysis, 2000);
+          return;
+        }
+        if (!response.ok) return;
+        const data = (await response.json()) as AnalysisView;
+        if (!cancelled) {
+          setAnalysisView(data);
+          setAnalysisStatus("ready");
+        }
+      } catch {
+        timeout = setTimeout(fetchAnalysis, 2000);
+      }
+    }
+
+    fetchAnalysis();
+
+    return () => {
+      cancelled = true;
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [documentId]);
+
   async function loadProcess() {
     if (processView) return;
     const response = await fetch(
-      `/api/planning-documents/${documentId}/view?viewType=process`
+      `/api/planning-documents/${documentId}/view?viewType=process${
+        siteId ? `&siteId=${encodeURIComponent(siteId)}` : ""
+      }`
     );
     if (!response.ok) return;
     const data = (await response.json()) as ProcessView;
@@ -85,7 +139,9 @@ export function PlanningDocumentSummaryCard({
   async function loadFees() {
     if (feesView) return;
     const response = await fetch(
-      `/api/planning-documents/${documentId}/view?viewType=fees`
+      `/api/planning-documents/${documentId}/view?viewType=fees${
+        siteId ? `&siteId=${encodeURIComponent(siteId)}` : ""
+      }`
     );
     if (!response.ok) return;
     const data = (await response.json()) as FeesView;
@@ -120,6 +176,43 @@ export function PlanningDocumentSummaryCard({
         <h2 className="text-lg font-semibold">
           {summary.title ?? "Planning document"}
         </h2>
+      </div>
+
+      <div
+        id="planning-risk"
+        className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+      >
+        {analysisStatus === "loading" && (
+          <p className="text-xs text-amber-800">Analysing document...</p>
+        )}
+        {analysisStatus === "ready" && analysisView ? (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-amber-900">
+                Planning risk
+              </span>
+              {analysisView.riskLevel && (
+                <span className="inline-flex rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-amber-900">
+                  {analysisView.riskLevel}
+                </span>
+              )}
+            </div>
+            {analysisView.headlineRisk && (
+              <p className="text-sm text-amber-900">{analysisView.headlineRisk}</p>
+            )}
+            {analysisView.keyIssues.length > 0 && (
+              <ul className="list-disc space-y-1 pl-4 text-xs text-amber-900">
+                {analysisView.keyIssues.slice(0, 4).map((issue) => (
+                  <li key={issue}>{issue}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-amber-800">
+            Planning risk summary will appear here once analysis completes.
+          </p>
+        )}
       </div>
 
       <div className="space-y-1">

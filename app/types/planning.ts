@@ -46,3 +46,12 @@ export interface PlanningDocumentSummary {
   documentsRequired: string[];
   meta: PlanningDocumentMeta;
 }
+
+export interface PlanningDocumentAnalysis {
+  headlineRisk: string | null;
+  riskLevel: "LOW" | "MEDIUM" | "HIGH" | "EXTREME" | null;
+  keyIssues: string[];
+  policyRefs: string[];
+  recommendedActions: string[];
+  timelineNotes: string | null;
+}

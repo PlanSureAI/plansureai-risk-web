@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { extractPdfTextNode } from "@/app/lib/extractPdfText";
 import { extractPlanningSummaryFromText } from "@/app/lib/extractPlanningSummary";
+import { extractPlanningAnalysisFromText } from "@/app/lib/extractPlanningAnalysis";
 import type { PlanningDocumentSummary } from "@/app/types/planning";
 
 export const runtime = "nodejs";
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
   if (!userId) {
     return NextResponse.json({ error: "file and userId required" }, { status: 400 });
   }
+  const siteId = formData.get("siteId") as string | null;
 
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
@@ -60,6 +62,7 @@ export async function POST(req: NextRequest) {
     .from("planning_documents")
     .insert({
       user_id: userId,
+      site_id: siteId ?? null,
       storage_path: storageData?.path,
       file_name: file.name,
       summary_json: summary,
@@ -71,5 +74,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ documentId: data.id, summary });
+  let analysisStatus: "ready" | "error" = "ready";
+  try {
+    const analysis = await extractPlanningAnalysisFromText(pdfText, file.name);
+    const { error: analysisError } = await supabase
+      .from("planning_document_analyses")
+      .insert({
+        planning_document_id: data.id,
+        user_id: userId,
+        analysis_json: analysis,
+      });
+    if (analysisError) {
+      analysisStatus = "error";
+      console.error("Failed to store planning analysis", analysisError);
+    }
+  } catch (analysisErr) {
+    analysisStatus = "error";
+    console.error("Failed to extract planning analysis", analysisErr);
+  }
+
+  return NextResponse.json({ documentId: data.id, summary, analysisStatus });
 }
