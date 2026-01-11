@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { extractPdfTextNode } from "@/app/lib/extractPdfText";
 import { extractPlanningSummaryFromText } from "@/app/lib/extractPlanningSummary";
 import { extractPlanningAnalysisFromText } from "@/app/lib/extractPlanningAnalysis";
+import { extractPlanningStructuredSummaryFromText } from "@/app/lib/extractPlanningStructuredSummary";
 import type { PlanningDocumentSummary } from "@/app/types/planning";
 
 export const runtime = "nodejs";
@@ -77,12 +78,22 @@ export async function POST(req: NextRequest) {
   let analysisStatus: "ready" | "error" = "ready";
   try {
     const analysis = await extractPlanningAnalysisFromText(pdfText, file.name);
+    let structuredSummary = null;
+    try {
+      structuredSummary = await extractPlanningStructuredSummaryFromText(
+        pdfText,
+        file.name
+      );
+    } catch (summaryErr) {
+      console.error("Failed to extract structured summary", summaryErr);
+    }
     const { error: analysisError } = await supabase
       .from("planning_document_analyses")
       .insert({
         planning_document_id: data.id,
         user_id: userId,
         analysis_json: analysis,
+        structured_summary: structuredSummary,
       });
     if (analysisError) {
       analysisStatus = "error";

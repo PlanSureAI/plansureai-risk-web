@@ -29,12 +29,21 @@ type FeesView = {
 };
 
 type AnalysisView = {
-  headlineRisk: string | null;
-  riskLevel: "LOW" | "MEDIUM" | "HIGH" | "EXTREME" | null;
-  keyIssues: string[];
-  policyRefs: string[];
-  recommendedActions: string[];
-  timelineNotes: string | null;
+  structuredSummary: {
+    headline: string | null;
+    risk_level: "LOW" | "MEDIUM" | "HIGH" | "EXTREME" | null;
+    key_issues: string[];
+    recommended_actions: string[];
+    timeline_notes: string[];
+  } | null;
+  analysis: {
+    headlineRisk: string | null;
+    riskLevel: "LOW" | "MEDIUM" | "HIGH" | "EXTREME" | null;
+    keyIssues: string[];
+    policyRefs: string[];
+    recommendedActions: string[];
+    timelineNotes: string | null;
+  } | null;
 };
 
 interface PlanningDocumentSummaryCardProps {
@@ -171,6 +180,18 @@ export function PlanningDocumentSummaryCard({
     );
   }
 
+  const structured = analysisView?.structuredSummary ?? null;
+  const legacy = analysisView?.analysis ?? null;
+  const riskLevel = structured?.risk_level ?? legacy?.riskLevel ?? null;
+  const headline = structured?.headline ?? legacy?.headlineRisk ?? null;
+  const keyIssues = structured?.key_issues ?? legacy?.keyIssues ?? [];
+  const recommendedActions =
+    structured?.recommended_actions ?? legacy?.recommendedActions ?? [];
+  const timelineNotes =
+    structured?.timeline_notes ??
+    (legacy?.timelineNotes ? [legacy.timelineNotes] : []);
+  const policyRefs = legacy?.policyRefs ?? [];
+
   return (
     <div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -182,9 +203,9 @@ export function PlanningDocumentSummaryCard({
             {summary.title ?? "Planning document"}
           </h2>
         </div>
-        {analysisView?.riskLevel && (
+        {riskLevel && (
           <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">
-            {analysisView.riskLevel} risk
+            {riskLevel} risk
           </span>
         )}
       </div>
@@ -202,25 +223,25 @@ export function PlanningDocumentSummaryCard({
               <span className="text-xs font-semibold uppercase tracking-wide text-amber-900">
                 Planning risk
               </span>
-              {analysisView.riskLevel && (
+              {riskLevel && (
                 <span className="inline-flex rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-amber-900">
-                  {analysisView.riskLevel}
+                  {riskLevel}
                 </span>
               )}
             </div>
-            {analysisView.headlineRisk && (
-              <p className="text-sm text-amber-900">{analysisView.headlineRisk}</p>
+            {headline && (
+              <p className="text-sm text-amber-900">{headline}</p>
             )}
-            {analysisView.keyIssues.length > 0 && (
+            {keyIssues.length > 0 && (
               <ul className="list-disc space-y-1 pl-4 text-xs text-amber-900">
-                {analysisView.keyIssues.slice(0, 4).map((issue) => (
+                {keyIssues.slice(0, 4).map((issue) => (
                   <li key={issue}>{issue}</li>
                 ))}
               </ul>
             )}
-            {analysisView.policyRefs.length > 0 && (
+            {policyRefs.length > 0 && (
               <div className="flex flex-wrap gap-2 text-xs text-amber-900">
-                {analysisView.policyRefs.slice(0, 4).map((policy) => (
+                {policyRefs.slice(0, 4).map((policy) => (
                   <span
                     key={policy}
                     className="inline-flex rounded-full border border-amber-200 bg-white px-2 py-0.5 font-semibold"
@@ -230,22 +251,29 @@ export function PlanningDocumentSummaryCard({
                 ))}
               </div>
             )}
-            {analysisView.recommendedActions.length > 0 && (
+            {recommendedActions.length > 0 && (
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
                   Suggested next steps
                 </p>
                 <ul className="mt-1 list-disc space-y-1 pl-4 text-xs text-amber-900">
-                  {analysisView.recommendedActions.slice(0, 3).map((action) => (
+                  {recommendedActions.slice(0, 3).map((action) => (
                     <li key={action}>{action}</li>
                   ))}
                 </ul>
               </div>
             )}
-            {analysisView.timelineNotes && (
-              <p className="text-xs text-amber-800">
-                Timeline notes: {analysisView.timelineNotes}
-              </p>
+            {timelineNotes.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
+                  Timeline notes
+                </p>
+                <ul className="mt-1 list-disc space-y-1 pl-4 text-xs text-amber-800">
+                  {timelineNotes.slice(0, 3).map((note) => (
+                    <li key={note}>{note}</li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         ) : (

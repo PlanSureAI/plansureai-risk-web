@@ -119,6 +119,13 @@ type BrokerPack = {
   broker_firm: string | null;
 };
 
+type PlanningTimelineStats = {
+  total: number;
+  approvals: number;
+  refusals: number;
+  medianWeeks: number | null;
+};
+
 const PRODUCT_LABELS = {
   homeBuildingFund: "Home Building Fund (development finance)",
   smeAccelerator: "SME Accelerator",
@@ -149,6 +156,72 @@ function extractPostcodeFromAddress(address?: string | null): string | null {
   if (!address) return null;
   const match = address.match(/\b([A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2})\b/i);
   return match ? match[1].toUpperCase() : null;
+}
+
+function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+  return sorted[mid];
+}
+
+async function getPlanningTimelineStats({
+  siteId,
+  postcode,
+}: {
+  siteId: string;
+  postcode: string | null;
+}): Promise<PlanningTimelineStats | null> {
+  const supabaseServer = await createSupabaseServerClient();
+  let query = supabaseServer
+    .from("application")
+    .select("received_date, decision_date, decision")
+    .gte("received_date", "2015-01-01");
+
+  query = query.eq("site_id", siteId);
+
+  if (postcode) {
+    query = query.or(`site_id.is.null,address_text.ilike.%${postcode}%`);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("❌ Error loading planning timeline stats:", error);
+    return null;
+  }
+
+  const rows = data ?? [];
+  if (rows.length === 0) return null;
+
+  const approvals = new Set(["granted", "split_decision", "appeal_allowed"]);
+  const refusals = new Set(["refused", "appeal_dismissed"]);
+  let approvalCount = 0;
+  let refusalCount = 0;
+  const durations: number[] = [];
+
+  for (const row of rows) {
+    if (row.decision && approvals.has(row.decision)) approvalCount += 1;
+    if (row.decision && refusals.has(row.decision)) refusalCount += 1;
+    if (row.received_date && row.decision_date) {
+      const received = new Date(row.received_date).getTime();
+      const decided = new Date(row.decision_date).getTime();
+      if (!Number.isNaN(received) && !Number.isNaN(decided) && decided >= received) {
+        const weeks = (decided - received) / (1000 * 60 * 60 * 24 * 7);
+        durations.push(weeks);
+      }
+    }
+  }
+
+  return {
+    total: rows.length,
+    approvals: approvalCount,
+    refusals: refusalCount,
+    medianWeeks: median(durations),
+  };
 }
 
 function computeDownsideProfit(
@@ -440,12 +513,23 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
     : null;
   const postcode = site ? extractPostcodeFromAddress(site.address) : null;
   let planningApplications: LandTechPlanningApplication[] = [];
+  let planningTimeline: PlanningTimelineStats | null = null;
 
-  if (site && postcode) {
+  if (site) {
     try {
-      planningApplications = (await getPlanningForPostcode(postcode)).slice(0, 3);
+      if (postcode) {
+        planningApplications = (await getPlanningForPostcode(postcode)).slice(0, 3);
+      }
     } catch (err) {
       console.error("Failed to fetch planning applications for postcode", err);
+    }
+    try {
+      planningTimeline = await getPlanningTimelineStats({
+        siteId: site.id,
+        postcode,
+      });
+    } catch (err) {
+      console.error("Failed to fetch planning timeline stats", err);
     }
   }
 
@@ -525,6 +609,65 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
               Sign in
             </Link>
           </div>
+        )}
+
+        {planningTimeline && (
+          <section className="rounded-xl border border-zinc-200 bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Planning timeline (since 2015)
+                </p>
+                <h2 className="mt-1 text-sm font-semibold text-zinc-900">
+                  Applications in this postcode
+                </h2>
+              </div>
+              <span className="text-xs text-zinc-500">
+                Median decision time{" "}
+                <span className="font-semibold text-zinc-700">
+                  {planningTimeline.medianWeeks != null
+                    ? `${planningTimeline.medianWeeks.toFixed(1)} weeks`
+                    : "—"}
+                </span>
+              </span>
+            </div>
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Total apps
+                </p>
+                <p className="mt-1 text-lg font-semibold text-zinc-900">
+                  {planningTimeline.total}
+                </p>
+              </div>
+              <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
+                <p
+                  className="text-xs font-medium uppercase tracking-wide text-zinc-500"
+                  title="Approvals include granted, split decision, and appeal allowed."
+                >
+                  Approvals
+                </p>
+                <p className="mt-1 text-lg font-semibold text-emerald-700">
+                  {planningTimeline.approvals}
+                </p>
+              </div>
+              <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
+                <p
+                  className="text-xs font-medium uppercase tracking-wide text-zinc-500"
+                  title="Refusals include refused and appeal dismissed."
+                >
+                  Refusals
+                </p>
+                <p className="mt-1 text-lg font-semibold text-rose-700">
+                  {planningTimeline.refusals}
+                </p>
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-zinc-500">
+              Since 2015. Approvals include split decisions and appeal allowed.
+              Refusals include appeal dismissed.
+            </p>
+          </section>
         )}
 
         <div className="flex flex-wrap gap-2">

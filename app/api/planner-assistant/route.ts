@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
-import type { PlanningDocumentSummary, PlanningDocumentAnalysis } from "@/app/types/planning";
+import type {
+  PlanningDocumentSummary,
+  PlanningDocumentAnalysis,
+  PlanningStructuredSummary,
+} from "@/app/types/planning";
 
 type PlannerAssistantRequest = {
   siteId: string;
@@ -42,18 +46,22 @@ export async function POST(req: NextRequest) {
 
   const { data: analysis } = await supabase
     .from("planning_document_analyses")
-    .select("analysis_json")
+    .select("analysis_json, structured_summary")
     .eq("planning_document_id", payload.documentId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
   const analysisJson = analysis?.analysis_json as PlanningDocumentAnalysis | undefined;
+  const structuredSummary = analysis?.structured_summary as
+    | PlanningStructuredSummary
+    | undefined;
 
   const answer = await runAssistant({
     question: payload.question,
     summary,
     analysis: analysisJson,
+    structuredSummary,
   });
 
   const { data: inserted, error: insertError } = await supabase
@@ -80,10 +88,12 @@ async function runAssistant({
   question,
   summary,
   analysis,
+  structuredSummary,
 }: {
   question: string;
   summary: PlanningDocumentSummary;
   analysis?: PlanningDocumentAnalysis;
+  structuredSummary?: PlanningStructuredSummary;
 }) {
   const system = `
 You are a planning copilot for UK development sites.
@@ -99,6 +109,7 @@ If data is missing, say what is unknown and suggest what to confirm.
     process: summary.process,
     documentsRequired: summary.documentsRequired,
     analysis: analysis ?? null,
+    structuredSummary: structuredSummary ?? null,
   };
 
   const response = await client.chat.completions.create({
