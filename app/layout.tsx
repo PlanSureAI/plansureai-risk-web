@@ -2,6 +2,8 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import Image from "next/image";
+import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { SignOutButton } from "@/app/components/SignOutButton";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -10,7 +12,16 @@ export const metadata = {
   description: "AI-powered planning intelligence for SME developers and property professionals",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
   return (
     <html lang="en">
       <body className={inter.className}>
@@ -29,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </Link>
 
               {/* Navigation Links */}
-              <div className="flex space-x-6 items-center">
+              <div className="flex items-center gap-6">
                 <Link href="/sites" className="text-sm text-gray-700 hover:text-blue-600 font-medium">
                   Sites
                 </Link>
@@ -60,6 +71,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 >
                   Dashboard
                 </Link>
+                {session ? (
+                  <SignOutButton />
+                ) : (
+                  <Link
+                    href="/login?next=/dashboard"
+                    className="inline-flex items-center rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100"
+                  >
+                    Sign in
+                  </Link>
+                )}
               </div>
             </div>
           </div>

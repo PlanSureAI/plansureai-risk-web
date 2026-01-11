@@ -171,6 +171,12 @@ export default async function DashboardPage({
     data: { user },
   } = await supabase.auth.getUser();
   const profile = user ? await getProfileForUser(supabase, user.id) : null;
+  const missingProfileFields = [
+    !profile?.full_name ? "full name" : null,
+    !profile?.company_name ? "company name" : null,
+    !profile?.email ? "email" : null,
+  ].filter(Boolean) as string[];
+  const showProfileBanner = missingProfileFields.length > 0;
   const showCouncilHint = filterOptions.councils.length <= 3;
 
   const riskCounts = countBy<RiskBand>(sites, (site) => site.riskBand, ["low", "medium", "high"]);
@@ -223,8 +229,27 @@ export default async function DashboardPage({
   return (
     <main className="px-6 py-8">
       <section className="mx-auto max-w-6xl space-y-8">
+        {showProfileBanner && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900">
+            <p className="font-semibold">Complete your profile</p>
+            <p className="mt-1 text-xs text-amber-800">
+              Missing {missingProfileFields.join(", ")}. Add these so your PDFs show the right
+              details.
+            </p>
+            <a
+              href="#profile-edit"
+              className="mt-3 inline-flex items-center rounded-full border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+            >
+              Create your profile
+            </a>
+          </div>
+        )}
         <ProfileHeader profile={profile} />
-        <details className="rounded-lg border border-slate-200 bg-white px-6 py-4 shadow-sm">
+        <details
+          id="profile-edit"
+          open={showProfileBanner}
+          className="rounded-lg border border-slate-200 bg-white px-6 py-4 shadow-sm"
+        >
           <summary className="cursor-pointer text-sm font-semibold text-slate-900">
             Edit profile
           </summary>
