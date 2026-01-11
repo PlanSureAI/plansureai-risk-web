@@ -300,7 +300,11 @@ export function PlanningDocumentSummaryCard({
       </div>
 
       {siteId && (
-        <SitePlannerAssistant siteId={siteId} documentId={documentId} />
+        <SitePlannerAssistant
+          siteId={siteId}
+          documentId={documentId}
+          contextType="summary"
+        />
       )}
 
       {activeTab === "process" && processView && (

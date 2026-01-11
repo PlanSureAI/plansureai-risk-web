@@ -5,6 +5,7 @@ import { useState } from "react";
 type Props = {
   siteId: string;
   documentId: string;
+  contextType?: "summary" | "compare";
 };
 
 const SUGGESTIONS = [
@@ -13,7 +14,11 @@ const SUGGESTIONS = [
   "How do the fees and route impact my next steps?",
 ];
 
-export default function SitePlannerAssistant({ siteId, documentId }: Props) {
+export default function SitePlannerAssistant({
+  siteId,
+  documentId,
+  contextType = "summary",
+}: Props) {
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
@@ -36,7 +41,7 @@ export default function SitePlannerAssistant({ siteId, documentId }: Props) {
           siteId,
           documentId,
           question,
-          contextType: "summary",
+          contextType,
         }),
       });
       const data = await res.json();
