@@ -22,10 +22,12 @@
     "next": "16.1.1",
     "openai": "^6.15.0",
     "pdf-lib": "^1.17.1",
+    "pdf-parse": "^1.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-is": "^19.2.3",
-    "recharts": "^3.6.0"
+    "recharts": "^3.6.0",
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -36,6 +38,6 @@
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^2.1.9"
+    "vitest": "^4.0.16"
   }
 }

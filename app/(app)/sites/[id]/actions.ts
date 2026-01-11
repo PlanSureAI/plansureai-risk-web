@@ -7,6 +7,11 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { buildSiteRiskProfileInput, type SitePlanningData } from "@/app/lib/planningDataProvider";
 import {
+  assertProfileForExport,
+  formatProfileHeaderLines,
+  getProfileForUser,
+} from "@/app/lib/profile";
+import {
   formatPlanningDataForPromptJson,
   type PlanningInstructionPayload,
 } from "@/app/lib/formatPlanningDataForPrompt";
@@ -451,6 +456,13 @@ export async function generateFinancePackPdf(formData: FormData): Promise<string
   const id = formData.get("id") as string;
   if (!id) throw new Error("Missing site id");
 
+  const supabaseServer = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabaseServer.auth.getUser();
+  const profile = user ? await getProfileForUser(supabaseServer, user.id) : null;
+  assertProfileForExport(profile);
+
   const pack = await generateFinancePack(formData);
 
   const doc = await PDFDocument.create();
@@ -470,6 +482,10 @@ export async function generateFinancePackPdf(formData: FormData): Promise<string
 
   // Header
   drawText("PlanSureAI – Indicative Development Finance Pack", { size: 12, bold: true });
+  if (profile) {
+    const profileLines = formatProfileHeaderLines(profile);
+    profileLines.forEach((line) => drawText(line));
+  }
   drawText(`Site: ${pack.scheme.name ?? "Untitled site"}`, { size: 11, bold: true });
   drawText(`Address: ${pack.scheme.address ?? "—"}`);
   drawText(`LPA: ${pack.scheme.localAuthority ?? "—"} | Country: ${pack.scheme.country}`);

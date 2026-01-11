@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { getProfileForUser } from "@/app/lib/profile";
+import ProfileHeader from "@/app/components/ProfileHeader";
 import DashboardChartsClient from "./DashboardChartsClient";
 import DashboardFiltersBar, { type FilterOption } from "./DashboardFiltersBar";
 
@@ -19,6 +21,32 @@ type DashboardFilters = {
   council?: string;
   status?: string;
 };
+
+async function saveProfile(formData: FormData) {
+  "use server";
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return;
+  }
+
+  const payload = {
+    id: user.id,
+    full_name: (formData.get("full_name") as string | null)?.trim() || null,
+    company_name: (formData.get("company_name") as string | null)?.trim() || null,
+    email: (formData.get("email") as string | null)?.trim() || null,
+    phone: (formData.get("phone") as string | null)?.trim() || null,
+    branding_logo_url:
+      (formData.get("branding_logo_url") as string | null)?.trim() || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  await supabase.from("profiles").upsert(payload, { onConflict: "id" });
+}
 
 async function getSites(filters: DashboardFilters): Promise<SiteSummary[]> {
   const supabase = await createSupabaseServerClient();
@@ -138,6 +166,17 @@ export default async function DashboardPage({
     getSites({ council, status }),
     getFilterOptions(),
   ]);
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const profile = user ? await getProfileForUser(supabase, user.id) : null;
+  const missingProfileFields = [
+    !profile?.full_name ? "full name" : null,
+    !profile?.company_name ? "company name" : null,
+    !profile?.email ? "email" : null,
+  ].filter(Boolean) as string[];
+  const showProfileBanner = missingProfileFields.length > 0;
   const showCouncilHint = filterOptions.councils.length <= 3;
 
   const riskCounts = countBy<RiskBand>(sites, (site) => site.riskBand, ["low", "medium", "high"]);
@@ -190,6 +229,97 @@ export default async function DashboardPage({
   return (
     <main className="px-6 py-8">
       <section className="mx-auto max-w-6xl space-y-8">
+        {showProfileBanner && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900">
+            <p className="font-semibold">Complete your profile</p>
+            <p className="mt-1 text-xs text-amber-800">
+              Missing {missingProfileFields.join(", ")}. Add these so your PDFs show the right
+              details.
+            </p>
+            <a
+              href="#profile-edit"
+              className="mt-3 inline-flex items-center rounded-full border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+            >
+              Create your profile
+            </a>
+          </div>
+        )}
+        <ProfileHeader profile={profile} />
+        <details
+          id="profile-edit"
+          open={showProfileBanner}
+          className="rounded-lg border border-slate-200 bg-white px-6 py-4 shadow-sm"
+        >
+          <summary className="cursor-pointer text-sm font-semibold text-slate-900">
+            Edit profile
+          </summary>
+          <form action={saveProfile} className="mt-4 grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="block text-xs font-medium text-slate-600">
+                Full name
+              </label>
+              <input
+                name="full_name"
+                required
+                defaultValue={profile?.full_name ?? ""}
+                className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600">
+                Company name
+              </label>
+              <input
+                name="company_name"
+                required
+                defaultValue={profile?.company_name ?? ""}
+                className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600">
+                Email
+              </label>
+              <input
+                name="email"
+                type="email"
+                required
+                defaultValue={profile?.email ?? user?.email ?? ""}
+                className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600">
+                Phone
+              </label>
+              <input
+                name="phone"
+                defaultValue={profile?.phone ?? ""}
+                className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium text-slate-600">
+                Logo URL
+              </label>
+              <input
+                name="branding_logo_url"
+                type="url"
+                placeholder="https://..."
+                defaultValue={profile?.branding_logo_url ?? ""}
+                className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <button
+                type="submit"
+                className="inline-flex items-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              >
+                Save changes
+              </button>
+            </div>
+          </form>
+        </details>
         <div className="rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
           <h1 className="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-700">
             Dashboard
