@@ -1,12 +1,13 @@
 "use client";
 
 import { FormEvent, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 
 export default function LoginPage() {
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -31,7 +32,12 @@ export default function LoginPage() {
       }
 
       setMessage("Logged in");
-      router.push("/dashboard");
+      const nextParam = searchParams.get("next");
+      const safeNext =
+        nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+          ? nextParam
+          : "/dashboard";
+      router.push(safeNext);
       router.refresh();
     });
   };
