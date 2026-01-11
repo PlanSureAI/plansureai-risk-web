@@ -126,6 +126,12 @@ type PlanningTimelineStats = {
   medianWeeks: number | null;
 };
 
+type LpaEvidenceStats = {
+  approvalRate: number | null;
+  medianWeeks: number | null;
+  decidedCount: number;
+};
+
 const PRODUCT_LABELS = {
   homeBuildingFund: "Home Building Fund (development finance)",
   smeAccelerator: "SME Accelerator",
@@ -166,6 +172,29 @@ function median(values: number[]): number | null {
     return (sorted[mid - 1] + sorted[mid]) / 2;
   }
   return sorted[mid];
+}
+
+function deriveLpaCode(lpaName?: string | null): string | null {
+  if (!lpaName) return null;
+  const stopwords = new Set([
+    "COUNCIL",
+    "CITY",
+    "METROPOLITAN",
+    "BOROUGH",
+    "DISTRICT",
+    "COUNTY",
+    "OF",
+    "THE",
+    "LONDON",
+    "ROYAL",
+  ]);
+  const tokens = lpaName
+    .toUpperCase()
+    .replace(/[^A-Z\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((token) => !stopwords.has(token));
+  return tokens[0] ?? null;
 }
 
 async function getPlanningTimelineStats({
@@ -221,6 +250,74 @@ async function getPlanningTimelineStats({
     approvals: approvalCount,
     refusals: refusalCount,
     medianWeeks: median(durations),
+  };
+}
+
+async function getLpaEvidenceStats(
+  lpaName?: string | null
+): Promise<LpaEvidenceStats | null> {
+  if (!lpaName) return null;
+  const supabaseServer = await createSupabaseServerClient();
+  const lpaCode = deriveLpaCode(lpaName);
+  let query = supabaseServer
+    .from("application")
+    .select("validated_date, received_date, decision_date, decision")
+    .gte("received_date", "2015-01-01");
+
+  if (lpaCode) {
+    query = query.eq("lpa_code", lpaCode);
+  } else {
+    query = query.ilike("address_text", `%${lpaName}%`);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("❌ Error loading LPA evidence stats:", error);
+    return null;
+  }
+
+  const rows = data ?? [];
+  if (rows.length === 0) return null;
+
+  const approvals = new Set(["granted", "split_decision", "appeal_allowed"]);
+  const refusals = new Set(["refused", "appeal_dismissed"]);
+  let approvalCount = 0;
+  let refusalCount = 0;
+  let decidedCount = 0;
+  const durations: number[] = [];
+
+  for (const row of rows) {
+    if (row.decision) {
+      decidedCount += 1;
+      if (approvals.has(row.decision)) approvalCount += 1;
+      if (refusals.has(row.decision)) refusalCount += 1;
+    }
+
+    const startDate = row.validated_date ?? row.received_date;
+    if (startDate && row.decision_date) {
+      const received = new Date(startDate).getTime();
+      const decided = new Date(row.decision_date).getTime();
+      if (!Number.isNaN(received) && !Number.isNaN(decided) && decided >= received) {
+        const weeks = (decided - received) / (1000 * 60 * 60 * 24 * 7);
+        durations.push(weeks);
+      }
+    }
+  }
+
+  if (decidedCount === 0) {
+    return {
+      approvalRate: null,
+      medianWeeks: median(durations),
+      decidedCount: 0,
+    };
+  }
+
+  const approvalRate = (approvalCount / decidedCount) * 100;
+
+  return {
+    approvalRate,
+    medianWeeks: median(durations),
+    decidedCount,
   };
 }
 
@@ -514,6 +611,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
   const postcode = site ? extractPostcodeFromAddress(site.address) : null;
   let planningApplications: LandTechPlanningApplication[] = [];
   let planningTimeline: PlanningTimelineStats | null = null;
+  let lpaEvidence: LpaEvidenceStats | null = null;
 
   if (site) {
     try {
@@ -530,6 +628,11 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
       });
     } catch (err) {
       console.error("Failed to fetch planning timeline stats", err);
+    }
+    try {
+      lpaEvidence = await getLpaEvidenceStats(site.local_planning_authority);
+    } catch (err) {
+      console.error("Failed to fetch LPA evidence stats", err);
     }
   }
 
@@ -666,6 +769,55 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             <p className="mt-3 text-xs text-zinc-500">
               Since 2015. Approvals include split decisions and appeal allowed.
               Refusals include appeal dismissed.
+            </p>
+          </section>
+        )}
+
+        {lpaEvidence && (
+          <section className="rounded-xl border border-zinc-200 bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  LPA evidence (since 2015)
+                </p>
+                <h2 className="mt-1 text-sm font-semibold text-zinc-900">
+                  {site.local_planning_authority ?? "Local planning authority"}
+                </h2>
+              </div>
+            </div>
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Approval rate
+                </p>
+                <p className="mt-1 text-lg font-semibold text-emerald-700">
+                  {lpaEvidence.approvalRate != null
+                    ? `${lpaEvidence.approvalRate.toFixed(1)}%`
+                    : "—"}
+                </p>
+              </div>
+              <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Median weeks
+                </p>
+                <p className="mt-1 text-lg font-semibold text-zinc-900">
+                  {lpaEvidence.medianWeeks != null
+                    ? `${lpaEvidence.medianWeeks.toFixed(1)}`
+                    : "—"}
+                </p>
+              </div>
+              <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Sample size
+                </p>
+                <p className="mt-1 text-lg font-semibold text-zinc-900">
+                  {lpaEvidence.decidedCount}
+                </p>
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-zinc-500">
+              Based on decided applications only. Approvals include granted, split decision, and
+              appeal allowed.
             </p>
           </section>
         )}
