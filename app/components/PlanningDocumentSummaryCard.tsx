@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import SitePlannerAssistant from "@/app/components/SitePlannerAssistant";
 
 type SummaryView = {
   title: string | null;
@@ -297,6 +298,10 @@ export function PlanningDocumentSummaryCard({
           Fees
         </button>
       </div>
+
+      {siteId && (
+        <SitePlannerAssistant siteId={siteId} documentId={documentId} />
+      )}
 
       {activeTab === "process" && processView && (
         <div className="space-y-2 text-sm">
