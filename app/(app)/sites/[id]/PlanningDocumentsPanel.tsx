@@ -7,6 +7,7 @@ import { GenerateBrokerPackButton } from "./GenerateBrokerPackButton";
 
 type UploadState = "idle" | "uploading" | "success" | "error";
 type CompareState = "idle" | "loading" | "ready" | "error";
+const MAX_COMPARE = 3;
 
 type PlanningDocItem = {
   id: string;
@@ -58,6 +59,10 @@ export default function PlanningDocumentsPanel({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const canCompare = useMemo(() => selectedIds.length >= 2, [selectedIds]);
+  const disableNewSelections = useMemo(
+    () => selectedIds.length >= MAX_COMPARE,
+    [selectedIds]
+  );
 
   useEffect(() => {
     if (!compareOpen) return;
@@ -185,6 +190,12 @@ export default function PlanningDocumentsPanel({
         >
           {status === "uploading" ? "Uploading…" : "Upload & analyse"}
         </button>
+        <p className="text-xs text-zinc-500 sm:ml-2">
+          PDF only. Max 10 MB.
+        </p>
+      </form>
+
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => setCompareOpen(true)}
@@ -192,10 +203,7 @@ export default function PlanningDocumentsPanel({
         >
           Compare planning docs
         </button>
-        <p className="text-xs text-zinc-500 sm:ml-2">
-          PDF only. Max 10 MB.
-        </p>
-      </form>
+      </div>
 
       {message && (
         <p
@@ -273,9 +281,15 @@ export default function PlanningDocumentsPanel({
                       type="checkbox"
                       className="h-4 w-4"
                       checked={selectedIds.includes(doc.id)}
+                      disabled={
+                        disableNewSelections && !selectedIds.includes(doc.id)
+                      }
                       onChange={(event) => {
                         if (event.target.checked) {
-                          setSelectedIds((prev) => [...prev, doc.id]);
+                          setSelectedIds((prev) => {
+                            if (prev.length >= MAX_COMPARE) return prev;
+                            return [...prev, doc.id];
+                          });
                         } else {
                           setSelectedIds((prev) =>
                             prev.filter((id) => id !== doc.id)
@@ -309,6 +323,11 @@ export default function PlanningDocumentsPanel({
               {!canCompare && (
                 <p className="text-xs text-zinc-500">
                   Select at least two documents.
+                </p>
+              )}
+              {disableNewSelections && (
+                <p className="text-xs text-zinc-500">
+                  You can compare up to {MAX_COMPARE} documents.
                 </p>
               )}
               {compareState === "error" && (
