@@ -16,6 +16,14 @@ export default function HomePage() {
               providing instant access to planning constraints, risk analysis, and viability
               assessments—turning weeks of research into minutes of clarity.
             </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <Link
+                href="/login?next=/onboarding"
+                className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              >
+                Get started free
+              </Link>
+            </div>
           </div>
         </div>
       </div>
