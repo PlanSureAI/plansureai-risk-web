@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { runFullAnalysis, uploadSitePdf, updateSite } from "./actions";
+import { PlanningDocumentSummaryCard } from "@/app/components/PlanningDocumentSummaryCard";
 import { RunAnalysisButton } from "./RunAnalysisButton";
 import { ConfidenceScoreSection } from "./ConfidenceScoreSection";
 import { RiskRationaleSection } from "./RiskRationaleSection";
@@ -172,7 +173,7 @@ function viabilityFlagClass(value: number | null, goodRange: [number, number]) {
 
 type PageProps = {
   params: { id: string };
-  searchParams?: { upload?: string };
+  searchParams?: { upload?: string; planningDocId?: string };
 };
 
 async function getSite(id: string): Promise<Site | null> {
@@ -421,6 +422,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
   const brokerPack = await getLatestBrokerPack(id);
   const resolvedSearchParams = await searchParams;
   const uploadStatus = resolvedSearchParams?.upload;
+  const planningDocId = resolvedSearchParams?.planningDocId;
   const nextMove = site ? getNextMove(site.ai_outcome, site.eligibility_results ?? []) : null;
   const units = site ? site.proposed_units ?? site.ai_units_estimate ?? null : null;
   const viability = site
@@ -952,6 +954,17 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
               </button>
               <p className="text-xs text-zinc-500 sm:ml-2">PDF only. Max 10 MB.</p>
             </form>
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-zinc-800">Planning document summary</p>
+            {planningDocId ? (
+              <PlanningDocumentSummaryCard documentId={planningDocId} />
+            ) : (
+              <p className="text-sm text-zinc-600">
+                Upload a planning PDF to generate a summary.
+              </p>
+            )}
           </div>
         </section>
 

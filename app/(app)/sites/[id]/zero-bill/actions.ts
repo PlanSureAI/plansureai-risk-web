@@ -5,6 +5,11 @@ import { PDFDocument, StandardFonts } from "pdf-lib";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 import {
+  assertProfileForExport,
+  formatProfileHeaderLines,
+  getProfileForUser,
+} from "@/app/lib/profile";
+import {
   buildSiteRiskProfileInput,
   type SitePlanningData,
 } from "@/app/lib/planningDataProvider";
@@ -192,6 +197,12 @@ export async function generateZeroBillPdf(formData: FormData): Promise<string> {
     throw new Error("Run the Zero-Bill analysis before exporting a PDF.");
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const profile = user ? await getProfileForUser(supabase, user.id) : null;
+  assertProfileForExport(profile);
+
   const doc = await PDFDocument.create();
   let page = doc.addPage([595, 842]); // A4 portrait
   const { width, height } = page.getSize();
@@ -221,6 +232,10 @@ export async function generateZeroBillPdf(formData: FormData): Promise<string> {
   };
 
   drawText("PlanSureAI – Zero-Bill Homes pack", { size: 12, bold: true });
+  if (profile) {
+    const profileLines = formatProfileHeaderLines(profile);
+    profileLines.forEach((line) => drawText(line));
+  }
   drawText(`Site: ${site.site_name ?? "Untitled site"}`, { size: 11, bold: true });
   drawText(site.address ?? "No address recorded");
   drawText(`LPA: ${site.local_planning_authority ?? "—"}`);

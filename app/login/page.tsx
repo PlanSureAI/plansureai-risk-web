@@ -31,7 +31,7 @@ export default function LoginPage() {
       }
 
       setMessage("Logged in");
-      router.push("/sites");
+      router.push("/dashboard");
       router.refresh();
     });
   };
