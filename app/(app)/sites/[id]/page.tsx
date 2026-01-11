@@ -503,6 +503,30 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
           )}
         </div>
 
+        {user && (
+          <PlanningDocumentsPanel
+            siteId={site.id}
+            userId={user.id}
+            initialDocumentId={planningDocId ?? null}
+            brokers={brokers}
+          />
+        )}
+
+        {!user && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+            <p className="font-semibold">Sign in to upload planning documents.</p>
+            <p className="mt-1 text-xs text-amber-800">
+              Planning PDFs are tied to your account and used to generate summaries.
+            </p>
+            <Link
+              href={`/login?next=/sites/${site.id}`}
+              className="mt-3 inline-flex items-center rounded-full border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+            >
+              Sign in
+            </Link>
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/sites/${site.id}/zero-bill`}
@@ -755,30 +779,6 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             </p>
           </div>
         </section>
-
-        {user && (
-          <PlanningDocumentsPanel
-            siteId={site.id}
-            userId={user.id}
-            initialDocumentId={planningDocId ?? null}
-            brokers={brokers}
-          />
-        )}
-
-        {!user && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-            <p className="font-semibold">Sign in to upload planning documents.</p>
-            <p className="mt-1 text-xs text-amber-800">
-              Planning PDFs are tied to your account and used to generate summaries.
-            </p>
-            <Link
-              href={`/login?next=/sites/${site.id}`}
-              className="mt-3 inline-flex items-center rounded-full border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100"
-            >
-              Sign in
-            </Link>
-          </div>
-        )}
 
         {viability && (
           <section className="mt-6 rounded-lg border border-zinc-200 bg-white p-4 text-xs">
