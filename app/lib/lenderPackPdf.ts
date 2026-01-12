@@ -70,12 +70,37 @@ export async function renderLenderPackPdf(data: LenderPackData): Promise<Buffer>
     );
   }
 
+  state = startNewSection(doc, state, "Risk overview", fontBold);
+  const riskIndex =
+    data.riskOverview.riskIndex != null ? `${data.riskOverview.riskIndex}/100` : "N/A";
+  const riskBand = data.riskOverview.riskBand ?? "N/A";
+  drawText(`Risk band: ${riskBand}`);
+  drawText(`Risk index: ${riskIndex}`);
+  if (data.riskOverview.topIssues.length > 0) {
+    drawText("Top issues", { bold: true });
+    data.riskOverview.topIssues.slice(0, 3).forEach((issue) => {
+      drawParagraph(`• ${issue.issue}`);
+      const mitigationText = String(issue.mitigation || "No mitigation specified");
+      drawParagraph(`  Mitigation: ${mitigationText}`, { size: 9 });
+    });
+  } else {
+    drawParagraph("No structured risk issues available yet.");
+  }
+
+  if (data.site.lender_strategy_notes) {
+    state = startNewSection(doc, state, "Lender strategy", fontBold);
+    drawParagraph(String(data.site.lender_strategy_notes));
+  }
+
   state = startNewSection(doc, state, "Planning narrative", fontBold);
   data.planningDocuments.forEach((docItem, idx) => {
     drawText(`${idx + 1}. ${docItem.file_name}`, { bold: true });
     drawText(`Uploaded: ${formatDate(docItem.uploaded_at)}`, { size: 9 });
     if (docItem.structuredSummary?.timeline_notes) {
-      drawParagraph(docItem.structuredSummary.timeline_notes, { size: 9 });
+      const timelineText = String(docItem.structuredSummary.timeline_notes.join(" "));
+      if (timelineText) {
+        drawParagraph(timelineText, { size: 9 });
+      }
     }
     state.y -= 4;
   });
@@ -147,7 +172,7 @@ function startNewSection(
 }
 
 function wrapText(text: string, font: any, size: number, maxWidth: number): string[] {
-  if (!text) return [""];
+  if (!text || typeof text !== "string") return [""];
   const words = text.split(" ");
   const lines: string[] = [];
   let currentLine = "";

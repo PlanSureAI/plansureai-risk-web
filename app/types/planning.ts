@@ -62,4 +62,12 @@ export interface PlanningStructuredSummary {
   key_issues: string[];
   recommended_actions: string[];
   timeline_notes: string[];
+  risk_issues?: Array<{
+    issue: string;
+    category: "planning" | "delivery" | "sales" | "cost" | "sponsor" | "energy" | "other";
+    probability: number;
+    impact: number;
+    owner?: string | null;
+    mitigation?: string | null;
+  }>;
 }

@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { buildRiskMatrixSnapshot, type RiskMatrixSnapshot } from "@/app/lib/risk/structuredRiskMatrix";
 import type { PlanningStructuredSummary } from "@/app/types/planning";
 
 export interface LenderPackData {
@@ -8,6 +9,7 @@ export interface LenderPackData {
     address: string;
     postcode: string | null;
     local_planning_authority: string;
+    lender_strategy_notes: string | null;
   };
   planningDocuments: Array<{
     id: string;
@@ -26,6 +28,15 @@ export interface LenderPackData {
     approvalRate: number;
     medianWeeks: number | null;
     sampleSize: number;
+  };
+  riskOverview: {
+    riskIndex: number | null;
+    riskBand: "low" | "medium" | "high" | null;
+    topIssues: Array<{
+      issue: string;
+      mitigation?: string | null;
+      score?: number;
+    }>;
   };
   generatedAt: string;
 }
@@ -70,7 +81,7 @@ export async function generateLenderPackData(
 
   const { data: site, error: siteError } = await supabase
     .from("sites")
-    .select("id, site_name, address, postcode, local_planning_authority")
+    .select("id, site_name, address, postcode, local_planning_authority, lender_strategy_notes")
     .eq("id", siteId)
     .single();
 
@@ -116,6 +127,11 @@ export async function generateLenderPackData(
     structuredSummary: summariesByDocId.get(doc.id) ?? null,
   }));
 
+  const riskOverview = await calculateRiskOverview(
+    supabase,
+    docIds
+  );
+
   const siteTimeline = await calculateSiteTimeline(
     supabase,
     siteId,
@@ -135,10 +151,12 @@ export async function generateLenderPackData(
       postcode: site.postcode ?? null,
       local_planning_authority:
         site.local_planning_authority ?? "Unknown LPA",
+      lender_strategy_notes: site.lender_strategy_notes ?? null,
     },
     planningDocuments,
     siteTimeline,
     lpaEvidence,
+    riskOverview,
     generatedAt: new Date().toISOString(),
   };
 }
@@ -246,5 +264,55 @@ async function calculateLpaEvidence(
     approvalRate,
     medianWeeks: median(weeks),
     sampleSize: decided.length,
+  };
+}
+
+async function calculateRiskOverview(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  docIds: string[]
+): Promise<LenderPackData["riskOverview"]> {
+  if (docIds.length === 0) {
+    return { riskIndex: null, riskBand: null, topIssues: [] };
+  }
+
+  const { data: analysis } = await supabase
+    .from("planning_document_analyses")
+    .select("structured_summary, risk_matrix, risk_index, risk_band, created_at")
+    .in("planning_document_id", docIds)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!analysis) {
+    return { riskIndex: null, riskBand: null, topIssues: [] };
+  }
+
+  const storedMatrix = (analysis.risk_matrix ?? null) as RiskMatrixSnapshot | null;
+  const structuredSummary = (analysis.structured_summary ?? null) as PlanningStructuredSummary | null;
+  const computedMatrix = structuredSummary ? buildRiskMatrixSnapshot(structuredSummary) : null;
+
+  const riskIndex =
+    (analysis.risk_index as number | null | undefined) ??
+    storedMatrix?.riskIndex ??
+    computedMatrix?.riskIndex ??
+    null;
+  const riskBand =
+    (analysis.risk_band as "low" | "medium" | "high" | null | undefined) ??
+    storedMatrix?.riskBand ??
+    computedMatrix?.riskBand ??
+    null;
+  const topIssues =
+    storedMatrix?.topIssues?.length
+      ? storedMatrix.topIssues
+      : computedMatrix?.topIssues ?? [];
+
+  return {
+    riskIndex: riskIndex != null ? Number(riskIndex) : null,
+    riskBand,
+    topIssues: topIssues.map((issue) => ({
+      issue: issue.issue,
+      mitigation: issue.mitigation ?? null,
+      score: issue.score,
+    })),
   };
 }

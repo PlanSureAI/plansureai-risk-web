@@ -9,10 +9,14 @@ import { RiskRationaleSection } from "./RiskRationaleSection";
 import { SiteKillersSection } from "./SiteKillersSection";
 import { FinancePackButton } from "./FinancePackButton";
 import { FinancePackPdfButton } from "./FinancePackPdfButton";
+import { LenderPackButton } from "./LenderPackButton";
+import { LenderStrategySection } from "./LenderStrategySection";
 import { getNextMove, getFrictionHint, type NextMove } from "@/app/types/siteFinance";
 import { BrokerSendForm } from "./BrokerSendForm";
 import { getPlanningForPostcode, type LandTechPlanningApplication } from "@/app/lib/landtech";
 import PlanningDocumentsPanel from "./PlanningDocumentsPanel";
+import { buildRiskMatrixSnapshot, type RiskMatrixSnapshot } from "@/app/lib/risk/structuredRiskMatrix";
+import type { PlanningStructuredSummary } from "@/app/types/planning";
 
 type Site = {
   id: string;
@@ -98,6 +102,7 @@ type Site = {
   growth_horizon_years: number | null;
   eligibility_results: any | null; // jsonb
   asking_price: number | null;
+  lender_strategy_notes: string | null;
 };
 
 type Broker = {
@@ -130,6 +135,16 @@ type LpaEvidenceStats = {
   approvalRate: number | null;
   medianWeeks: number | null;
   decidedCount: number;
+};
+
+type RiskOverview = {
+  riskIndex: number | null;
+  riskBand: "low" | "medium" | "high" | null;
+  topIssues: Array<{
+    issue: string;
+    mitigation?: string | null;
+    score?: number;
+  }>;
 };
 
 const PRODUCT_LABELS = {
@@ -321,6 +336,56 @@ async function getLpaEvidenceStats(
   };
 }
 
+async function getLatestRiskOverview(siteId: string): Promise<RiskOverview | null> {
+  const supabaseServer = await createSupabaseServerClient();
+  const { data: documents } = await supabaseServer
+    .from("planning_documents")
+    .select("id")
+    .eq("site_id", siteId);
+
+  const docIds = (documents ?? []).map((doc) => doc.id);
+  if (docIds.length === 0) return null;
+
+  const { data: analysis } = await supabaseServer
+    .from("planning_document_analyses")
+    .select("structured_summary, risk_matrix, risk_index, risk_band, created_at")
+    .in("planning_document_id", docIds)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!analysis) return null;
+
+  const storedMatrix = (analysis.risk_matrix ?? null) as RiskMatrixSnapshot | null;
+  const structuredSummary = (analysis.structured_summary ?? null) as PlanningStructuredSummary | null;
+  const computedMatrix = structuredSummary ? buildRiskMatrixSnapshot(structuredSummary) : null;
+
+  const riskIndex =
+    (analysis.risk_index as number | null | undefined) ??
+    storedMatrix?.riskIndex ??
+    computedMatrix?.riskIndex ??
+    null;
+  const riskBand =
+    (analysis.risk_band as "low" | "medium" | "high" | null | undefined) ??
+    storedMatrix?.riskBand ??
+    computedMatrix?.riskBand ??
+    null;
+  const topIssues =
+    storedMatrix?.topIssues?.length
+      ? storedMatrix.topIssues
+      : computedMatrix?.topIssues ?? [];
+
+  return {
+    riskIndex: riskIndex != null ? Number(riskIndex) : null,
+    riskBand,
+    topIssues: topIssues.map((issue) => ({
+      issue: issue.issue,
+      mitigation: issue.mitigation ?? null,
+      score: issue.score,
+    })),
+  };
+}
+
 function computeDownsideProfit(
   gdv: number | null | undefined,
   totalCost: number | null | undefined
@@ -378,7 +443,8 @@ async function getSite(id: string): Promise<Site | null> {
         interest_cover,
         planning_confidence_score,
         confidence_reasons,
-        eligibility_results
+        eligibility_results,
+        lender_strategy_notes
       `
     )
     .eq("id", id)
@@ -426,6 +492,7 @@ async function getSite(id: string): Promise<Site | null> {
     planning_confidence_score: data.planning_confidence_score ?? null,
     confidence_reasons: data.confidence_reasons ?? null,
     eligibility_results: (data as any).eligibility_results ?? null,
+    lender_strategy_notes: (data as any).lender_strategy_notes ?? null,
   };
 
   return site as Site;
@@ -523,7 +590,8 @@ export async function getSiteForLender(id: string): Promise<Site | null> {
         interest_cover,
         planning_confidence_score,
         confidence_reasons,
-        eligibility_results
+        eligibility_results,
+        lender_strategy_notes
       `
     )
     .eq("id", id)
@@ -567,6 +635,7 @@ export async function getSiteForLender(id: string): Promise<Site | null> {
     planning_confidence_score: data.planning_confidence_score ?? null,
     confidence_reasons: data.confidence_reasons ?? null,
     eligibility_results: (data as any).eligibility_results ?? null,
+    lender_strategy_notes: (data as any).lender_strategy_notes ?? null,
   };
 
   return site as Site;
@@ -612,6 +681,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
   let planningApplications: LandTechPlanningApplication[] = [];
   let planningTimeline: PlanningTimelineStats | null = null;
   let lpaEvidence: LpaEvidenceStats | null = null;
+  let riskOverview: RiskOverview | null = null;
 
   if (site) {
     try {
@@ -633,6 +703,11 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
       lpaEvidence = await getLpaEvidenceStats(site.local_planning_authority);
     } catch (err) {
       console.error("Failed to fetch LPA evidence stats", err);
+    }
+    try {
+      riskOverview = await getLatestRiskOverview(site.id);
+    } catch (err) {
+      console.error("Failed to fetch risk overview", err);
     }
   }
 
@@ -821,6 +896,55 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             </p>
           </section>
         )}
+
+        {riskOverview && (
+          <section className="rounded-xl border border-zinc-200 bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Risk overview
+                </p>
+                <h2 className="mt-1 text-sm font-semibold text-zinc-900">
+                  Lender risk snapshot
+                </h2>
+              </div>
+              <span className="inline-flex rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-800">
+                {riskOverview.riskBand ? `${riskOverview.riskBand.toUpperCase()} risk` : "Risk TBD"}
+              </span>
+            </div>
+            <div className="mt-3 flex items-center gap-4 text-sm text-zinc-700">
+              <span>
+                Index{" "}
+                <span className="font-semibold text-zinc-900">
+                  {riskOverview.riskIndex != null ? `${riskOverview.riskIndex}/100` : "—"}
+                </span>
+              </span>
+            </div>
+            {riskOverview.topIssues.length > 0 ? (
+              <ul className="mt-3 space-y-2 text-sm text-zinc-700">
+                {riskOverview.topIssues.slice(0, 3).map((issue, idx) => (
+                  <li key={`${issue.issue}-${idx}`} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+                    <p className="font-medium text-zinc-900">{issue.issue}</p>
+                    {issue.mitigation && (
+                      <p className="mt-1 text-xs text-zinc-600">
+                        Mitigation: {issue.mitigation}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-xs text-zinc-500">
+                No structured risk issues available yet.
+              </p>
+            )}
+          </section>
+        )}
+
+        <LenderStrategySection
+          siteId={site.id}
+          initialNotes={site.lender_strategy_notes}
+        />
 
         <div className="flex flex-wrap gap-2">
           <Link
@@ -1180,6 +1304,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             </form>
 
             <FinancePackPdfButton siteId={site.id} siteName={site.site_name} />
+            <LenderPackButton siteId={site.id} siteName={site.site_name} />
           </div>
 
           <div className="space-y-4">

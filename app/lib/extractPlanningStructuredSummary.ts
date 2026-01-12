@@ -18,7 +18,17 @@ Schema:
   "risk_level": "LOW" | "MEDIUM" | "HIGH" | "EXTREME" | null,
   "key_issues": string[],
   "recommended_actions": string[],
-  "timeline_notes": string[]
+  "timeline_notes": string[],
+  "risk_issues": [
+    {
+      "issue": string,
+      "category": "planning" | "delivery" | "sales" | "cost" | "sponsor" | "energy" | "other",
+      "probability": 1|2|3|4|5,
+      "impact": 1|2|3|4|5,
+      "owner": string|null,
+      "mitigation": string|null
+    }
+  ]
 }
 
 Rules:
@@ -27,6 +37,8 @@ Rules:
 - key_issues should be 3–5 concise bullet-style strings.
 - recommended_actions should be 3–5 practical next steps.
 - timeline_notes should be 1–3 items if timelines/fees are mentioned.
+- risk_issues should be 3–6 items; keep issue text concise and specific.
+- probability/impact are 1–5 integers; owner/mitigation can be null if unknown.
 - File name: "${fileName}".
 
 Now extract the structured summary from this document text:
