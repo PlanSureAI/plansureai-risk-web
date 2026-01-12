@@ -39,6 +39,35 @@ type OutcomesPayload = {
   performance?: PerformancePayload | null;
 };
 
+type PlanningRow = {
+  planning_ref: string | null;
+  decision: string | null;
+  decision_date: string | null;
+  authority_name: string | null;
+  notes: string | null;
+};
+
+type FundingRow = {
+  lender_name: string | null;
+  decision: string | null;
+  ltc_percent: number | null;
+  gdv_ltv_percent: number | null;
+  interest_rate_percent: number | null;
+  approved_loan_amount: number | null;
+  decision_date: string | null;
+  notes: string | null;
+};
+
+type PerformanceRow = {
+  status: string | null;
+  actual_build_cost: number | null;
+  actual_gdv: number | null;
+  build_start_date: string | null;
+  build_completion_date: string | null;
+  sale_completion_date: string | null;
+  notes: string | null;
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -128,9 +157,9 @@ export async function PUT(
   const performancePayload = payload.performance ?? null;
 
   const errors: string[] = [];
-  let planningData: PlanningPayload | null = null;
-  let fundingData: FundingPayload | null = null;
-  let performanceData: PerformancePayload | null = null;
+  let planningData: PlanningRow | null = null;
+  let fundingData: FundingRow | null = null;
+  let performanceData: PerformanceRow | null = null;
 
   if (planningPayload) {
     const { data, error } = await supabase
