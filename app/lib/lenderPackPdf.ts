@@ -139,7 +139,7 @@ export async function renderLenderPackPdf(data: LenderPackData): Promise<Buffer>
 }
 
 function createPage(doc: PDFDocument): PageState {
-  const page = doc.addPage(A4);
+  const page = doc.addPage([...A4] as [number, number]);
   return { page, y: A4[1] - 50 };
 }
 
