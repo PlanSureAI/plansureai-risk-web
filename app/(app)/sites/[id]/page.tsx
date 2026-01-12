@@ -11,12 +11,14 @@ import { FinancePackButton } from "./FinancePackButton";
 import { FinancePackPdfButton } from "./FinancePackPdfButton";
 import { LenderPackButton } from "./LenderPackButton";
 import { LenderStrategySection } from "./LenderStrategySection";
+import { OutcomesSection } from "./OutcomesSection";
 import { getNextMove, getFrictionHint, type NextMove } from "@/app/types/siteFinance";
 import { BrokerSendForm } from "./BrokerSendForm";
 import { getPlanningForPostcode, type LandTechPlanningApplication } from "@/app/lib/landtech";
 import PlanningDocumentsPanel from "./PlanningDocumentsPanel";
 import { buildRiskMatrixSnapshot, type RiskMatrixSnapshot } from "@/app/lib/risk/structuredRiskMatrix";
 import type { PlanningStructuredSummary } from "@/app/types/planning";
+import type { OutcomesBundle } from "./outcomesTypes";
 
 type Site = {
   id: string;
@@ -123,6 +125,7 @@ type BrokerPack = {
   broker_name: string | null;
   broker_firm: string | null;
 };
+
 
 type PlanningTimelineStats = {
   total: number;
@@ -383,6 +386,51 @@ async function getLatestRiskOverview(siteId: string): Promise<RiskOverview | nul
       mitigation: issue.mitigation ?? null,
       score: issue.score,
     })),
+  };
+}
+
+async function getOutcomesBundle(
+  supabaseServer: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  siteId: string
+): Promise<OutcomesBundle> {
+  const [planning, funding, performance] = await Promise.all([
+    supabaseServer
+      .from("planning_outcomes")
+      .select("planning_ref, decision, decision_date, authority_name, notes")
+      .eq("scheme_id", siteId)
+      .limit(1)
+      .maybeSingle(),
+    supabaseServer
+      .from("funding_outcomes")
+      .select(
+        "lender_name, decision, ltc_percent, gdv_ltv_percent, interest_rate_percent, approved_loan_amount, decision_date, notes"
+      )
+      .eq("scheme_id", siteId)
+      .limit(1)
+      .maybeSingle(),
+    supabaseServer
+      .from("performance_outcomes")
+      .select(
+        "status, actual_gdv, actual_build_cost, build_start_date, build_completion_date, sale_completion_date, notes"
+      )
+      .eq("scheme_id", siteId)
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  if (planning.error || funding.error || performance.error) {
+    console.error("❌ Error loading outcomes:", {
+      planning: planning.error?.message,
+      funding: funding.error?.message,
+      performance: performance.error?.message,
+      siteId,
+    });
+  }
+
+  return {
+    planning: planning.data ?? null,
+    funding: funding.data ?? null,
+    performance: performance.data ?? null,
   };
 }
 
@@ -662,6 +710,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
   const {
     data: { user },
   } = await supabaseServer.auth.getUser();
+  const outcomes = user ? await getOutcomesBundle(supabaseServer, id) : null;
   const resolvedSearchParams = await searchParams;
   const planningDocId = resolvedSearchParams?.planningDocId;
   const nextMove = site ? getNextMove(site.ai_outcome, site.eligibility_results ?? []) : null;
@@ -766,12 +815,18 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
         </div>
 
         {user && (
-          <PlanningDocumentsPanel
-            siteId={site.id}
-            userId={user.id}
-            initialDocumentId={planningDocId ?? null}
-            brokers={brokers}
-          />
+          <>
+            <PlanningDocumentsPanel
+              siteId={site.id}
+              userId={user.id}
+              initialDocumentId={planningDocId ?? null}
+              brokers={brokers}
+            />
+            <OutcomesSection
+              siteId={site.id}
+              initialOutcomes={outcomes}
+            />
+          </>
         )}
 
         {!user && (
