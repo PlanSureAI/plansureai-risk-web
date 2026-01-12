@@ -22,7 +22,7 @@ export async function GET(
     const pdfBuffer = await renderLenderPackPdf(packData);
     const filename = `lender-pack-${slugify(packData.site.site_name)}-${packData.generatedAt.slice(0, 10)}.pdf`;
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
