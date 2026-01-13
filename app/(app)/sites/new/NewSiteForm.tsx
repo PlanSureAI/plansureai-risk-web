@@ -2,10 +2,14 @@
 
 import { useFormState } from "react-dom";
 import { SubmitButton } from "./SubmitButton";
-import { createSite, initialState } from "./actions";
+import { createSite } from "./actions";
+import { initialState, type CreateSiteState } from "./types";
 
 export function NewSiteForm() {
-  const [state, formAction] = useFormState(createSite, initialState);
+  const [state, formAction] = useFormState<CreateSiteState, FormData>(
+    createSite,
+    initialState
+  );
 
   return (
     <form action={formAction} className="space-y-4">

@@ -1,14 +1,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
-
-export type CreateSiteState = {
-  error: string | null;
-};
-
-export const initialState: CreateSiteState = {
-  error: null,
-};
+import type { CreateSiteState } from "./types";
 
 export async function createSite(
   _prevState: CreateSiteState,
