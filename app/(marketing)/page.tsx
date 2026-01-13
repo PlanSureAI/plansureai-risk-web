@@ -91,6 +91,9 @@ export default function HomePage() {
               Apply for beta access
             </Link>
           </div>
+          <p className="mt-4 text-xs text-gray-600">
+            Questions? Email <a className="underline" href="mailto:plansureai@gmail.com">plansureai@gmail.com</a>
+          </p>
         </section>
 
         <section className="bg-white rounded-xl border border-gray-200 p-8">
