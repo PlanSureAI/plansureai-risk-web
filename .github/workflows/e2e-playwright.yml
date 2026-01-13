@@ -2,9 +2,7 @@ name: E2E Playwright
 
 on:
   pull_request:
-    branches: [main, staging]
-  push:
-    branches: [main, staging]
+    branches: [staging]
 
 jobs:
   e2e-playwright:
