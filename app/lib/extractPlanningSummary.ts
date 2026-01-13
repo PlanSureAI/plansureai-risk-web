@@ -69,7 +69,7 @@ ${text}
 function buildImagePrompt(fileName: string, focus?: "drawings"): string {
   const focusNote =
     focus === "drawings"
-      ? "Prioritise elevations, heights, materials, fenestration, and architectural notes."
+      ? "Prioritise elevations, heights, roof pitch, facade materials/finishes, window/door proportions, and architectural notes."
       : "";
   return `
 You are looking at a planning drawing or plan sheet.
