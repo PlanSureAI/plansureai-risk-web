@@ -88,11 +88,11 @@ export default function PlanningDocumentsPanel({
           Planning documents
         </p>
         <h2 className="mt-2 text-lg font-semibold text-zinc-900">
-          Upload planning documents (PDF)
+          Upload planning documents (PDF, PNG, JPG)
         </h2>
         <p className="mt-1 text-sm text-zinc-600">
-          Drop in a PIP, pre-app, or planning letter and PlanSureAI will extract
-          the key planning route, fees, and process steps.
+          Drop in a PIP, pre-app, planning letter, or plan sheet and PlanSureAI will
+          extract the key planning route, fees, and process steps.
         </p>
       </div>
 
@@ -101,10 +101,10 @@ export default function PlanningDocumentsPanel({
         className="flex flex-col items-start gap-3 sm:flex-row sm:items-center"
       >
         <label className="inline-flex cursor-pointer items-center rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-50">
-          Choose PDF
+          Choose file
           <input
             type="file"
-            accept="application/pdf"
+            accept="application/pdf,image/png,image/jpeg"
             className="hidden"
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           />
@@ -117,7 +117,7 @@ export default function PlanningDocumentsPanel({
           {status === "uploading" ? "Uploading…" : "Upload & analyse"}
         </button>
         <p className="text-xs text-zinc-500 sm:ml-2">
-          PDF only. Max 10 MB.
+          PDF or image. Max 10 MB.
         </p>
       </form>
 

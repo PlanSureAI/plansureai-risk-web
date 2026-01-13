@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { extractPdfTextNode } from "@/app/lib/extractPdfText";
-import { extractPlanningSummaryFromText } from "@/app/lib/extractPlanningSummary";
-import { extractPlanningAnalysisFromText } from "@/app/lib/extractPlanningAnalysis";
+import {
+  extractPlanningSummaryFromImage,
+  extractPlanningSummaryFromText,
+} from "@/app/lib/extractPlanningSummary";
+import {
+  extractPlanningAnalysisFromImage,
+  extractPlanningAnalysisFromText,
+} from "@/app/lib/extractPlanningAnalysis";
 import type { PlanningDocumentSummary } from "@/app/types/planning";
 
 export const runtime = "nodejs";
@@ -43,8 +49,27 @@ export async function POST(req: NextRequest) {
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
-  const pdfText = await extractPdfTextNode(buffer);
-  const summary = await extractPlanningSummaryFromText(pdfText, file.name);
+  let summary: PlanningDocumentSummary;
+  let analysisSourceText: string | null = null;
+
+  if (file.type === "application/pdf") {
+    const pdfText = await extractPdfTextNode(buffer);
+    if (pdfText.trim().length < 50) {
+      return NextResponse.json(
+        { error: "PDF looks image-only. Please upload a PNG or JPG version." },
+        { status: 400 }
+      );
+    }
+    summary = await extractPlanningSummaryFromText(pdfText, file.name);
+    analysisSourceText = pdfText;
+  } else if (file.type.startsWith("image/")) {
+    summary = await extractPlanningSummaryFromImage(buffer, file.type, file.name);
+  } else {
+    return NextResponse.json(
+      { error: "Unsupported file type. Upload a PDF, PNG, or JPG." },
+      { status: 400 }
+    );
+  }
 
   const path = `${userId}/${Date.now()}-${file.name}`;
   const { data: storageData, error: storageError } = await supabase.storage
@@ -76,7 +101,9 @@ export async function POST(req: NextRequest) {
 
   let analysisStatus: "ready" | "error" = "ready";
   try {
-    const analysis = await extractPlanningAnalysisFromText(pdfText, file.name);
+    const analysis = analysisSourceText
+      ? await extractPlanningAnalysisFromText(analysisSourceText, file.name)
+      : await extractPlanningAnalysisFromImage(buffer, file.type, file.name);
     const { error: analysisError } = await supabase
       .from("planning_document_analyses")
       .insert({

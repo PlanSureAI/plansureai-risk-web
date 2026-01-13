@@ -66,6 +66,57 @@ ${text}
 `;
 }
 
+function buildImagePrompt(fileName: string): string {
+  return `
+You are looking at a planning drawing or plan sheet.
+Extract information that is explicitly visible in the drawing, title block, and annotations.
+Return JSON using the schema below.
+If a field is unknown or not present, use null or an empty array.
+Set "sourceFileName" to "${fileName}".
+
+Schema:
+{
+  "site": {
+    "name": string|null,
+    "address": string|null,
+    "localAuthority": string|null,
+    "clientName": string|null
+  },
+  "proposal": {
+    "description": string|null,
+    "route": string[],
+    "dwellingsMin": number|null,
+    "dwellingsMax": number|null,
+    "isHousingLed": boolean
+  },
+  "process": {
+    "stage": string|null,
+    "steps": string[]
+  },
+  "fees": {
+    "planningAuthorityFee": {
+      "amount": number|null,
+      "currency": "GBP",
+      "payer": string|null,
+      "description": string|null
+    },
+    "agentFee": {
+      "amount": number|null,
+      "currency": "GBP",
+      "vatExcluded": boolean,
+      "description": string|null
+    }
+  },
+  "documentsRequired": string[],
+  "meta": {
+    "documentTitle": string|null,
+    "documentDate": string|null,
+    "sourceFileName": string|null
+  }
+}
+`;
+}
+
 function extractJson(content: string): PlanningDocumentSummary {
   const trimmed = content.trim();
   try {
@@ -89,6 +140,35 @@ export async function extractPlanningSummaryFromText(
     messages: [
       { role: "system", content: SYSTEM_INSTRUCTIONS },
       { role: "user", content: prompt },
+    ],
+    temperature: 0,
+  });
+
+  const raw = completion.choices[0]?.message?.content ?? "{}";
+  return extractJson(raw);
+}
+
+export async function extractPlanningSummaryFromImage(
+  buffer: Buffer,
+  mimeType: string,
+  fileName: string
+): Promise<PlanningDocumentSummary> {
+  const base64 = buffer.toString("base64");
+  const prompt = buildImagePrompt(fileName);
+  const completion = await client.chat.completions.create({
+    model: "gpt-4.1-mini",
+    messages: [
+      { role: "system", content: SYSTEM_INSTRUCTIONS },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: prompt },
+          {
+            type: "image_url",
+            image_url: { url: `data:${mimeType};base64,${base64}` },
+          },
+        ],
+      },
     ],
     temperature: 0,
   });

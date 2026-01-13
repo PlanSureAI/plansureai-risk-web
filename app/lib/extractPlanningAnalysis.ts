@@ -37,6 +37,26 @@ ${text}
 `;
 }
 
+function buildImagePrompt(fileName: string): string {
+  return `
+You are looking at a planning drawing or plan sheet.
+Extract planning risk signals that are explicitly visible in the drawing, title block, and annotations.
+Return JSON using the schema below.
+If a field is unknown or not present, use null or an empty array.
+File name: "${fileName}".
+
+Schema:
+{
+  "headlineRisk": string|null,
+  "riskLevel": "LOW" | "MEDIUM" | "HIGH" | "EXTREME" | null,
+  "keyIssues": string[],
+  "policyRefs": string[],
+  "recommendedActions": string[],
+  "timelineNotes": string|null
+}
+`;
+}
+
 function extractJson(content: string): PlanningDocumentAnalysis {
   const trimmed = content.trim();
   try {
@@ -64,6 +84,35 @@ export async function extractPlanningAnalysisFromText(
     messages: [
       { role: "system", content: SYSTEM_INSTRUCTIONS },
       { role: "user", content: prompt },
+    ],
+    temperature: 0,
+  });
+
+  const raw = completion.choices[0]?.message?.content ?? "{}";
+  return extractJson(raw);
+}
+
+export async function extractPlanningAnalysisFromImage(
+  buffer: Buffer,
+  mimeType: string,
+  fileName: string
+): Promise<PlanningDocumentAnalysis> {
+  const base64 = buffer.toString("base64");
+  const prompt = buildImagePrompt(fileName);
+  const completion = await client.chat.completions.create({
+    model: "gpt-4.1-mini",
+    messages: [
+      { role: "system", content: SYSTEM_INSTRUCTIONS },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: prompt },
+          {
+            type: "image_url",
+            image_url: { url: `data:${mimeType};base64,${base64}` },
+          },
+        ],
+      },
     ],
     temperature: 0,
   });
