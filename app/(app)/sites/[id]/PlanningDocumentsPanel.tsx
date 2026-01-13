@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PlanningDocumentSummaryCard } from "@/app/components/PlanningDocumentSummaryCard";
 import { GenerateBrokerPackButton } from "./GenerateBrokerPackButton";
+import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 
 type UploadState = "idle" | "uploading" | "success" | "error";
 
@@ -29,10 +30,60 @@ export default function PlanningDocumentsPanel({
   const [status, setStatus] = useState<UploadState>("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [jobStatus, setJobStatus] = useState<string | null>(null);
+  const [progress, setProgress] = useState<number>(0);
+  const [progressMessage, setProgressMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [drawingsFocus, setDrawingsFocus] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (!jobId) return;
+    const supabase = createSupabaseBrowserClient();
+    const channel = supabase
+      .channel(`document-job-${jobId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "document_jobs",
+          filter: `id=eq.${jobId}`,
+        },
+        (payload) => {
+          const updated = payload.new as {
+            status: string;
+            progress: number;
+            progress_message: string | null;
+            error_message: string | null;
+            analysis_status: string | null;
+            planning_document_id: string | null;
+          };
+          setJobStatus(updated.status);
+          setProgress(updated.progress ?? 0);
+          setProgressMessage(updated.progress_message);
+          setErrorMessage(updated.error_message);
+          if (updated.status === "completed" && updated.planning_document_id) {
+            setDocumentId(updated.planning_document_id);
+            const params = new URLSearchParams(searchParams?.toString());
+            params.set("planningDocId", updated.planning_document_id);
+            router.replace(params.toString() ? `${pathname}?${params.toString()}` : pathname);
+            setStatus("success");
+          }
+          if (updated.status === "failed") {
+            setStatus("error");
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [jobId, pathname, router, searchParams]);
 
   const handleUpload = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -44,6 +95,11 @@ export default function PlanningDocumentsPanel({
 
     setStatus("uploading");
     setMessage(null);
+    setJobId(null);
+    setJobStatus(null);
+    setProgress(0);
+    setProgressMessage(null);
+    setErrorMessage(null);
 
     const formData = new FormData();
     formData.set("file", file);
@@ -54,7 +110,7 @@ export default function PlanningDocumentsPanel({
     }
 
     try {
-      const res = await fetch("/api/upload-planning-pdf", {
+      const res = await fetch("/api/documents/upload", {
         method: "POST",
         body: formData,
       });
@@ -64,21 +120,12 @@ export default function PlanningDocumentsPanel({
         throw new Error(err.error || "Upload failed.");
       }
 
-      const data = (await res.json()) as {
-        documentId: string;
-        analysisStatus?: "ready" | "error";
-      };
-      setDocumentId(data.documentId);
-      setStatus("success");
-      if (data.analysisStatus === "error") {
-        setMessage("Upload complete. Analysis is still processing.");
-      } else {
-        setMessage("Planning document analysed.");
-      }
-
-      const params = new URLSearchParams(searchParams?.toString());
-      params.set("planningDocId", data.documentId);
-      router.replace(params.toString() ? `${pathname}?${params.toString()}` : pathname);
+      const data = (await res.json()) as { jobId: string };
+      setJobId(data.jobId);
+      setJobStatus("pending");
+      setProgress(0);
+      setProgressMessage("Queued for processing");
+      setMessage("Upload complete. Processing started.");
     } catch (err) {
       setStatus("error");
       setMessage(err instanceof Error ? err.message : "Upload failed.");
@@ -142,6 +189,34 @@ export default function PlanningDocumentsPanel({
         >
           {message}
         </p>
+      )}
+      {jobId && (
+        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-700">
+          <div className="flex items-center gap-3">
+            <div className="h-2 w-full rounded-full bg-zinc-200">
+              <div
+                className="h-2 rounded-full bg-blue-600 transition-all"
+                style={{ width: `${Math.min(progress, 100)}%` }}
+              />
+            </div>
+            <span className="w-12 text-right text-xs">{progress}%</span>
+          </div>
+          <p className="mt-2 text-xs text-zinc-600">
+            {progressMessage ||
+              (jobStatus === "pending"
+                ? "Queued for processing..."
+                : jobStatus === "processing"
+                ? "Processing..."
+                : jobStatus === "completed"
+                ? "Complete."
+                : jobStatus === "failed"
+                ? "Processing failed."
+                : "Waiting...")}
+          </p>
+          {errorMessage && (
+            <p className="mt-2 text-xs text-red-600">{errorMessage}</p>
+          )}
+        </div>
       )}
 
       <div className="space-y-3">

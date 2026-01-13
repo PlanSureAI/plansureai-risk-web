@@ -33,6 +33,12 @@ LANDTECH_API_KEY=...
 
 # App config
 NEXT_PUBLIC_APP_URL=https://plansure.ai
+
+# QStash document processing
+QSTASH_TOKEN=...
+QSTASH_CURRENT_SIGNING_KEY=...
+QSTASH_NEXT_SIGNING_KEY=...
+PROCESS_DOCUMENT_URL=https://www.plansureai.com/api/documents/process
 ```
 
 ## AI Gateway
@@ -113,6 +119,21 @@ Status codes:
 - `200`: Success
 - `400`: Invalid parameters (e.g., out-of-UK coordinates)
 - `504`: Upstream timeout (Planning Data API took >10s)
+
+## Document processing pipeline
+
+Planning documents are uploaded to Supabase Storage and processed asynchronously via QStash. The
+pipeline creates a `document_jobs` record, enqueues a worker job, and updates the job with
+progress plus the generated summary/analysis.
+
+Required runtime config:
+
+- `QSTASH_TOKEN`
+- `QSTASH_CURRENT_SIGNING_KEY`
+- `QSTASH_NEXT_SIGNING_KEY`
+- `PROCESS_DOCUMENT_URL`
+
+Migration required: `20260213002000_create_document_jobs.sql`
 
 Tier-1 default datasets:
 
