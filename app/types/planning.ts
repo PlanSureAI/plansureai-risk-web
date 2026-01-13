@@ -55,3 +55,19 @@ export interface PlanningDocumentAnalysis {
   recommendedActions: string[];
   timelineNotes: string | null;
 }
+
+export interface PlanningStructuredSummary {
+  headline: string | null;
+  risk_level: "LOW" | "MEDIUM" | "HIGH" | "EXTREME" | null;
+  key_issues: string[];
+  recommended_actions: string[];
+  timeline_notes: string[];
+  risk_issues?: Array<{
+    issue: string;
+    category: "planning" | "delivery" | "sales" | "cost" | "sponsor" | "energy" | "other";
+    probability: number;
+    impact: number;
+    owner?: string | null;
+    mitigation?: string | null;
+  }>;
+}

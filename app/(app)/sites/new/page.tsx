@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { SubmitButton } from "./SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,15 @@ export async function createSite(formData: FormData) {
   "use server";
 
   const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    console.error("Error loading user for site creation", userError);
+    redirect("/login?next=/sites/new");
+  }
 
   const site_name = (formData.get("site_name") as string | null)?.trim() || null;
   const address = (formData.get("address") as string | null)?.trim() || null;
@@ -19,17 +29,24 @@ export async function createSite(formData: FormData) {
     askingPriceRaw && askingPriceRaw.trim() !== ""
       ? Number(askingPriceRaw)
       : null;
+  const proposedUnitsRaw = formData.get("proposed_units") as string | null;
+  const proposed_units =
+    proposedUnitsRaw && proposedUnitsRaw.trim() !== ""
+      ? Number(proposedUnitsRaw)
+      : null;
   const notes = (formData.get("notes") as string | null)?.trim() || null;
 
   const { data, error } = await supabase
     .from("sites")
     .insert([
       {
+        user_id: user.id,
         site_name,
         address,
         local_planning_authority,
         status,
         asking_price,
+        proposed_units,
         planning_summary: notes,
       },
     ])
@@ -148,12 +165,7 @@ export default function NewSitePage() {
             </div>
 
             <div className="pt-2 flex items-center gap-3">
-              <button
-                type="submit"
-                className="inline-flex items-center rounded-full bg-black px-6 py-3 text-sm font-medium text-white hover:bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
-              >
-                Create and analyse
-              </button>
+              <SubmitButton />
               <a
                 href="/sites"
                 className="text-label underline underline-offset-4"

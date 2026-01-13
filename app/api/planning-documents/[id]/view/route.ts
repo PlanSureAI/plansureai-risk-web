@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 import type {
   PlanningDocumentAnalysis,
   PlanningDocumentSummary,
+  PlanningStructuredSummary,
 } from "@/app/types/planning";
 
 export async function GET(
@@ -80,10 +81,13 @@ function buildFeesView(summary: PlanningDocumentSummary) {
 async function buildAnalysisView(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   id: string
-): Promise<PlanningDocumentAnalysis | null> {
+): Promise<{
+  structuredSummary: PlanningStructuredSummary | null;
+  analysis: PlanningDocumentAnalysis | null;
+} | null> {
   const { data, error } = await supabase
     .from("planning_document_analyses")
-    .select("analysis_json")
+    .select("analysis_json, structured_summary")
     .eq("planning_document_id", id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -93,5 +97,10 @@ async function buildAnalysisView(
     return null;
   }
 
-  return data.analysis_json as PlanningDocumentAnalysis;
+  return {
+    structuredSummary: (data.structured_summary ?? null) as
+      | PlanningStructuredSummary
+      | null,
+    analysis: (data.analysis_json ?? null) as PlanningDocumentAnalysis | null,
+  };
 }

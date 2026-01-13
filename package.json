@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "build:scripts": "tsc -p tsconfig.scripts.json",
     "fetch:cornwall": "npm run build:scripts && node dist-scripts/fetch-cornwall.js",
     "fetch:birmingham": "npm run build:scripts && node dist-scripts/fetch-birmingham.js",
@@ -30,6 +31,7 @@
     "zod": "^4.1.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

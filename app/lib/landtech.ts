@@ -10,7 +10,8 @@ export async function getPlanningForPostcode(
   if (!trimmed) return [];
 
   if (!LANDTECH_API_KEY) {
-    throw new Error("LANDTECH_API_KEY is not configured");
+    console.warn("LandTech disabled: missing LANDTECH_API_KEY");
+    return [];
   }
 
   const res = await fetch(
