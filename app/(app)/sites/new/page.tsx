@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { SubmitButton } from "./SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -164,12 +165,7 @@ export default function NewSitePage() {
             </div>
 
             <div className="pt-2 flex items-center gap-3">
-              <button
-                type="submit"
-                className="inline-flex items-center rounded-full bg-black px-6 py-3 text-sm font-medium text-white hover:bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
-              >
-                Create and analyse
-              </button>
+              <SubmitButton />
               <a
                 href="/sites"
                 className="text-label underline underline-offset-4"
