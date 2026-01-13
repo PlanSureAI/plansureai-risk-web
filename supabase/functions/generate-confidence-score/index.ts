@@ -64,6 +64,10 @@ Return ONLY valid JSON in this exact format:
 
 Rules:
 - Be realistic and evidence-based
+- Use ONLY facts stated in the input fields above; do not infer or assume missing facts
+- If a fact is not provided, say "Not evidenced in provided inputs"
+- Do not add nearby features (railways, flood risk, heritage, highways) unless explicitly mentioned
+- If inputs are sparse, lower the score and make reasons about missing evidence
 - Use professional UK planning language
 - Do not speculate or guarantee outcomes
 - Keep each reason to one sentence
