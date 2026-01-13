@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "file and userId required" }, { status: 400 });
   }
   const siteId = formData.get("siteId") as string | null;
+  const focus = formData.get("focus") === "drawings" ? "drawings" : undefined;
 
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
@@ -63,7 +64,12 @@ export async function POST(req: NextRequest) {
     summary = await extractPlanningSummaryFromText(pdfText, file.name);
     analysisSourceText = pdfText;
   } else if (file.type.startsWith("image/")) {
-    summary = await extractPlanningSummaryFromImage(buffer, file.type, file.name);
+    summary = await extractPlanningSummaryFromImage(
+      buffer,
+      file.type,
+      file.name,
+      focus
+    );
   } else {
     return NextResponse.json(
       { error: "Unsupported file type. Upload a PDF, PNG, or JPG." },
@@ -103,7 +109,7 @@ export async function POST(req: NextRequest) {
   try {
     const analysis = analysisSourceText
       ? await extractPlanningAnalysisFromText(analysisSourceText, file.name)
-      : await extractPlanningAnalysisFromImage(buffer, file.type, file.name);
+      : await extractPlanningAnalysisFromImage(buffer, file.type, file.name, focus);
     const { error: analysisError } = await supabase
       .from("planning_document_analyses")
       .insert({

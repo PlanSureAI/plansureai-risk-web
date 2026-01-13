@@ -29,6 +29,7 @@ export default function PlanningDocumentsPanel({
   const [status, setStatus] = useState<UploadState>("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [drawingsFocus, setDrawingsFocus] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -48,6 +49,9 @@ export default function PlanningDocumentsPanel({
     formData.set("file", file);
     formData.set("userId", userId);
     formData.set("siteId", siteId);
+    if (drawingsFocus) {
+      formData.set("focus", "drawings");
+    }
 
     try {
       const res = await fetch("/api/upload-planning-pdf", {
@@ -120,6 +124,15 @@ export default function PlanningDocumentsPanel({
           PDF or image. Max 10 MB.
         </p>
       </form>
+      <label className="flex items-center gap-2 text-xs text-zinc-600">
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+          checked={drawingsFocus}
+          onChange={(event) => setDrawingsFocus(event.target.checked)}
+        />
+        Focus on drawings (elevations, heights, materials).
+      </label>
 
       {message && (
         <p

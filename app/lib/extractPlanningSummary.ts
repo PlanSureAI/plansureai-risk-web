@@ -66,10 +66,15 @@ ${text}
 `;
 }
 
-function buildImagePrompt(fileName: string): string {
+function buildImagePrompt(fileName: string, focus?: "drawings"): string {
+  const focusNote =
+    focus === "drawings"
+      ? "Prioritise elevations, heights, materials, fenestration, and architectural notes."
+      : "";
   return `
 You are looking at a planning drawing or plan sheet.
 Extract information that is explicitly visible in the drawing, title block, and annotations.
+${focusNote}
 Return JSON using the schema below.
 If a field is unknown or not present, use null or an empty array.
 Set "sourceFileName" to "${fileName}".
@@ -151,10 +156,11 @@ export async function extractPlanningSummaryFromText(
 export async function extractPlanningSummaryFromImage(
   buffer: Buffer,
   mimeType: string,
-  fileName: string
+  fileName: string,
+  focus?: "drawings"
 ): Promise<PlanningDocumentSummary> {
   const base64 = buffer.toString("base64");
-  const prompt = buildImagePrompt(fileName);
+  const prompt = buildImagePrompt(fileName, focus);
   const completion = await client.chat.completions.create({
     model: "gpt-4.1-mini",
     messages: [
