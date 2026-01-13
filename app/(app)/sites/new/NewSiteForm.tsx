@@ -36,6 +36,21 @@ export function NewSiteForm() {
         />
       </div>
 
+      <div>
+        <label className="block text-label">
+          Reference code <span className="text-zinc-500 font-normal">(optional)</span>
+        </label>
+        <input
+          type="text"
+          name="reference_code"
+          placeholder="e.g. 23/00123/FUL or internal ref"
+          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-body"
+        />
+        <p className="mt-1 text-xs text-zinc-600">
+          Planning application reference or internal tracking code
+        </p>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-3">
         <div>
           <label className="block text-label">Local planning authority</label>

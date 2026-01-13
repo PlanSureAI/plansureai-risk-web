@@ -29,6 +29,8 @@ export async function createSite(
 
   const site_name = (formData.get("site_name") as string | null)?.trim() || null;
   const address = (formData.get("address") as string | null)?.trim() || null;
+  const reference_code =
+    (formData.get("reference_code") as string | null)?.trim() || null;
   const local_planning_authority =
     (formData.get("local_planning_authority") as string | null)?.trim() || null;
   const status = (formData.get("status") as string | null)?.trim() || null;
@@ -57,6 +59,7 @@ export async function createSite(
         user_id: user.id,
         site_name,
         address,
+        reference_code,
         local_planning_authority,
         status,
         asking_price,
