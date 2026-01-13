@@ -8,8 +8,8 @@ import type { RiskLevel } from "@/lib/risk/types";
 type SiteRow = {
   id: string;
   site_name: string | null;
-  reference_code: string | null;
   address: string | null;
+  reference_code: string | null;
   local_planning_authority: string | null;
   status: string | null;
   planning_outcome: string | null;
@@ -64,8 +64,8 @@ async function getSites(): Promise<SiteRow[]> {
     .select(`
       id,
       site_name,
-      reference_code,
       address,
+      reference_code,
       local_planning_authority,
       status,
       planning_outcome,

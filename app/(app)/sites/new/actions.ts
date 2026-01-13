@@ -46,10 +46,14 @@ export async function createSite(
       : null;
   const notes = (formData.get("notes") as string | null)?.trim() || null;
 
-  if (!site_name || !address || !status) {
-    return {
-      error: "Please provide a site name, address, and status.",
-    };
+  if (!site_name) {
+    return { error: "Site name is required" };
+  }
+  if (!address) {
+    return { error: "Address is required" };
+  }
+  if (!status) {
+    return { error: "Status is required" };
   }
 
   const { data, error } = await supabase
@@ -73,7 +77,7 @@ export async function createSite(
   if (error || !data) {
     console.error("Error creating site", error);
     return {
-      error: "We couldn't create the site. Please try again.",
+      error: "Failed to create site. Please try again.",
     };
   }
 
