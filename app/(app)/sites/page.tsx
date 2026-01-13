@@ -8,6 +8,7 @@ import type { RiskLevel } from "@/lib/risk/types";
 type SiteRow = {
   id: string;
   site_name: string | null;
+  reference_code: string | null;
   address: string | null;
   local_planning_authority: string | null;
   status: string | null;
@@ -63,6 +64,7 @@ async function getSites(): Promise<SiteRow[]> {
     .select(`
       id,
       site_name,
+      reference_code,
       address,
       local_planning_authority,
       status,
@@ -118,6 +120,9 @@ export default async function SitesPage() {
                   Site
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Reference
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
                   Address
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
@@ -150,7 +155,7 @@ export default async function SitesPage() {
               {sites.length === 0 && (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={11}
                     className="px-4 py-6 text-center text-sm text-zinc-500"
                   >
                     No sites found yet.
@@ -164,6 +169,9 @@ export default async function SitesPage() {
                     <Link href={`/sites/${site.id}`} className="hover:underline">
                       {site.site_name || "Untitled site"}
                     </Link>
+                  </td>
+                  <td className="px-4 py-3 text-xs font-mono text-zinc-700">
+                    {site.reference_code || "—"}
                   </td>
                   <td className="px-4 py-3 text-zinc-700">
                     {site.address || "—"}
