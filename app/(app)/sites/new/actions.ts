@@ -1,5 +1,3 @@
-"use server";
-
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
@@ -16,6 +14,8 @@ export async function createSite(
   _prevState: CreateSiteState,
   formData: FormData
 ): Promise<CreateSiteState> {
+  "use server";
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
