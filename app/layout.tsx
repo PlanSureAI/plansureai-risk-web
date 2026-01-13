@@ -22,6 +22,7 @@ export default async function RootLayout({
     data: { session },
   } = await supabase.auth.getSession();
   const addSiteHref = session ? "/sites/new" : "/login?next=/sites/new";
+  const userLabel = session?.user?.email?.charAt(0)?.toUpperCase() ?? "U";
 
   return (
     <html lang="en">
@@ -89,7 +90,28 @@ export default async function RootLayout({
                   Dashboard
                 </Link>
                 {session ? (
-                  <SignOutButton />
+                  <details className="relative">
+                    <summary className="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-700 [&::-webkit-details-marker]:hidden">
+                      {userLabel}
+                    </summary>
+                    <div className="absolute right-0 z-20 mt-2 w-48 rounded-md border border-gray-200 bg-white py-2 shadow-lg">
+                      <Link
+                        href="/profile"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        Account
+                      </Link>
+                      <Link
+                        href="/how-it-works"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        Help
+                      </Link>
+                      <div className="px-4 py-2">
+                        <SignOutButton />
+                      </div>
+                    </div>
+                  </details>
                 ) : (
                   <Link
                     href="/login?next=/dashboard"

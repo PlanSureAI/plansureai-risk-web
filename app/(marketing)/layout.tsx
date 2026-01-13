@@ -66,8 +66,8 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
                     </Link>
                   </div>
                 </div>
-                <Link href="/dashboard" className="hover:text-zinc-900">
-                  Dashboard
+                <Link href="/pricing" className="hover:text-zinc-900">
+                  Pricing
                 </Link>
                 <Link
                   href="/login?next=/dashboard"
