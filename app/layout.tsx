@@ -21,6 +21,7 @@ export default async function RootLayout({
   const {
     data: { session },
   } = await supabase.auth.getSession();
+  const getStartedHref = session ? "/sites/new" : "/login?next=/sites/new";
 
   return (
     <html lang="en">
@@ -41,30 +42,62 @@ export default async function RootLayout({
 
               {/* Navigation Links */}
               <div className="flex items-center gap-6">
-                <Link href="/sites" className="text-sm text-gray-700 hover:text-blue-600 font-medium">
-                  Sites
-                </Link>
                 <Link
-                  href="/constraints"
+                  href={getStartedHref}
                   className="text-sm text-gray-700 hover:text-blue-600 font-medium"
                 >
-                  Constraints
+                  Getting started
                 </Link>
-                <Link
-                  href="/viability"
-                  className="text-sm text-gray-700 hover:text-blue-600 font-medium"
-                >
-                  Viability
-                </Link>
-                <Link
-                  href="/zero-bill-homes"
-                  className="text-sm text-gray-700 hover:text-blue-600 font-medium"
-                >
-                  Zero-Bill Homes
-                </Link>
-                <Link href="/epc" className="text-sm text-gray-700 hover:text-blue-600 font-medium">
-                  EPC explorer
-                </Link>
+                <div className="relative group">
+                  <button
+                    type="button"
+                    className="text-sm text-gray-700 hover:text-blue-600 font-medium"
+                  >
+                    Tools
+                  </button>
+                  <div className="absolute left-0 z-20 hidden w-52 rounded-md border border-gray-200 bg-white py-2 shadow-lg group-hover:block group-focus-within:block">
+                    <Link
+                      href="/sites"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Sites
+                    </Link>
+                    <Link
+                      href="/constraints"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Planning check
+                    </Link>
+                    <Link
+                      href="/viability"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Viability
+                    </Link>
+                    <Link
+                      href="/epc"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      EPC database
+                    </Link>
+                  </div>
+                </div>
+                <div className="relative group">
+                  <button
+                    type="button"
+                    className="text-sm text-gray-700 hover:text-blue-600 font-medium"
+                  >
+                    Solutions
+                  </button>
+                  <div className="absolute left-0 z-20 hidden w-52 rounded-md border border-gray-200 bg-white py-2 shadow-lg group-hover:block group-focus-within:block">
+                    <Link
+                      href="/zero-bill-homes"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      EPC A development
+                    </Link>
+                  </div>
+                </div>
                 <Link
                   href="/dashboard"
                   className="text-sm text-gray-700 hover:text-blue-600 font-medium"
