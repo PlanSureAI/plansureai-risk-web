@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import SitePlannerAssistant from "@/app/components/SitePlannerAssistant";
 
 type SummaryView = {
   title: string | null;
@@ -29,21 +28,12 @@ type FeesView = {
 };
 
 type AnalysisView = {
-  structuredSummary: {
-    headline: string | null;
-    risk_level: "LOW" | "MEDIUM" | "HIGH" | "EXTREME" | null;
-    key_issues: string[];
-    recommended_actions: string[];
-    timeline_notes: string[];
-  } | null;
-  analysis: {
-    headlineRisk: string | null;
-    riskLevel: "LOW" | "MEDIUM" | "HIGH" | "EXTREME" | null;
-    keyIssues: string[];
-    policyRefs: string[];
-    recommendedActions: string[];
-    timelineNotes: string | null;
-  } | null;
+  headlineRisk: string | null;
+  riskLevel: "LOW" | "MEDIUM" | "HIGH" | "EXTREME" | null;
+  keyIssues: string[];
+  policyRefs: string[];
+  recommendedActions: string[];
+  timelineNotes: string | null;
 };
 
 interface PlanningDocumentSummaryCardProps {
@@ -180,34 +170,12 @@ export function PlanningDocumentSummaryCard({
     );
   }
 
-  const structured = analysisView?.structuredSummary ?? null;
-  const legacy = analysisView?.analysis ?? null;
-  const riskLevel = structured?.risk_level ?? legacy?.riskLevel ?? null;
-  const headline = structured?.headline ?? legacy?.headlineRisk ?? null;
-  const keyIssues = structured?.key_issues ?? legacy?.keyIssues ?? [];
-  const recommendedActions =
-    structured?.recommended_actions ?? legacy?.recommendedActions ?? [];
-  const timelineNotes =
-    structured?.timeline_notes ??
-    (legacy?.timelineNotes ? [legacy.timelineNotes] : []);
-  const policyRefs = legacy?.policyRefs ?? [];
-
   return (
-    <div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-            Planning document
-          </p>
-          <h2 className="text-lg font-semibold text-zinc-900">
-            {summary.title ?? "Planning document"}
-          </h2>
-        </div>
-        {riskLevel && (
-          <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">
-            {riskLevel} risk
-          </span>
-        )}
+    <div className="space-y-4 rounded-lg border p-4">
+      <div>
+        <h2 className="text-lg font-semibold">
+          {summary.title ?? "Planning document"}
+        </h2>
       </div>
 
       <div
@@ -223,57 +191,21 @@ export function PlanningDocumentSummaryCard({
               <span className="text-xs font-semibold uppercase tracking-wide text-amber-900">
                 Planning risk
               </span>
-              {riskLevel && (
+              {analysisView.riskLevel && (
                 <span className="inline-flex rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-amber-900">
-                  {riskLevel}
+                  {analysisView.riskLevel}
                 </span>
               )}
             </div>
-            {headline && (
-              <p className="text-sm text-amber-900">{headline}</p>
+            {analysisView.headlineRisk && (
+              <p className="text-sm text-amber-900">{analysisView.headlineRisk}</p>
             )}
-            {keyIssues.length > 0 && (
+            {analysisView.keyIssues.length > 0 && (
               <ul className="list-disc space-y-1 pl-4 text-xs text-amber-900">
-                {keyIssues.slice(0, 4).map((issue) => (
+                {analysisView.keyIssues.slice(0, 4).map((issue) => (
                   <li key={issue}>{issue}</li>
                 ))}
               </ul>
-            )}
-            {policyRefs.length > 0 && (
-              <div className="flex flex-wrap gap-2 text-xs text-amber-900">
-                {policyRefs.slice(0, 4).map((policy) => (
-                  <span
-                    key={policy}
-                    className="inline-flex rounded-full border border-amber-200 bg-white px-2 py-0.5 font-semibold"
-                  >
-                    {policy}
-                  </span>
-                ))}
-              </div>
-            )}
-            {recommendedActions.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
-                  Suggested next steps
-                </p>
-                <ul className="mt-1 list-disc space-y-1 pl-4 text-xs text-amber-900">
-                  {recommendedActions.slice(0, 3).map((action) => (
-                    <li key={action}>{action}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {timelineNotes.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
-                  Timeline notes
-                </p>
-                <ul className="mt-1 list-disc space-y-1 pl-4 text-xs text-amber-800">
-                  {timelineNotes.slice(0, 3).map((note) => (
-                    <li key={note}>{note}</li>
-                  ))}
-                </ul>
-              </div>
             )}
           </div>
         ) : (
@@ -283,22 +215,20 @@ export function PlanningDocumentSummaryCard({
         )}
       </div>
 
-      <div className="space-y-1 text-sm text-zinc-800">
+      <div className="space-y-1">
         {summary.bullets.map((line) => (
-          <p key={line}>
+          <p key={line} className="text-sm text-gray-800">
             {line}
           </p>
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-2 border-t border-zinc-100 pt-3">
+      <div className="flex gap-2 border-t pt-3">
         <button
           type="button"
           onClick={() => handleTabChange("summary")}
-          className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-            activeTab === "summary"
-              ? "border-zinc-900 bg-zinc-900 text-white"
-              : "border-zinc-200 bg-white text-zinc-700"
+          className={`rounded border px-2 py-1 text-xs ${
+            activeTab === "summary" ? "bg-gray-900 text-white" : "bg-white"
           }`}
         >
           Summary
@@ -306,10 +236,8 @@ export function PlanningDocumentSummaryCard({
         <button
           type="button"
           onClick={() => handleTabChange("process")}
-          className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-            activeTab === "process"
-              ? "border-zinc-900 bg-zinc-900 text-white"
-              : "border-zinc-200 bg-white text-zinc-700"
+          className={`rounded border px-2 py-1 text-xs ${
+            activeTab === "process" ? "bg-gray-900 text-white" : "bg-white"
           }`}
         >
           Process & steps
@@ -317,23 +245,13 @@ export function PlanningDocumentSummaryCard({
         <button
           type="button"
           onClick={() => handleTabChange("fees")}
-          className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-            activeTab === "fees"
-              ? "border-zinc-900 bg-zinc-900 text-white"
-              : "border-zinc-200 bg-white text-zinc-700"
+          className={`rounded border px-2 py-1 text-xs ${
+            activeTab === "fees" ? "bg-gray-900 text-white" : "bg-white"
           }`}
         >
           Fees
         </button>
       </div>
-
-      {siteId && (
-        <SitePlannerAssistant
-          siteId={siteId}
-          documentId={documentId}
-          contextType="summary"
-        />
-      )}
 
       {activeTab === "process" && processView && (
         <div className="space-y-2 text-sm">

@@ -3,8 +3,6 @@ import { createClient } from "@supabase/supabase-js";
 import { extractPdfTextNode } from "@/app/lib/extractPdfText";
 import { extractPlanningSummaryFromText } from "@/app/lib/extractPlanningSummary";
 import { extractPlanningAnalysisFromText } from "@/app/lib/extractPlanningAnalysis";
-import { extractPlanningStructuredSummaryFromText } from "@/app/lib/extractPlanningStructuredSummary";
-import { buildRiskMatrixSnapshot } from "@/app/lib/risk/structuredRiskMatrix";
 import type { PlanningDocumentSummary } from "@/app/types/planning";
 
 export const runtime = "nodejs";
@@ -79,43 +77,13 @@ export async function POST(req: NextRequest) {
   let analysisStatus: "ready" | "error" = "ready";
   try {
     const analysis = await extractPlanningAnalysisFromText(pdfText, file.name);
-    let structuredSummary = null;
-    let riskMatrix = null;
-    let riskIndex = null;
-    let riskBand = null;
-    try {
-      structuredSummary = await extractPlanningStructuredSummaryFromText(
-        pdfText,
-        file.name
-      );
-      const matrixSnapshot = buildRiskMatrixSnapshot(structuredSummary);
-      riskMatrix = matrixSnapshot;
-      riskIndex = matrixSnapshot.riskIndex;
-      riskBand = matrixSnapshot.riskBand;
-    } catch (summaryErr) {
-      console.error("Failed to extract structured summary", summaryErr);
-    }
-    console.log("RISK DEBUG", {
-      riskMatrix,
-      riskIndex,
-      riskBand,
-    });
     const { error: analysisError } = await supabase
       .from("planning_document_analyses")
       .insert({
         planning_document_id: data.id,
         user_id: userId,
         analysis_json: analysis,
-        structured_summary: structuredSummary,
-        risk_matrix: riskMatrix,
-        risk_index: riskIndex,
-        risk_band: riskBand,
       });
-    if (analysisError) {
-      console.error("❌ ANALYSIS INSERT ERROR:", analysisError);
-    } else {
-      console.log("✅ ANALYSIS INSERT SUCCESS");
-    }
     if (analysisError) {
       analysisStatus = "error";
       console.error("Failed to store planning analysis", analysisError);
