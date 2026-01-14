@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { verifySignature } from "@upstash/qstash/nextjs";
+import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
 import { extractPdfTextNode } from "@/app/lib/extractPdfText";
 import {
   extractPlanningSummaryFromImage,
@@ -180,4 +180,4 @@ async function handler(req: NextRequest) {
   }
 }
 
-export const POST = verifySignature(handler);
+export const POST = verifySignatureAppRouter(handler);
