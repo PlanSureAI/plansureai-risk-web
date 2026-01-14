@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { SignOutButton } from "@/app/components/SignOutButton";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -125,6 +126,7 @@ export default async function RootLayout({
           </div>
         </nav>
         {children}
+        <Analytics />
       </body>
     </html>
   );
