@@ -180,4 +180,20 @@ async function handler(req: NextRequest) {
   }
 }
 
-export const POST = verifySignatureAppRouter(handler);
+const currentSigningKey = process.env.QSTASH_CURRENT_SIGNING_KEY;
+const nextSigningKey = process.env.QSTASH_NEXT_SIGNING_KEY;
+
+export const POST =
+  currentSigningKey && nextSigningKey
+    ? verifySignatureAppRouter(handler, {
+        currentSigningKey,
+        nextSigningKey,
+      })
+    : async () =>
+        NextResponse.json(
+          {
+            error: "QStash signing keys are missing.",
+            required: ["QSTASH_CURRENT_SIGNING_KEY", "QSTASH_NEXT_SIGNING_KEY"],
+          },
+          { status: 500 }
+        );
