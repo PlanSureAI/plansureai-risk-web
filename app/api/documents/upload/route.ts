@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       user_id: user.id,
       site_id: siteId,
       storage_path: storageData.path,
-      file_name: file.name,
+      filename: file.name,
       file_size: file.size,
       mime_type: file.type,
       status: "pending",

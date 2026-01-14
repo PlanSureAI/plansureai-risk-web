@@ -80,6 +80,7 @@ async function handler(req: NextRequest) {
       progress_message: "Extracting planning summary",
     });
 
+    const fileName = job.filename ?? job.file_name ?? "planning-document";
     let summary;
     let analysisSourceText: string | null = null;
 
@@ -88,13 +89,13 @@ async function handler(req: NextRequest) {
       if (pdfText.trim().length < 50) {
         throw new Error("PDF looks image-only. Upload a PNG or JPG version.");
       }
-      summary = await extractPlanningSummaryFromText(pdfText, job.file_name);
+      summary = await extractPlanningSummaryFromText(pdfText, fileName);
       analysisSourceText = pdfText;
     } else if (job.mime_type?.startsWith("image/")) {
       summary = await extractPlanningSummaryFromImage(
         buffer,
         job.mime_type,
-        job.file_name,
+        fileName,
         focus ?? undefined
       );
     } else {
@@ -107,7 +108,7 @@ async function handler(req: NextRequest) {
         user_id: job.user_id,
         site_id: job.site_id,
         storage_path: job.storage_path,
-        file_name: job.file_name,
+        file_name: fileName,
         summary_json: summary,
       })
       .select("id")
@@ -126,11 +127,11 @@ async function handler(req: NextRequest) {
     let analysisStatus: "ready" | "error" = "ready";
     try {
       const analysis = analysisSourceText
-        ? await extractPlanningAnalysisFromText(analysisSourceText, job.file_name)
+        ? await extractPlanningAnalysisFromText(analysisSourceText, fileName)
         : await extractPlanningAnalysisFromImage(
             buffer,
             job.mime_type,
-            job.file_name,
+            fileName,
             focus ?? undefined
           );
 
