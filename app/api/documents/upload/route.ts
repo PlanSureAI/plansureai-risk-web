@@ -110,13 +110,22 @@ export async function POST(request: NextRequest) {
 
     const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
 
+    const processUrl =
+      process.env.PROCESS_DOCUMENT_URL ||
+      (process.env.NEXT_PUBLIC_APP_URL
+        ? `${process.env.NEXT_PUBLIC_APP_URL}/api/documents/process`
+        : "");
+
+    if (!processUrl) {
+      return NextResponse.json(
+        { error: "PROCESS_DOCUMENT_URL is not configured" },
+        { status: 500 }
+      );
+    }
+
     try {
       await qstash.publishJSON({
-        api: {
-          name: "documents-processor",
-          baseUrl:
-            process.env.PROCESS_DOCUMENT_URL || process.env.NEXT_PUBLIC_APP_URL,
-        },
+        url: processUrl,
         body: {
           documentId,
           fileUrl,
