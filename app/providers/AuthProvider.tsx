@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { Session } from '@supabase/supabase-js';
+import type { Session } from 'next-auth';
 import { useAuth } from '@/app/hooks/useAuth';
 
 interface AuthContextType {
@@ -15,9 +15,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const auth = useAuth();
+  const contextValue: AuthContextType = {
+    session: auth.session ?? null,
+    loading: auth.isLoading,
+    user: auth.session?.user ?? null,
+    signOut: auth.logout,
+  };
 
   return (
-    <AuthContext.Provider value={auth}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
