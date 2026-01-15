@@ -39,24 +39,29 @@ export function UploadStatusMonitor({
     fetchDocuments();
 
     // Subscribe to real-time updates
-    const subscription = supabase
-      .from('documents')
-      .on('*', (payload) => {
-        if (payload.new.site_id === siteId) {
+    const channel = supabase
+      .channel(`documents-site-${siteId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'documents', filter: `site_id=eq.${siteId}` },
+        (payload) => {
+          const record = payload.new as Record<string, any> | null;
+          if (!record) return;
+
           const updatedDoc: DocumentStatus = {
-            id: payload.new.id,
-            fileName: payload.new.file_name,
-            fileSize: payload.new.file_size,
-            status: payload.new.status,
-            riskScore: payload.new.extracted_info?.riskScore,
-            riskFactors: payload.new.risk_factors,
-            errorMessage: payload.new.error_message,
-            createdAt: payload.new.created_at,
-            processedAt: payload.new.processed_at,
+            id: record.id,
+            fileName: record.file_name,
+            fileSize: record.file_size,
+            status: record.status,
+            riskScore: record.extracted_info?.riskScore,
+            riskFactors: record.risk_factors,
+            errorMessage: record.error_message,
+            createdAt: record.created_at,
+            processedAt: record.processed_at,
           };
 
           setDocuments((prev) => {
-            const existing = prev.findIndex((d) => d.id === payload.new.id);
+            const existing = prev.findIndex((d) => d.id === record.id);
             if (existing >= 0) {
               const updated = [...prev];
               updated[existing] = updatedDoc;
@@ -67,11 +72,11 @@ export function UploadStatusMonitor({
 
           onStatusChange?.(updatedDoc);
         }
-      })
+      )
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      void supabase.removeChannel(channel);
     };
   }, [siteId, onStatusChange]);
 
