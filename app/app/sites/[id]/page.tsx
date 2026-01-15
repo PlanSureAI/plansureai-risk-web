@@ -58,7 +58,7 @@ export default function SiteDetailPage() {
 
   const fetchSiteDetail = async () => {
     try {
-      const response = await apiClient.get(`/api/sites/${params.id}`);
+      const response = await apiClient.get<SiteDetail>(`/api/sites/${params.id}`);
       setSite(response.data);
     } catch (error) {
       console.error('Failed to fetch site:', error);
