@@ -24,7 +24,10 @@ async function main() {
     path.join(rawDir, "conservation-area.csv"),
     "utf8"
   );
-  const conservationRows = parse(conservationCsv, { columns: true });
+  const conservationRows = parse(conservationCsv, { columns: true }) as Record<
+    string,
+    any
+  >[];
 
   for (const row of conservationRows) {
     // Filter for Birmingham only
@@ -53,7 +56,7 @@ async function main() {
     path.join(rawDir, "listed-building-outline.csv"),
     "utf8"
   );
-  const listedRows = parse(listedCsv, { columns: true });
+  const listedRows = parse(listedCsv, { columns: true }) as Record<string, any>[];
 
   for (const row of listedRows) {
     if (
@@ -81,7 +84,10 @@ async function main() {
     path.join(rawDir, "article-4-direction-area.csv"),
     "utf8"
   );
-  const article4Rows = parse(article4Csv, { columns: true });
+  const article4Rows = parse(article4Csv, { columns: true }) as Record<
+    string,
+    any
+  >[];
 
   for (const row of article4Rows) {
     if (
