@@ -4,7 +4,7 @@ import { RiskAssessment } from "@/app/types";
 import { cn } from "@/app/lib/utils";
 
 interface RiskScoreCardProps {
-  assessment: RiskAssessment;
+  assessment?: RiskAssessment | null;
   loading?: boolean;
 }
 
@@ -35,7 +35,7 @@ export function RiskScoreCard({ assessment, loading }: RiskScoreCardProps) {
     }
   };
 
-  if (loading) {
+  if (loading || !assessment) {
     return (
       <div className="animate-pulse">
         <div className="h-48 bg-gray-200 rounded-lg"></div>

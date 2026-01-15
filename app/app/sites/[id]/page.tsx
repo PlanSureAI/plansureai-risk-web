@@ -5,6 +5,7 @@ import { MainLayout } from '@/app/components/MainLayout';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuthContext } from '@/app/providers/AuthProvider';
 import { RiskScoreCard } from '@/app/components/RiskScoreCard';
+import type { RiskAssessment } from '@/app/types';
 import { ShareLinkGenerator } from '@/app/components/ShareLinkGenerator';
 import { PreAppPackViewer } from '@/app/components/PreAppPackViewer';
 import { DocumentUpload } from '@/app/components/DocumentUpload';
@@ -31,6 +32,7 @@ interface SiteDetail {
   units: number;
   risk_score: number;
   risk_factors: string[];
+  risk_assessment?: RiskAssessment | null;
   documents_count: number;
   created_at: string;
   updated_at: string;
@@ -176,7 +178,7 @@ export default function SiteDetailPage() {
 
             {/* Sidebar */}
             <div>
-              <RiskScoreCard siteId={site.id} score={site.risk_score} />
+              <RiskScoreCard assessment={site.risk_assessment ?? null} />
             </div>
           </div>
         )}
