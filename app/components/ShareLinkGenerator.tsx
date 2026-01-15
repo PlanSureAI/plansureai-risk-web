@@ -96,7 +96,7 @@ export function ShareLinkGenerator({ siteId }: ShareLinkGeneratorProps) {
           </div>
 
           <div className="text-sm text-gray-600">
-            <p>Link expires: {new Date(share.expiresAt).toLocaleDateString()}</p>
+            <p>Link expires: {new Date(share.expires_at).toLocaleDateString()}</p>
           </div>
 
           <button
