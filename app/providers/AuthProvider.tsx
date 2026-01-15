@@ -19,7 +19,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session: auth.session ?? null,
     loading: auth.isLoading,
     user: auth.session?.user ?? null,
-    signOut: auth.logout,
+    signOut: async () => {
+      await auth.logout();
+    },
   };
 
   return (
