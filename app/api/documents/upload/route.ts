@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import * as pdf from "pdf-parse";
+import pdf from "pdf-parse";
 import { Client } from "@upstash/qstash";
 
 export async function POST(request: NextRequest) {
