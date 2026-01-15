@@ -1,17 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { verifySignature } from "@upstash/qstash/nextjs";
+import { Receiver } from "@upstash/qstash";
 import { supabaseAdmin } from "@/app/lib/supabase";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+const currentSigningKey = process.env.QSTASH_CURRENT_SIGNING_KEY;
+const nextSigningKey = process.env.QSTASH_NEXT_SIGNING_KEY ?? currentSigningKey;
+
+if (!currentSigningKey || !nextSigningKey) {
+  throw new Error("QStash signing keys are required");
+}
+
+const receiver = new Receiver({
+  currentSigningKey,
+  nextSigningKey,
+});
+
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
-    const isValid = await verifySignature({
-      signature: request.headers.get("upstash-signature") || "",
+    const signature = request.headers.get("upstash-signature");
+
+    if (!signature) {
+      return NextResponse.json(
+        { error: "Missing signature" },
+        { status: 401 }
+      );
+    }
+
+    const isValid = await receiver.verify({
+      signature,
       body: rawBody,
     });
 
