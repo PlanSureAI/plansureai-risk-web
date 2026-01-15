@@ -61,6 +61,7 @@ export interface PlanningApproval {
   site_name: string;
   latitude: number;
   longitude: number;
+  distance_km: number;
   status: "approved" | "refused" | "pending";
   units: number;
   approval_date: string;
