@@ -116,6 +116,7 @@ export interface PreAppPack {
     likely_conditions: string[];
     information_required: string[];
     estimated_timeline: string;
+    key_policy_references: string[];
   };
   generated_at: string;
   status: "draft" | "ready" | "archived";
