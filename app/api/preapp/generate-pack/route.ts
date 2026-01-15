@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/app/lib/supabase";
-import { Client as AnthropicClient } from "@anthropic-ai/sdk";
+import Anthropic from "@anthropic-ai/sdk";
 
-const anthropic = new AnthropicClient({
+const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
 async function generatePackContent(
   site: any,
-  client: AnthropicClient
+  client: Anthropic
 ): Promise<PreAppContent> {
   const constraints = site.planning_constraints
     ?.map((c: any) => `${c.type}: ${c.description}`)

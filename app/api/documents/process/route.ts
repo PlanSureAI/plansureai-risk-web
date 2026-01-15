@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Anthropic } from "@anthropic-ai/sdk";
+import Anthropic from "@anthropic-ai/sdk";
 import { verifySignature } from "@upstash/qstash/nextjs";
 import { supabaseAdmin } from "@/app/lib/supabase";
 

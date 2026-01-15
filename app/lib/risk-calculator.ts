@@ -1,7 +1,7 @@
-import { Client as AnthropicClient } from "@anthropic-ai/sdk";
+import Anthropic from "@anthropic-ai/sdk";
 import { RiskAssessment } from "@/app/types";
 
-const anthropic = new AnthropicClient({
+const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
