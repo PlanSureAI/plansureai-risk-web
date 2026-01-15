@@ -1,200 +1,159 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
-import { extractPdfTextNode } from "@/app/lib/extractPdfText";
-import {
-  extractPlanningSummaryFromImage,
-  extractPlanningSummaryFromText,
-} from "@/app/lib/extractPlanningSummary";
-import {
-  extractPlanningAnalysisFromImage,
-  extractPlanningAnalysisFromText,
-} from "@/app/lib/extractPlanningAnalysis";
+import { Anthropic } from "@anthropic-ai/sdk";
+import { verifySignature } from "@upstash/qstash/nextjs";
+import { supabaseAdmin } from "@/app/lib/supabase";
 
-export const runtime = "nodejs";
-export const maxDuration = 300;
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    throw new Error("Supabase service credentials missing");
-  }
-  return createClient(url, key);
-}
-
-async function updateJob(
-  supabase: ReturnType<typeof getSupabaseAdmin>,
-  jobId: string,
-  updates: Record<string, unknown>
-) {
-  await supabase
-    .from("document_jobs")
-    .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq("id", jobId);
-}
-
-async function handler(req: NextRequest) {
-  const { jobId, focus } = (await req.json()) as {
-    jobId?: string;
-    focus?: "drawings" | null;
-  };
-
-  if (!jobId) {
-    return NextResponse.json({ error: "Missing jobId" }, { status: 400 });
-  }
-
-  const supabase = getSupabaseAdmin();
-  const { data: job, error: jobError } = await supabase
-    .from("document_jobs")
-    .select("*")
-    .eq("id", jobId)
-    .single();
-
-  if (jobError || !job) {
-    return NextResponse.json({ error: "Job not found" }, { status: 404 });
-  }
-
+export async function POST(request: NextRequest) {
   try {
-    await updateJob(supabase, jobId, {
-      status: "processing",
-      progress: 10,
-      progress_message: "Downloading document",
-      started_at: new Date().toISOString(),
-      attempts: (job.attempts ?? 0) + 1,
+    const rawBody = await request.text();
+    const isValid = await verifySignature({
+      signature: request.headers.get("upstash-signature") || "",
+      body: rawBody,
     });
 
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from("planning-pdfs")
-      .download(job.storage_path);
-
-    if (downloadError || !fileData) {
-      throw new Error(downloadError?.message ?? "Failed to download file");
+    if (!isValid) {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
-    const arrayBuffer = await fileData.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    /**
+     * Webhook handler for async document processing (QStash)
+     *
+     * Uses supabaseAdmin (bypasses RLS) because:
+     * - Webhook is a service-to-service operation, not user-initiated
+     * - Needs to update documents/sites regardless of RLS policies
+     * - Service role key ensures operation succeeds even if user deleted
+     * - Signature verification proves this is a legitimate QStash call
+     *
+     * Security: Signature verified first, then admin query performed
+     */
+    const requestBody = JSON.parse(rawBody);
+    const { documentId, fileUrl, siteId, userId, fileName, pdfText } =
+      requestBody;
 
-    await updateJob(supabase, jobId, {
-      progress: 35,
-      progress_message: "Extracting planning summary",
-    });
-
-    const fileName = job.filename ?? job.file_name ?? "planning-document";
-    let summary;
-    let analysisSourceText: string | null = null;
-
-    if (job.mime_type === "application/pdf") {
-      const pdfText = await extractPdfTextNode(buffer);
-      if (pdfText.trim().length < 50) {
-        throw new Error("PDF looks image-only. Upload a PNG or JPG version.");
-      }
-      summary = await extractPlanningSummaryFromText(pdfText, fileName);
-      analysisSourceText = pdfText;
-    } else if (job.mime_type?.startsWith("image/")) {
-      summary = await extractPlanningSummaryFromImage(
-        buffer,
-        job.mime_type,
-        fileName,
-        focus ?? undefined
+    if (!documentId || !fileUrl || !siteId || !userId) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
       );
-    } else {
-      throw new Error("Unsupported file type");
     }
 
-    const { data: planningDoc, error: planningDocError } = await supabase
-      .from("planning_documents")
-      .insert({
-        user_id: job.user_id,
-        site_id: job.site_id,
-        storage_path: job.storage_path,
-        file_name: fileName,
-        summary_json: summary,
-      })
-      .select("id")
+    const { data: site, error: siteError } = await supabaseAdmin
+      .from("sites")
+      .select("*")
+      .eq("id", siteId)
       .single();
 
-    if (planningDocError || !planningDoc) {
-      throw new Error(planningDocError?.message ?? "Failed to store summary");
+    if (siteError || !site) {
+      await updateDocumentStatus(
+        supabaseAdmin,
+        documentId,
+        "failed",
+        "Site not found"
+      );
+      return NextResponse.json({ error: "Site not found" }, { status: 404 });
     }
 
-    await updateJob(supabase, jobId, {
-      progress: 70,
-      progress_message: "Generating planning analysis",
-      planning_document_id: planningDoc.id,
-    });
+    let extractedInfo: Record<string, any> = {};
+    let riskFactors: string[] = [];
 
-    let analysisStatus: "ready" | "error" = "ready";
     try {
-      const analysis = analysisSourceText
-        ? await extractPlanningAnalysisFromText(analysisSourceText, fileName)
-        : await extractPlanningAnalysisFromImage(
-            buffer,
-            job.mime_type,
-            fileName,
-            focus ?? undefined
-          );
-
-      const { error: analysisError } = await supabase
-        .from("planning_document_analyses")
-        .insert({
-          planning_document_id: planningDoc.id,
-          user_id: job.user_id,
-          analysis_json: analysis,
-        });
-
-      if (analysisError) {
-        analysisStatus = "error";
-        await updateJob(supabase, jobId, {
-          error_message: analysisError.message,
-        });
-      }
-    } catch (analysisErr) {
-      analysisStatus = "error";
-      await updateJob(supabase, jobId, {
-        error_message: analysisErr instanceof Error ? analysisErr.message : "Analysis failed",
+      const message = await anthropic.messages.create({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 1024,
+        messages: [
+          {
+            role: "user",
+            content: `You are a planning risk assessment expert. Analyze this planning document for the site: ${site.name} (${site.reference})\n\nDocument: ${pdfText}\n\nExtract:\n1. Key findings (2-3 bullet points)\n2. Top 3 risk factors (most critical first)\n3. Planning risks (0-100 score, where 0 is no risk, 100 is very high risk)\n\nRespond in JSON: { \"keyFindings\": [...], \"riskFactors\": [...], \"riskScore\": number }`,
+          },
+        ],
       });
+
+      const responseText =
+        message.content[0]?.type === "text" ? message.content[0].text : "";
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+
+      if (jsonMatch) {
+        extractedInfo = JSON.parse(jsonMatch[0]);
+        riskFactors = extractedInfo.riskFactors || [];
+      }
+    } catch (claudeError) {
+      console.error("Claude analysis error:", claudeError);
+      riskFactors = ["Unable to analyze document"];
     }
 
-    await updateJob(supabase, jobId, {
-      status: "completed",
-      progress: 100,
-      progress_message:
-        analysisStatus === "ready" ? "Analysis complete" : "Summary ready",
-      analysis_status: analysisStatus,
-      completed_at: new Date().toISOString(),
-    });
+    const { error: updateError } = await supabaseAdmin
+      .from("documents")
+      .update({
+        status: "processed",
+        extracted_text: pdfText,
+        extracted_info: extractedInfo,
+        risk_factors: riskFactors,
+        processed_at: new Date().toISOString(),
+      })
+      .eq("id", documentId);
 
-    return NextResponse.json({ ok: true });
+    if (updateError) {
+      console.error("Database update error:", updateError);
+      await updateDocumentStatus(
+        supabaseAdmin,
+        documentId,
+        "failed",
+        "Failed to save extracted data"
+      );
+      return NextResponse.json(
+        { error: "Failed to save extracted data" },
+        { status: 500 }
+      );
+    }
+
+    if (extractedInfo.riskScore) {
+      const currentRiskScore = site.risk_score || 0;
+      const newRiskScore = Math.max(currentRiskScore, extractedInfo.riskScore);
+
+      await supabaseAdmin
+        .from("sites")
+        .update({
+          risk_score: newRiskScore,
+          risk_factors: Array.from(
+            new Set([...(site.risk_factors || []), ...riskFactors])
+          ).slice(0, 10),
+          documents_count: (site.documents_count || 0) + 1,
+        })
+        .eq("id", siteId);
+    }
+
+    return NextResponse.json(
+      {
+        message: "Document processed successfully",
+        documentId,
+        riskFactors,
+        riskScore: extractedInfo.riskScore,
+      },
+      { status: 200 }
+    );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Processing failed";
-    await updateJob(supabase, jobId, {
-      status: "failed",
-      progress: 100,
-      progress_message: "Processing failed",
-      error_message: message,
-      analysis_status: "error",
-      completed_at: new Date().toISOString(),
-    });
-
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Process error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
-const currentSigningKey = process.env.QSTASH_CURRENT_SIGNING_KEY;
-const nextSigningKey = process.env.QSTASH_NEXT_SIGNING_KEY;
+async function updateDocumentStatus(
+  supabase: any,
+  documentId: string,
+  status: string,
+  errorMessage?: string
+) {
+  const updateData: Record<string, any> = { status };
+  if (errorMessage) {
+    updateData.error_message = errorMessage;
+  }
 
-export const POST =
-  currentSigningKey && nextSigningKey
-    ? verifySignatureAppRouter(handler, {
-        currentSigningKey,
-        nextSigningKey,
-      })
-    : async () =>
-        NextResponse.json(
-          {
-            error: "QStash signing keys are missing.",
-            required: ["QSTASH_CURRENT_SIGNING_KEY", "QSTASH_NEXT_SIGNING_KEY"],
-          },
-          { status: 500 }
-        );
+  await supabase.from("documents").update(updateData).eq("id", documentId);
+}

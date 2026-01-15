@@ -1,0 +1,4 @@
+authority,reference,address,postcode,description,units,decision,submitted_date,decision_date,planning_portal_url,refusal_reasons
+Cornwall,PA23/01234,"Land North East of Steephurst, Nansmellyon Road, Mullion",TR12 7HB,"Erection of 6 dwellings",6,approved,2023-03-15,2023-08-22,https://planning.cornwall.gov.uk/online-applications/applicationDetails.do?activeTab=summary&keyVal=ABC123,
+Birmingham,2023/12345,"123 High Street, Edgbaston, Birmingham",B15 2TU,"Residential development of 8 apartments",8,refused,2023-06-10,2023-11-15,https://eplanning.birmingham.gov.uk/Northgate/PlanningExplorer/Generic/StdDetails.aspx?PT=Planning%20Applications&TYPE=PL/PlanningPK&PARAM=123456,"Overdevelopment; Insufficient parking; Impact on conservation area"
+Leeds,22/09876,"45 Kirkstall Road, Leeds",LS4 2AE,"Demolition and erection of 4 houses",4,approved,2022-11-20,2023-03-14,https://publicaccess.leeds.gov.uk/online-applications/applicationDetails.do?activeTab=summary&keyVal=ABC123,

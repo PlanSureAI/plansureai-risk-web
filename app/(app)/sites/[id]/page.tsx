@@ -13,6 +13,8 @@ import { getNextMove, getFrictionHint, type NextMove } from "@/app/types/siteFin
 import { BrokerSendForm } from "./BrokerSendForm";
 import { getPlanningForPostcode, type LandTechPlanningApplication } from "@/app/lib/landtech";
 import PlanningDocumentsPanel from "./PlanningDocumentsPanel";
+import { PlanningRiskCard } from "./PlanningRiskCard";
+import { ComparableApprovalsMap } from "./ComparableApprovalsMap";
 
 type Site = {
   id: string;
@@ -564,6 +566,15 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             </p>
           </div>
         </section>
+
+        <PlanningRiskCard siteId={site.id} />
+
+        <ComparableApprovalsMap
+          site={{
+            id: site.id,
+            address: site.address,
+          }}
+        />
 
         {planningApplications.length > 0 && (
           <section className="rounded-xl border border-zinc-200 bg-white p-4">

@@ -2,6 +2,7 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import Image from "next/image";
+import { Analytics } from "@vercel/analytics/next";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { SignOutButton } from "@/app/components/SignOutButton";
 
@@ -125,6 +126,7 @@ export default async function RootLayout({
           </div>
         </nav>
         {children}
+        <Analytics />
       </body>
     </html>
   );

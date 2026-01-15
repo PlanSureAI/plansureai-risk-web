@@ -1,99 +1,161 @@
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import * as pdf from "pdf-parse";
 import { Client } from "@upstash/qstash";
 
-export const runtime = "nodejs";
+export async function POST(request: NextRequest) {
+  try {
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get: (name: string) => cookieStore.get(name)?.value,
+          set: (name: string, value: string, options: any) => {
+            cookieStore.set(name, value, options);
+          },
+          remove: (name: string, options: any) => {
+            cookieStore.delete(name);
+          },
+        },
+      }
+    );
 
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    throw new Error("Supabase service credentials missing");
-  }
-  return createClient(url, key);
-}
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-export async function POST(req: NextRequest) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  if (userError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+    const formData = await request.formData();
+    const file = formData.get("file") as File;
+    const siteId = formData.get("siteId") as string;
 
-  const formData = await req.formData();
-  const file = formData.get("file") as File | null;
-  const siteId = (formData.get("siteId") as string | null) ?? null;
-  const focus = formData.get("focus") === "drawings" ? "drawings" : null;
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
 
-  if (!file) {
-    return NextResponse.json({ error: "No file provided" }, { status: 400 });
-  }
+    if (!siteId) {
+      return NextResponse.json({ error: "No siteId provided" }, { status: 400 });
+    }
 
-  const admin = getSupabaseAdmin();
+    if (!file.type.includes("pdf")) {
+      return NextResponse.json(
+        { error: "Only PDF files are supported" },
+        { status: 400 }
+      );
+    }
 
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  const path = `${user.id}/${Date.now()}-${file.name}`;
+    const buffer = await file.arrayBuffer();
 
-  const { data: storageData, error: storageError } = await admin.storage
-    .from("planning-pdfs")
-    .upload(path, buffer, {
-      contentType: file.type || "application/pdf",
-      upsert: false,
-    });
+    let pdfText = "";
+    try {
+      const data = await pdf(Buffer.from(buffer));
+      pdfText = data.text;
+    } catch (error) {
+      console.error("PDF parsing error:", error);
+      return NextResponse.json(
+        { error: "Failed to parse PDF" },
+        { status: 400 }
+      );
+    }
 
-  if (storageError || !storageData?.path) {
+    const fileName = `${siteId}/${Date.now()}-${file.name}`;
+    const { error: storageError } = await supabase.storage
+      .from("documents")
+      .upload(fileName, buffer, {
+        contentType: "application/pdf",
+      });
+
+    if (storageError) {
+      console.error("Storage upload error:", storageError);
+      return NextResponse.json(
+        { error: "Failed to upload file" },
+        { status: 500 }
+      );
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("documents")
+      .getPublicUrl(fileName);
+    const fileUrl = urlData.publicUrl;
+
+    const { data: documentData, error: dbError } = await supabase
+      .from("documents")
+      .insert({
+        site_id: siteId,
+        user_id: session.user.id,
+        file_name: file.name,
+        file_url: fileUrl,
+        file_size: file.size,
+        status: "processing",
+        content_preview: pdfText.substring(0, 1000),
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error("Database insert error:", dbError);
+      return NextResponse.json(
+        { error: "Failed to create document record" },
+        { status: 500 }
+      );
+    }
+
+    const documentId = documentData.id;
+
+    const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
+
+    try {
+      await qstash.publishJSON({
+        api: {
+          name: "documents-processor",
+          baseUrl:
+            process.env.PROCESS_DOCUMENT_URL || process.env.NEXT_PUBLIC_APP_URL,
+        },
+        body: {
+          documentId,
+          fileUrl,
+          siteId,
+          userId: session.user.id,
+          fileName: file.name,
+          pdfText,
+        },
+      });
+    } catch (qstashError) {
+      console.error("QStash publish error:", qstashError);
+
+      await supabase
+        .from("documents")
+        .update({ status: "failed", error_message: "Failed to queue processing" })
+        .eq("id", documentId);
+
+      return NextResponse.json(
+        {
+          documentId,
+          message:
+            "File uploaded but processing queue failed. Please retry.",
+        },
+        { status: 202 }
+      );
+    }
+
     return NextResponse.json(
-      { error: storageError?.message ?? "Upload failed" },
+      {
+        documentId,
+        message: "File uploaded successfully and queued for processing",
+      },
+      { status: 202 }
+    );
+  } catch (error) {
+    console.error("Upload error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
-
-  const { data: job, error: jobError } = await admin
-    .from("document_jobs")
-    .insert({
-      user_id: user.id,
-      site_id: siteId,
-      storage_path: storageData.path,
-      filename: file.name,
-      file_size: file.size,
-      mime_type: file.type,
-      status: "pending",
-      progress: 0,
-      progress_message: "Queued for processing",
-      analysis_status: "pending",
-      updated_at: new Date().toISOString(),
-    })
-    .select("id")
-    .single();
-
-  if (jobError || !job) {
-    return NextResponse.json(
-      { error: jobError?.message ?? "Job creation failed" },
-      { status: 500 }
-    );
-  }
-
-  const qstashToken = process.env.QSTASH_TOKEN;
-  const processUrl = process.env.PROCESS_DOCUMENT_URL;
-  if (!qstashToken || !processUrl) {
-    return NextResponse.json(
-      { error: "QStash not configured" },
-      { status: 500 }
-    );
-  }
-
-  const client = new Client({ token: qstashToken });
-  await client.publishJSON({
-    url: processUrl,
-    body: { jobId: job.id, focus },
-    retries: 3,
-  });
-
-  return NextResponse.json({ jobId: job.id, status: "pending" });
 }

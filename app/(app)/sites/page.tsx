@@ -15,7 +15,8 @@ type SiteRow = {
   planning_outcome: string | null;
   planning_summary: string | null;
   ai_outcome: string | null;
-  risk_level: RiskLevel | null;
+  risk_score: number | null;
+  risk_level: string | null;
   risk_profile: {
     overallRiskScore?: number;
     riskLevel?: RiskLevel;
@@ -58,6 +59,27 @@ function getHeadlineFundingStatus(results: SiteRow["eligibility_results"]): stri
   return `${prefix}: ${r.status}`;
 }
 
+function planningRiskBadge(level: string, score: number) {
+  const normalized = level.toLowerCase();
+  const classes =
+    normalized === "low"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      : normalized === "medium"
+        ? "border-amber-200 bg-amber-50 text-amber-800"
+        : normalized === "high"
+          ? "border-orange-200 bg-orange-50 text-orange-800"
+          : "border-rose-200 bg-rose-50 text-rose-800";
+
+  return (
+    <span
+      className={`inline-flex items-center gap-2 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${classes}`}
+    >
+      {score}
+      <span className="uppercase">{level}</span>
+    </span>
+  );
+}
+
 async function getSites(): Promise<SiteRow[]> {
   const { data, error } = await supabase
     .from("sites")
@@ -72,6 +94,7 @@ async function getSites(): Promise<SiteRow[]> {
       planning_summary,
       ai_outcome,
       eligibility_results,
+      risk_score,
       risk_level,
       risk_profile,
       last_assessed_at
@@ -185,11 +208,15 @@ export default async function SitesPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs">
-                    {(site.risk_profile?.overallRiskScore != null &&
-                      (site.risk_profile?.riskLevel || site.risk_level)) ? (
+                    {site.risk_score != null && site.risk_level ? (
+                      <Link href={`/sites/${site.id}`} className="inline-flex">
+                        {planningRiskBadge(site.risk_level, site.risk_score)}
+                      </Link>
+                    ) : site.risk_profile?.overallRiskScore != null &&
+                      site.risk_profile?.riskLevel ? (
                       <Link href={`/sites/${site.id}/risk`} className="inline-flex">
                         <RiskBadge
-                          riskLevel={(site.risk_profile?.riskLevel ?? site.risk_level) as RiskLevel}
+                          riskLevel={site.risk_profile.riskLevel}
                           riskScore={site.risk_profile.overallRiskScore}
                         />
                       </Link>

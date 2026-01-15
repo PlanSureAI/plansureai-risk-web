@@ -116,8 +116,15 @@ export default function PlanningDocumentsPanel({
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Upload failed.");
+        const raw = await res.text();
+        let detail = "Upload failed.";
+        try {
+          const parsed = JSON.parse(raw) as { error?: string };
+          if (parsed?.error) detail = parsed.error;
+        } catch {
+          if (raw.trim()) detail = raw.trim();
+        }
+        throw new Error(detail);
       }
 
       const data = (await res.json()) as { jobId: string };
