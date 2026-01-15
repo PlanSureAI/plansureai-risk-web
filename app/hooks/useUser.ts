@@ -36,13 +36,17 @@ export function useUser() {
     }
 
     if (session?.user) {
+      const sessionUser = session.user as typeof session.user & {
+        id?: string;
+        plan_tier?: User["plan_tier"];
+      };
       setState({
         user: {
-          id: session.user.id || "",
-          email: session.user.email || "",
-          name: session.user.name || "",
-          avatar_url: session.user.image,
-          plan_tier: (session.user.plan_tier as any) || "free",
+          id: sessionUser.id || "",
+          email: sessionUser.email || "",
+          name: sessionUser.name || "",
+          avatar_url: sessionUser.image || undefined,
+          plan_tier: sessionUser.plan_tier || "free",
         },
         loading: false,
         error: null,
