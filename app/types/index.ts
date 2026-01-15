@@ -89,6 +89,7 @@ export interface ShareLink {
   id: string;
   site_id: string;
   token: string;
+  shareUrl?: string;
   expires_at: string;
   recipient_email?: string;
   created_at: string;
