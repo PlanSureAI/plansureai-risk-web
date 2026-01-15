@@ -88,7 +88,11 @@ function buildHistorySummary(applications: NearbyApplication[]): PlanningHistory
   };
 }
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -101,7 +105,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   const { data: site, error } = await supabase
     .from("sites")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("user_id", user.id)
     .single();
 
@@ -138,12 +142,16 @@ export async function POST(request: Request, { params }: { params: { id: string 
       risk_analysis: riskAnalysis,
       risk_calculated_at: new Date().toISOString(),
     })
-    .eq("id", params.id);
+    .eq("id", id);
 
   return NextResponse.json(riskAnalysis);
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -156,7 +164,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
   const { data: site } = await supabase
     .from("sites")
     .select("risk_score, risk_level, risk_analysis, risk_calculated_at")
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("user_id", user.id)
     .single();
 
