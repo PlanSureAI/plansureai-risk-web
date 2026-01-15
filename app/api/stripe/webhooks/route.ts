@@ -26,7 +26,12 @@ export async function POST(request: NextRequest) {
         const customerId = subscription.customer as string;
 
         const customer = await stripe.customers.retrieve(customerId);
-        const userId = (customer.metadata as any)?.user_id;
+        if (customer.deleted) {
+          console.warn(`Customer ${customerId} is deleted`);
+          break;
+        }
+
+        const userId = customer.metadata?.user_id;
 
         if (!userId) {
           console.warn(`No user_id found for customer ${customerId}`);
