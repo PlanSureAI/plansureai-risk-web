@@ -62,8 +62,13 @@ export function PlanningRiskCard({ siteId }: Props) {
       }
       return;
     }
-    const data = (await res.json()) as RiskScore;
-    setRiskScore(data);
+    const data = (await res.json()) as RiskScore & { calculated?: boolean };
+    if (data.calculated === false) {
+      setShouldAutoGenerate(true);
+      return;
+    }
+    const { calculated: _calculated, ...risk } = data;
+    setRiskScore(risk);
   }
 
   async function generateRiskScore() {

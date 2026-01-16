@@ -169,8 +169,23 @@ export async function GET(
     .single();
 
   if (!site || !site.risk_analysis) {
-    return NextResponse.json({ error: "Risk score not calculated yet" }, { status: 200 });
+    return NextResponse.json(
+      {
+        calculated: false,
+        score: 0,
+        level: "low",
+        tagline: "Risk score not calculated yet",
+        topRisks: [],
+        allRisks: [],
+        positiveFactors: [],
+        confidence: 0,
+        calculatedAt: new Date().toISOString(),
+        dataVersion: "unscored",
+        message: "Risk score not calculated yet",
+      },
+      { status: 200 }
+    );
   }
 
-  return NextResponse.json(site.risk_analysis);
+  return NextResponse.json({ calculated: true, ...site.risk_analysis });
 }
