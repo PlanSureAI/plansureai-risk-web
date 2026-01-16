@@ -122,3 +122,74 @@ export interface PreAppPack {
   generated_at: string;
   status: "draft" | "ready" | "archived";
 }
+
+export interface PlanningDocument {
+  id: string;
+  site_id: string;
+  type: string;
+  source: string;
+  file_path: string;
+  file_name: string;
+  mime_type: string | null;
+  uploaded_by: string | null;
+  uploaded_at: string;
+  parsed: boolean;
+  parsed_at: string | null;
+  parse_error: string | null;
+}
+
+export interface RiskAssessmentRecord {
+  id: string;
+  site_id: string;
+  planning_document_id: string | null;
+  overall_score: number | null;
+  overall_confidence: number | null;
+  headline_risk_colour: string | null;
+  primary_killers: string[] | null;
+  summary_markdown: string | null;
+  created_at: string;
+  created_by: string | null;
+}
+
+export interface RiskAssessmentReason {
+  id: string;
+  risk_assessment_id: string;
+  category: string;
+  severity: string;
+  title: string;
+  detail_markdown: string | null;
+  policy_refs: string[] | null;
+  source_type: string | null;
+  created_at: string;
+}
+
+export interface ComparableApplication {
+  id: string;
+  site_id: string;
+  external_app_id: string | null;
+  lpa_name: string | null;
+  distance_m: number | null;
+  decision: string | null;
+  decision_date: string | null;
+  units_total: number | null;
+  scheme_type: string | null;
+  headline_reasons: string | null;
+  data_source: string | null;
+  created_at: string;
+}
+
+export interface ComparableSummary {
+  id: string;
+  site_id: string;
+  summary_markdown: string | null;
+  stats_json: Record<string, any> | null;
+  created_at: string;
+}
+
+export interface MitigationPlan {
+  id: string;
+  site_id: string;
+  risk_assessment_id: string | null;
+  plan_markdown: string | null;
+  created_at: string;
+}
