@@ -1,0 +1,11 @@
+authority,policy_reference,policy_title,policy_category,strictness,policy_text,local_plan_name,adopted_date,review_date
+Cornwall,Policy 12,Design,design,mandatory,"All development must be of an appropriate quality of design and respect local character.",Cornwall Local Plan,2016-11-22,
+Cornwall,Policy 9,Rural Exception Sites,housing,flexible,"Support housing on rural exception sites where it meets identified local need.",Cornwall Local Plan,2016-11-22,
+Cornwall,Policy 13,Development Standards,design,mandatory,"Minimum space standards apply. Parking requirements: 2 spaces per dwelling.",Cornwall Local Plan,2016-11-22,
+Cornwall,Policy 21,Best Use of Land,housing,encouraged,"Housing development should achieve minimum density of 30 dph unless character dictates otherwise.",Cornwall Local Plan,2016-11-22,
+Birmingham,TP27,Design and Place Making,design,mandatory,"Development must respond to character and context, with high quality architecture.",Birmingham Development Plan,2017-01-10,
+Birmingham,TP38,Green Belt,environment,mandatory,"Inappropriate development in the Green Belt will not be approved except in very special circumstances.",Birmingham Development Plan,2017-01-10,
+Birmingham,TP21,Affordable Housing,housing,mandatory,"Affordable housing will be sought on residential schemes above threshold.",Birmingham Development Plan,2017-01-10,
+Leeds,PP1,Land Use,housing,encouraged,"Development should make best use of land and support housing delivery.",Leeds Local Plan,2019-09-10,
+Leeds,H5,Housing Mix,housing,encouraged,"Provide a mix of house types and sizes appropriate to local needs.",Leeds Local Plan,2019-09-10,
+Leeds,P10,Design Quality,design,mandatory,"Development must achieve high quality design and enhance local distinctiveness.",Leeds Local Plan,2019-09-10,

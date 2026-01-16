@@ -9,12 +9,18 @@ export type RiskFactor = {
   description: string;
   impact: number;
   mitigation?: string;
+  policy_reference?: string;
+  policy_text?: string;
+  policy_url?: string;
+  evidence?: string;
+  topRefusalReasons?: Array<{ reason: string; count: number; percentage: number }>;
 };
 
 export type PositiveFactor = {
   id: string;
   title: string;
   impact: number;
+  evidence?: string;
 };
 
 export type RiskScore = {
@@ -53,6 +59,27 @@ export type PlanningHistorySummary = {
   refusalReasonHighlights: string[];
 };
 
+export type PolicyReference = {
+  policy_reference: string;
+  policy_title: string;
+  policy_text: string;
+  policy_category: string | null;
+};
+
+export type ComparableInsights = {
+  similarApproved: number;
+  similarRefused: number;
+  approvalProbability: number;
+  avgDecisionWeeks: number | null;
+  topRefusalReasons: Array<{ reason: string; count: number; percentage: number }>;
+};
+
+type RiskScoreOptions = {
+  policies?: PolicyReference[];
+  authority?: string | null;
+  comparables?: ComparableInsights | null;
+};
+
 type ConfidenceInputs = {
   hasConstraintsData: boolean;
   hasPolicyData: boolean;
@@ -73,14 +100,38 @@ function getLocalDensityPolicy(authority?: string | null) {
   return 35;
 }
 
+function findPolicy(
+  policies: PolicyReference[] | undefined,
+  matcher: (policy: PolicyReference) => boolean
+): PolicyReference | undefined {
+  if (!policies) return undefined;
+  return policies.find(matcher);
+}
+
+function attachPolicy(
+  risk: RiskFactor,
+  policies: PolicyReference[] | undefined,
+  matcher: (policy: PolicyReference) => boolean
+): RiskFactor {
+  const policy = findPolicy(policies, matcher);
+  if (!policy) return risk;
+  return {
+    ...risk,
+    policy_reference: policy.policy_reference,
+    policy_text: policy.policy_text,
+  };
+}
+
 export function calculatePlanningRiskScore(
   site: PlanningRiskSite,
-  history?: PlanningHistorySummary | null
+  history?: PlanningHistorySummary | null,
+  options?: RiskScoreOptions
 ): RiskScore {
   let baseScore = 100;
   const riskFactors: RiskFactor[] = [];
   const positiveFactors: PositiveFactor[] = [];
   const constraints = site.constraints ?? [];
+  const policies = options?.policies;
 
   const addRisk = (risk: RiskFactor) => {
     riskFactors.push(risk);
@@ -118,42 +169,61 @@ export function calculatePlanningRiskScore(
   }
 
   if (constraints.includes("conservation_area")) {
-    addRisk({
-      id: "conservation-area",
-      severity: "high",
-      weight: 2,
-      title: "Conservation Area",
-      description: "Design must preserve or enhance local character.",
-      impact: -15,
-      mitigation: "Prepare a heritage statement and design response.",
-      category: "constraint",
-    });
+    const risk = attachPolicy(
+      {
+        id: "conservation-area",
+        severity: "high",
+        weight: 2,
+        title: "Conservation Area",
+        description: "Design must preserve or enhance local character.",
+        impact: -15,
+        mitigation: "Prepare a heritage statement and design response.",
+        category: "constraint",
+      },
+      policies,
+      (policy) =>
+        policy.policy_category === "design" ||
+        policy.policy_text.toLowerCase().includes("conservation")
+    );
+    addRisk(risk);
   }
 
   if (constraints.includes("listed_building_nearby")) {
-    addRisk({
-      id: "listed-building-setting",
-      severity: "high",
-      weight: 2,
-      title: "Listed Building Setting",
-      description: "Development must avoid harm to heritage setting.",
-      impact: -12,
-      mitigation: "Include a heritage impact assessment.",
-      category: "constraint",
-    });
+    const risk = attachPolicy(
+      {
+        id: "listed-building-setting",
+        severity: "high",
+        weight: 2,
+        title: "Listed Building Setting",
+        description: "Development must avoid harm to heritage setting.",
+        impact: -12,
+        mitigation: "Include a heritage impact assessment.",
+        category: "constraint",
+      },
+      policies,
+      (policy) =>
+        policy.policy_text.toLowerCase().includes("heritage") ||
+        policy.policy_text.toLowerCase().includes("listed")
+    );
+    addRisk(risk);
   }
 
   if (constraints.includes("green_belt")) {
-    addRisk({
-      id: "green-belt",
-      severity: "critical",
-      weight: 3,
-      title: "Green Belt",
-      description: "Very special circumstances required.",
-      impact: -28,
-      mitigation: "Consider previously developed land exceptions.",
-      category: "constraint",
-    });
+    const risk = attachPolicy(
+      {
+        id: "green-belt",
+        severity: "critical",
+        weight: 3,
+        title: "Green Belt",
+        description: "Very special circumstances required.",
+        impact: -28,
+        mitigation: "Consider previously developed land exceptions.",
+        category: "constraint",
+      },
+      policies,
+      (policy) => policy.policy_text.toLowerCase().includes("green belt")
+    );
+    addRisk(risk);
   }
 
   if (constraints.includes("TPO")) {
@@ -187,16 +257,21 @@ export function calculatePlanningRiskScore(
   const affordableRequired = authority.toLowerCase().includes("cornwall") && units >= 6;
 
   if (affordableRequired && !site.affordable_housing) {
-    addRisk({
-      id: "affordable-housing",
-      severity: "high",
-      weight: 2,
-      title: "Affordable Housing Requirement",
-      description: "Affordable housing policy applies at 6+ units.",
-      impact: -18,
-      mitigation: "Provide affordable housing or rural exception case.",
-      category: "policy",
-    });
+    const risk = attachPolicy(
+      {
+        id: "affordable-housing",
+        severity: "high",
+        weight: 2,
+        title: "Affordable Housing Requirement",
+        description: "Affordable housing policy applies at 6+ units.",
+        impact: -18,
+        mitigation: "Provide affordable housing or rural exception case.",
+        category: "policy",
+      },
+      policies,
+      (policy) => policy.policy_text.toLowerCase().includes("affordable")
+    );
+    addRisk(risk);
   } else if (affordableRequired && site.affordable_housing) {
     addPositive({
       id: "affordable-housing-included",
@@ -275,6 +350,35 @@ export function calculatePlanningRiskScore(
     });
   }
 
+  const comparables = options?.comparables;
+  if (comparables) {
+    if (comparables.approvalProbability >= 0.7) {
+      addPositive({
+        id: "local-approval-rate",
+        title: `${Math.round(comparables.approvalProbability * 100)}% approval rate for similar schemes`,
+        impact: 10,
+        evidence: `${comparables.similarApproved} approvals vs ${comparables.similarRefused} refusals nearby`,
+      });
+    } else if (comparables.approvalProbability <= 0.4) {
+      addRisk({
+        id: "low-approval-rate",
+        severity: "high",
+        weight: 2,
+        title: "Low Local Approval Rate",
+        description: "Comparable schemes show a low approval rate nearby.",
+        impact: -18,
+        mitigation: comparables.topRefusalReasons.length
+          ? `Address common refusal reasons: ${comparables.topRefusalReasons
+              .map((r) => r.reason)
+              .join(", ")}`
+          : "Review recent refusals and address recurring issues.",
+        category: "history",
+        evidence: `${comparables.similarRefused} refusals vs ${comparables.similarApproved} approvals`,
+        topRefusalReasons: comparables.topRefusalReasons,
+      });
+    }
+  }
+
   if (site.has_vehicle_access === true) {
     addPositive({
       id: "vehicle-access",
@@ -346,8 +450,8 @@ export function calculatePlanningRiskScore(
 
   const confidence = calculateConfidence({
     hasConstraintsData: constraints.length > 0,
-    hasPolicyData: site.local_plan_status != null || affordableRequired,
-    hasHistoryData: !!history,
+    hasPolicyData: site.local_plan_status != null || affordableRequired || !!policies?.length,
+    hasHistoryData: !!history || !!comparables,
     hasSiteVisit: !!site.visited_at,
   });
 

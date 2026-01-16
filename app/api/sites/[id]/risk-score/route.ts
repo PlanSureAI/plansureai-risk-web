@@ -4,6 +4,8 @@ import {
   calculatePlanningRiskScore,
   type PlanningHistorySummary,
   type PlanningRiskSite,
+  type PolicyReference,
+  type ComparableInsights,
 } from "@/app/lib/planningRiskScoring";
 
 type NearbyApplication = {
@@ -13,6 +15,15 @@ type NearbyApplication = {
   refusal_reasons: string[] | null;
   units: number | null;
 };
+
+function normalizeAuthority(authority?: string | null): string | null {
+  if (!authority) return null;
+  const key = authority.toLowerCase();
+  if (key.includes("cornwall")) return "Cornwall";
+  if (key.includes("birmingham")) return "Birmingham";
+  if (key.includes("leeds")) return "Leeds";
+  return authority;
+}
 
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
   const query = address.trim();
@@ -88,6 +99,69 @@ function buildHistorySummary(applications: NearbyApplication[]): PlanningHistory
   };
 }
 
+function buildComparableInsights(
+  applications: NearbyApplication[],
+  targetUnits: number | null
+): ComparableInsights | null {
+  if (!applications.length) return null;
+  const unitTarget = targetUnits ?? 0;
+  const similar = applications.filter((app) => {
+    if (!app.units || unitTarget === 0) return true;
+    return app.units >= unitTarget * 0.5 && app.units <= unitTarget * 1.5;
+  });
+
+  const approvals = similar.filter((app) => app.decision === "approved");
+  const refusals = similar.filter((app) => app.decision === "refused");
+  const decidedCount = approvals.length + refusals.length;
+  const approvalProbability =
+    decidedCount > 0 ? approvals.length / decidedCount : 0;
+
+  const decisionDurations = similar
+    .map((app) => {
+      if (!app.decision_date || !app.validated_date) return null;
+      const decision = new Date(app.decision_date).getTime();
+      const validated = new Date(app.validated_date).getTime();
+      if (!Number.isFinite(decision) || !Number.isFinite(validated)) return null;
+      return Math.round((decision - validated) / (1000 * 60 * 60 * 24 * 7));
+    })
+    .filter((value): value is number => value != null);
+
+  const avgDecisionWeeks =
+    decisionDurations.length > 0
+      ? Math.round(
+          decisionDurations.reduce((sum, value) => sum + value, 0) /
+            decisionDurations.length
+        )
+      : null;
+
+  const refusalReasons = refusals
+    .flatMap((app) => app.refusal_reasons ?? [])
+    .map((reason) => reason.trim())
+    .filter(Boolean);
+
+  const reasonCounts = refusalReasons.reduce<Record<string, number>>((acc, reason) => {
+    acc[reason] = (acc[reason] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const topRefusalReasons = Object.entries(reasonCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3)
+    .map(([reason, count]) => ({
+      reason,
+      count,
+      percentage: refusals.length > 0 ? (count / refusals.length) * 100 : 0,
+    }));
+
+  return {
+    similarApproved: approvals.length,
+    similarRefused: refusals.length,
+    approvalProbability,
+    avgDecisionWeeks,
+    topRefusalReasons,
+  };
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -114,6 +188,8 @@ export async function POST(
   }
 
   let historySummary: PlanningHistorySummary | null = null;
+  let comparableInsights: ComparableInsights | null = null;
+  let policies: PolicyReference[] = [];
   const address = (site as any).address as string | null;
   const coords = address ? await geocodeAddress(address) : null;
 
@@ -128,11 +204,31 @@ export async function POST(
     );
 
     if (Array.isArray(applications) && applications.length > 0) {
-      historySummary = buildHistorySummary(applications as NearbyApplication[]);
+      const nearbyApps = applications as NearbyApplication[];
+      historySummary = buildHistorySummary(nearbyApps);
+      comparableInsights = buildComparableInsights(
+        nearbyApps,
+        (site as any).proposed_units ?? null
+      );
     }
   }
 
-  const riskAnalysis = calculatePlanningRiskScore(site as PlanningRiskSite, historySummary);
+  const authority = normalizeAuthority(
+    (site as any).local_planning_authority ?? null
+  );
+  if (authority) {
+    const { data: policyRows } = await supabase
+      .from("local_plan_policies")
+      .select("policy_reference, policy_title, policy_text, policy_category")
+      .eq("authority", authority);
+    policies = (policyRows as PolicyReference[]) ?? [];
+  }
+
+  const riskAnalysis = calculatePlanningRiskScore(site as PlanningRiskSite, historySummary, {
+    policies,
+    comparables: comparableInsights,
+    authority,
+  });
 
   await supabase
     .from("sites")
