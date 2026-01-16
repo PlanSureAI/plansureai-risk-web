@@ -6,6 +6,33 @@ interface GeocodeResult {
   display_name: string;
 }
 
+function extractPostcode(query: string): string | null {
+  const match = query.match(/\b([A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2})\b/i);
+  return match ? match[1].toUpperCase() : null;
+}
+
+async function geocodeQuery(query: string) {
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/search?` +
+      `q=${encodeURIComponent(query)}&` +
+      `countrycodes=gb&` +
+      `format=json&` +
+      `limit=1`,
+    {
+      headers: {
+        "User-Agent": "PlanSureAI/1.0 (https://www.plansureai.com)",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Geocoding API returned ${response.status}`);
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get('q');
@@ -15,27 +42,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Call Nominatim geocoding API from server-side (no CORS issues)
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?` +
-        `q=${encodeURIComponent(query)}&` +
-        `countrycodes=gb&` +
-        `format=json&` +
-        `limit=1`,
-      {
-        headers: {
-          'User-Agent': 'PlanSureAI/1.0 (https://www.plansureai.com)',
-        },
+    let data = await geocodeQuery(query);
+    if (!data.length) {
+      const postcode = extractPostcode(query);
+      if (postcode) {
+        data = await geocodeQuery(postcode);
       }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Geocoding API returned ${response.status}`);
     }
 
-    const data = await response.json();
-
-    if (!data || data.length === 0) {
+    if (!data.length) {
       return NextResponse.json({ error: 'Location not found' }, { status: 404 });
     }
 

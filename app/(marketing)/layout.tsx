@@ -11,7 +11,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
             <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
               <Link href="/" className="flex items-center">
                 <Image
-                  src="/logo.jpg"
+                  src="/logo.png"
                   alt="PlanSureAI"
                   width={160}
                   height={40}

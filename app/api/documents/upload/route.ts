@@ -114,14 +114,8 @@ export async function POST(request: NextRequest) {
       process.env.PROCESS_DOCUMENT_URL ||
       (process.env.NEXT_PUBLIC_APP_URL
         ? `${process.env.NEXT_PUBLIC_APP_URL}/api/documents/process`
-        : "");
-
-    if (!processUrl) {
-      return NextResponse.json(
-        { error: "PROCESS_DOCUMENT_URL is not configured" },
-        { status: 500 }
-      );
-    }
+        : "") ||
+      `${request.nextUrl.origin}/api/documents/process`;
 
     try {
       await qstash.publishJSON({

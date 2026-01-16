@@ -34,7 +34,7 @@ export default async function RootLayout({
               {/* Logo */}
               <Link href="/" className="flex items-center space-x-3">
                 <Image
-                  src="/logo.jpg"
+                  src="/logo.png"
                   alt="PlanSureAI"
                   width={160}
                   height={40}

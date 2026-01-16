@@ -440,6 +440,17 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
         downsideProfitOnCostPct: computeDownsideProfit(site.gdv, site.total_cost),
       }
     : null;
+  const hasViabilityData =
+    viability != null &&
+    [
+      viability.gdv,
+      viability.totalCost,
+      viability.profitOnCostPct,
+      viability.loanAmount,
+      viability.ltcPercent,
+      viability.ltgdvPercent,
+      viability.downsideProfitOnCostPct,
+    ].some((value) => value != null);
   const postcode = site ? extractPostcodeFromAddress(site.address) : null;
   let planningApplications: LandTechPlanningApplication[] = [];
 
@@ -668,9 +679,11 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
           keyPlanningConsiderations={site.key_planning_considerations}
         />
 
-        <section className="mt-6 rounded-xl border border-zinc-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-zinc-900">Edit planning analysis</h2>
-          <p className="mt-1 text-xs text-zinc-600">
+        <details className="mt-6 rounded-xl border border-zinc-200 bg-white p-4">
+          <summary className="cursor-pointer text-sm font-semibold text-zinc-900">
+            Edit planning analysis
+          </summary>
+          <p className="mt-2 text-xs text-zinc-600">
             Update status, outcome, and the key summaries for this site.
           </p>
 
@@ -755,7 +768,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
               Save changes
             </button>
           </form>
-        </section>
+        </details>
 
         <section className="space-y-4">
           <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm">
@@ -791,7 +804,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
           </div>
         </section>
 
-        {viability && (
+        {hasViabilityData && (
           <section className="mt-6 rounded-lg border border-zinc-200 bg-white p-4 text-xs">
             <p className="mb-2 font-semibold text-zinc-800">Viability snapshot</p>
             <div className="grid gap-x-6 gap-y-1 sm:grid-cols-3">
