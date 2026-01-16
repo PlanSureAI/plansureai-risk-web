@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import pdf from "pdf-parse";
 import { Client } from "@upstash/qstash";
+import { supabaseAdmin } from "@/app/lib/supabase";
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     const fileName = `${siteId}/${Date.now()}-${file.name}`;
-    const { error: storageError } = await supabase.storage
+    const { error: storageError } = await supabaseAdmin.storage
       .from("documents")
       .upload(fileName, buffer, {
         contentType: "application/pdf",
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(fileName);
     const fileUrl = urlData.publicUrl;
 
-    const { data: documentData, error: dbError } = await supabase
+    const { data: documentData, error: dbError } = await supabaseAdmin
       .from("documents")
       .insert({
         site_id: siteId,

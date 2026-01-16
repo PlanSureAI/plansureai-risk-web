@@ -169,7 +169,7 @@ export async function GET(
     .single();
 
   if (!site || !site.risk_analysis) {
-    return NextResponse.json({ error: "Risk score not calculated yet" }, { status: 404 });
+    return NextResponse.json({ error: "Risk score not calculated yet" }, { status: 200 });
   }
 
   return NextResponse.json(site.risk_analysis);
