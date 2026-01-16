@@ -66,13 +66,30 @@ export async function POST(request: NextRequest) {
     }
 
     const fileName = `${siteId}/${Date.now()}-${file.name}`;
-    const { error: storageError } = await supabaseAdmin.storage
-      .from("documents")
-      .upload(fileName, buffer, {
-        contentType: "application/pdf",
-      });
+    const bucketCandidates = [
+      process.env.DOCUMENTS_BUCKET,
+      "documents",
+      "planning-docs",
+    ].filter(Boolean) as string[];
 
-    if (storageError) {
+    let bucketUsed: string | null = null;
+    let storageError: any = null;
+
+    for (const bucket of bucketCandidates) {
+      const { error } = await supabaseAdmin.storage
+        .from(bucket)
+        .upload(fileName, buffer, {
+          contentType: "application/pdf",
+        });
+      if (!error) {
+        bucketUsed = bucket;
+        storageError = null;
+        break;
+      }
+      storageError = error;
+    }
+
+    if (storageError || !bucketUsed) {
       console.error("Storage upload error:", storageError);
       return NextResponse.json(
         { error: "Failed to upload file" },
@@ -81,7 +98,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { data: urlData } = supabase.storage
-      .from("documents")
+      .from(bucketUsed)
       .getPublicUrl(fileName);
     const fileUrl = urlData.publicUrl;
 
