@@ -364,11 +364,6 @@ export function PlanningRiskCard({ siteId }: Props) {
         ) : null}
       </div>
 
-      {riskScore?.mitigation_plan && (
-        <div style={{ marginTop: "40px", borderTop: "2px solid #e5e7eb", paddingTop: "40px" }}>
-          {/* ...mitigation plan content... */}
-        </div>
-      )}
     </>
   );
 }
