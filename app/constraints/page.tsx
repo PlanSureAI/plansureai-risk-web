@@ -3,44 +3,82 @@
 import { useState } from 'react';
 import { Search, MapPin, AlertCircle, Loader2 } from 'lucide-react';
 
-interface Constraint {
-  dataset: string;
-  name: string;
-  reference: string;
-  entity: string;
-  geometry?: any;
-}
-
-interface ConstraintGroup {
-  dataset: string;
+type ConstraintMeta = {
   title: string;
-  count: number;
-  constraints: Constraint[];
-}
+  description: string;
+  badgeClass: string;
+};
 
 export default function ConstraintsPage() {
   const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [results, setResults] = useState<ConstraintGroup[]>([]);
+  const [results, setResults] = useState<string[]>([]);
   const [searchedAddress, setSearchedAddress] = useState('');
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
 
-  const datasetTitles: Record<string, string> = {
-    'conservation-area': 'Conservation Areas',
-    'listed-building': 'Listed Buildings',
-    'article-4-direction-area': 'Article 4 Direction Areas',
-    'tree-preservation-zone': 'Tree Preservation Zones',
-    'flood-risk-zone': 'Flood Risk Zones',
+  const constraintMeta: Record<string, ConstraintMeta> = {
+    conservation_area: {
+      title: 'Conservation Area',
+      description: 'Protected area with special architectural or historic interest.',
+      badgeClass: 'border-amber-200 bg-amber-50 text-amber-800',
+    },
+    listed_building_nearby: {
+      title: 'Listed Building Nearby',
+      description: 'Development must safeguard nearby heritage assets.',
+      badgeClass: 'border-orange-200 bg-orange-50 text-orange-800',
+    },
+    article_4_direction: {
+      title: 'Article 4 Direction',
+      description: 'Permitted development rights are restricted in this area.',
+      badgeClass: 'border-amber-200 bg-amber-50 text-amber-800',
+    },
+    TPO: {
+      title: 'Tree Preservation Order',
+      description: 'Protected trees or woodland require special consent.',
+      badgeClass: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    },
+    ancient_woodland: {
+      title: 'Ancient Woodland',
+      description: 'Sensitive habitat with strong protection in planning decisions.',
+      badgeClass: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    },
+    flood_zone_2: {
+      title: 'Flood Zone 2',
+      description: 'Medium probability of flooding; assessments likely required.',
+      badgeClass: 'border-sky-200 bg-sky-50 text-sky-800',
+    },
+    flood_zone_3: {
+      title: 'Flood Zone 3',
+      description: 'High probability of flooding; significant constraints apply.',
+      badgeClass: 'border-rose-200 bg-rose-50 text-rose-800',
+    },
+    AONB: {
+      title: 'Area of Outstanding Natural Beauty',
+      description: 'Landscape protections apply; development must be sensitive.',
+      badgeClass: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    },
+    national_park: {
+      title: 'National Park',
+      description: 'High protection area with strict planning controls.',
+      badgeClass: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    },
+    green_belt: {
+      title: 'Green Belt',
+      description: 'Development is tightly controlled and requires special justification.',
+      badgeClass: 'border-rose-200 bg-rose-50 text-rose-800',
+    },
+    SSSI: {
+      title: 'SSSI',
+      description: 'Site of Special Scientific Interest; major constraints apply.',
+      badgeClass: 'border-rose-200 bg-rose-50 text-rose-800',
+    },
   };
 
-  const datasetDescriptions: Record<string, string> = {
-    'conservation-area': 'Areas of special architectural or historic interest with protected character',
-    'listed-building': 'Buildings of special architectural or historic interest',
-    'article-4-direction-area': 'Areas where permitted development rights are restricted',
-    'tree-preservation-zone': 'Protected trees and woodland areas',
-    'flood-risk-zone': 'Areas at risk of flooding',
-  };
+  const formatFallbackTitle = (key: string) =>
+    key
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
   const geocodeAddress = async (
     query: string
@@ -91,9 +129,9 @@ export default function ConstraintsPage() {
 
       setCoordinates(coords);
 
-      // Fetch constraints
+      // Fetch constraints from Planning Data API (server-side)
       const response = await fetch(
-        `/api/planning-constraints?lat=${coords.lat}&lng=${coords.lng}&limit=100`
+        `/api/constraints/check?lat=${coords.lat}&lng=${coords.lng}`
       );
 
       const data = await response.json();
@@ -104,35 +142,7 @@ export default function ConstraintsPage() {
         throw new Error(data.error || 'Failed to fetch constraints');
       }
 
-      // Group by dataset
-      const grouped: Record<string, Constraint[]> = (data?.features || []).reduce(
-        (acc: Record<string, Constraint[]>, feature: any) => {
-          const dataset = feature.properties.dataset;
-          if (!acc[dataset]) {
-            acc[dataset] = [];
-          }
-          acc[dataset].push({
-            dataset,
-            name: feature.properties.name || 'Unnamed',
-            reference: feature.properties.reference || feature.properties.entity,
-            entity: feature.properties.entity,
-            geometry: feature.geometry,
-          });
-          return acc;
-        },
-        {}
-      );
-
-      const groupedResults: ConstraintGroup[] = Object.entries(grouped).map(
-        ([dataset, constraints]) => ({
-          dataset,
-          title: datasetTitles[dataset] || dataset,
-          count: constraints.length,
-          constraints: constraints as Constraint[],
-        })
-      );
-
-      setResults(groupedResults);
+      setResults(data.constraints || []);
       setSearchedAddress(address);
     } catch (err) {
       console.error('Full error details:', err);
@@ -213,51 +223,48 @@ export default function ConstraintsPage() {
                   Location: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
                 </p>
               )}
+              <p className="mt-2 text-xs text-gray-500">
+                Data source: planning.data.gov.uk
+              </p>
             </div>
 
-            {results.map((group) => (
-              <div
-                key={group.dataset}
-                className="bg-white rounded-lg shadow-sm border border-gray-200"
-              >
-                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{group.title}</h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {datasetDescriptions[group.dataset] || ''}
-                      </p>
-                    </div>
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                      {group.count} {group.count === 1 ? 'constraint' : 'constraints'}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex flex-wrap gap-2">
+                {results.map((constraint) => {
+                  const meta = constraintMeta[constraint];
+                  const badgeClass =
+                    meta?.badgeClass ?? 'border-gray-200 bg-gray-50 text-gray-700';
+                  const label = meta?.title ?? formatFallbackTitle(constraint);
+                  return (
+                    <span
+                      key={constraint}
+                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass}`}
+                    >
+                      {label}
                     </span>
-                  </div>
-                </div>
-
-                <div className="divide-y divide-gray-200">
-                  {group.constraints.map((constraint, idx) => (
-                    <div key={idx} className="px-6 py-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="text-sm font-medium text-gray-900">{constraint.name}</h4>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Reference: {constraint.reference}
-                          </p>
-                        </div>
-                        <a
-                          href={`https://www.planning.data.gov.uk/entity/${constraint.entity}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="ml-4 text-sm text-blue-600 hover:text-blue-800"
-                        >
-                          View details →
-                        </a>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            ))}
+            </div>
+
+            <div className="space-y-3">
+              {results.map((constraint) => {
+                const meta = constraintMeta[constraint];
+                return (
+                  <div
+                    key={`${constraint}-detail`}
+                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+                  >
+                    <p className="text-sm font-semibold text-gray-900">
+                      {meta?.title ?? formatFallbackTitle(constraint)}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-600">
+                      {meta?.description ?? 'Planning constraint identified for this location.'}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

@@ -126,25 +126,6 @@ function extractPostcodeFromAddress(address?: string | null): string | null {
   return match ? match[1].toUpperCase() : null;
 }
 
-function computeDownsideProfit(
-  gdv: number | null | undefined,
-  totalCost: number | null | undefined
-): number | null {
-  if (gdv == null || totalCost == null) return null;
-  const gdvDown = Number(gdv) * 0.9;
-  const costUp = Number(totalCost) * 1.1;
-  if (costUp === 0) return null;
-  const profit = gdvDown - costUp;
-  return (profit / costUp) * 100;
-}
-
-function viabilityFlagClass(value: number | null, goodRange: [number, number]) {
-  if (value == null) return "text-zinc-500";
-  const [min, max] = goodRange;
-  if (value < min || value > max) return "text-amber-700";
-  return "text-zinc-800";
-}
-
 type PageProps = {
   params: { id: string };
 };
@@ -332,28 +313,6 @@ export default async function SiteDetailPage({ params }: PageProps) {
   const site = await getSite(id);
   const nextMove = site ? getNextMove(site.ai_outcome, site.eligibility_results ?? []) : null;
   const units = site ? site.proposed_units ?? site.ai_units_estimate ?? null : null;
-  const viability = site
-    ? {
-        gdv: site.gdv ?? null,
-        totalCost: site.total_cost ?? null,
-        profitOnCostPct: site.profit_on_cost_percent ?? null,
-        loanAmount: site.loan_amount ?? null,
-        ltcPercent: site.ltc_percent ?? null,
-        ltgdvPercent: site.ltgdv_percent ?? null,
-        downsideProfitOnCostPct: computeDownsideProfit(site.gdv, site.total_cost),
-      }
-    : null;
-  const hasViabilityData =
-    viability != null &&
-    [
-      viability.gdv,
-      viability.totalCost,
-      viability.profitOnCostPct,
-      viability.loanAmount,
-      viability.ltcPercent,
-      viability.ltgdvPercent,
-      viability.downsideProfitOnCostPct,
-    ].some((value) => value != null);
   const postcode = site ? extractPostcodeFromAddress(site.address) : null;
   let planningApplications: LandTechPlanningApplication[] = [];
 
@@ -687,55 +646,6 @@ export default async function SiteDetailPage({ params }: PageProps) {
         </section>
         */}
 
-        {hasViabilityData && (
-          <section className="mt-6 rounded-lg border border-zinc-200 bg-white p-4 text-xs">
-            <p className="mb-2 font-semibold text-zinc-800">Viability snapshot</p>
-            <div className="grid gap-x-6 gap-y-1 sm:grid-cols-3">
-              <p>
-                GDV:{" "}
-                <span className="font-medium">
-                  {viability.gdv != null ? `£${Number(viability.gdv).toLocaleString()}` : "—"}
-                </span>
-              </p>
-              <p>
-                Total cost:{" "}
-                <span className="font-medium">
-                  {viability.totalCost != null
-                    ? `£${Number(viability.totalCost).toLocaleString()}`
-                    : "—"}
-                </span>
-              </p>
-              <p className={viabilityFlagClass(viability.profitOnCostPct, [18, 25])}>
-                Profit on cost:{" "}
-                <span className="font-medium">
-                  {viability.profitOnCostPct != null
-                    ? `${viability.profitOnCostPct.toFixed(1)}%`
-                    : "—"}
-                </span>
-              </p>
-              <p className={viabilityFlagClass(viability.ltcPercent, [70, 85])}>
-                LTC:{" "}
-                <span className="font-medium">
-                  {viability.ltcPercent != null ? `${viability.ltcPercent.toFixed(1)}%` : "—"}
-                </span>
-              </p>
-              <p className={viabilityFlagClass(viability.ltgdvPercent, [55, 70])}>
-                LTGDV:{" "}
-                <span className="font-medium">
-                  {viability.ltgdvPercent != null ? `${viability.ltgdvPercent.toFixed(1)}%` : "—"}
-                </span>
-              </p>
-              <p className={viabilityFlagClass(viability.downsideProfitOnCostPct, [12, 20])}>
-                Downside profit (cost +10%, GDV -10%):{" "}
-                <span className="font-medium">
-                  {viability.downsideProfitOnCostPct != null
-                    ? `${viability.downsideProfitOnCostPct.toFixed(1)}%`
-                    : "—"}
-                </span>
-              </p>
-            </div>
-          </section>
-        )}
 
         {site.eligibility_results && site.eligibility_results.length > 0 && (
           <section className="space-y-4">
