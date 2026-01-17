@@ -284,24 +284,32 @@ export function PlanningRiskCard({ siteId }: Props) {
           <div className="mt-6">
             <h4 className="text-sm font-semibold text-zinc-900">Key Risk Factors</h4>
             <ul className="mt-3 space-y-3">
-              {riskScore.topRisks.map((risk) => (
-                <li key={risk.id} className="flex gap-3 rounded-lg border border-zinc-100 bg-zinc-50 p-3">
-                  {severityDot(risk.severity)}
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between">
-                      <strong className="text-sm font-semibold text-zinc-900">{risk.title}</strong>
-                      <span className="text-xs text-zinc-500">-{risk.impact} pts</span>
-                    </div>
-                    <p className="mt-1 text-xs text-zinc-600">{risk.description}</p>
-                    {risk.mitigation ? (
-                      <p className="mt-2 text-xs text-blue-600">{risk.mitigation}</p>
-                    ) : null}
+            {riskScore.topRisks.map((risk) => (
+              <li key={risk.id} className="flex gap-3 rounded-lg border border-zinc-100 bg-zinc-50 p-3">
+                {severityDot(risk.severity)}
+                <div className="flex-1">
+                  <div className="flex items-start justify-between">
+                    <strong className="text-sm font-semibold text-zinc-900">{risk.title}</strong>
+                    <span className="text-xs text-zinc-500">-{risk.impact} pts</span>
                   </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+                  <p className="mt-1 text-xs text-zinc-600">{risk.description}</p>
+                  {risk.mitigation ? (
+                    <p className="mt-2 text-xs text-blue-600">{risk.mitigation}</p>
+                  ) : null}
+                  {risk.policy ? (
+                    <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-2">
+                      <p className="text-xs font-semibold text-blue-900">
+                        📋 {risk.policy.plan} {risk.policy.number}
+                      </p>
+                      <p className="mt-1 text-xs text-blue-700">{risk.policy.text}</p>
+                    </div>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
         {riskScore?.positiveFactors?.length > 0 && (
           <div className="mt-6">

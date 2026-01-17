@@ -4,9 +4,9 @@ import {
   calculatePlanningRiskScore,
   type PlanningHistorySummary,
   type PlanningRiskSite,
-  type PolicyReference,
   type ComparableInsights,
 } from "@/app/lib/planningRiskScoring";
+import { getPoliciesForConstraints, attachPoliciesToRiskFactors } from "@/app/lib/policyLookup";
 
 type NearbyApplication = {
   decision: string | null;
@@ -189,7 +189,7 @@ export async function POST(
 
   let historySummary: PlanningHistorySummary | null = null;
   let comparableInsights: ComparableInsights | null = null;
-  let policies: PolicyReference[] = [];
+  const constraints = ((site as any).constraints ?? []) as string[];
   const address = (site as any).address as string | null;
   const coords = address ? await geocodeAddress(address) : null;
 
@@ -216,31 +216,37 @@ export async function POST(
   const authority = normalizeAuthority(
     (site as any).local_planning_authority ?? null
   );
-  if (authority) {
-    const { data: policyRows } = await supabase
-      .from("local_plan_policies")
-      .select("policy_reference, policy_title, policy_text, policy_category")
-      .eq("authority", authority);
-    policies = (policyRows as PolicyReference[]) ?? [];
-  }
 
   const riskAnalysis = calculatePlanningRiskScore(site as PlanningRiskSite, historySummary, {
-    policies,
     comparables: comparableInsights,
     authority,
   });
+
+  const policies = authority
+    ? await getPoliciesForConstraints(authority, constraints)
+    : [];
+  const topRisksWithPolicies = attachPoliciesToRiskFactors(riskAnalysis.topRisks, policies);
+  const allRisksWithPolicies = attachPoliciesToRiskFactors(riskAnalysis.allRisks, policies);
+
+  const mitigationPlan = await generateMitigationPlan(riskAnalysis, site);
+  const fullAnalysis = {
+    ...riskAnalysis,
+    topRisks: topRisksWithPolicies,
+    allRisks: allRisksWithPolicies,
+    mitigation_plan: mitigationPlan,
+  };
 
   await supabase
     .from("sites")
     .update({
       risk_score: riskAnalysis.score,
       risk_level: riskAnalysis.level,
-      risk_analysis: riskAnalysis,
+      risk_analysis: fullAnalysis,
       risk_calculated_at: new Date().toISOString(),
     })
     .eq("id", id);
 
-  return NextResponse.json(riskAnalysis);
+  return NextResponse.json(fullAnalysis);
 }
 
 export async function GET(
