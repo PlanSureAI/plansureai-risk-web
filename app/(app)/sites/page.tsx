@@ -2,8 +2,10 @@ import Link from "next/link";
 import { SignOutButton } from "@/app/components/SignOutButton";
 import { RiskBadge } from "@/app/components/RiskBadge";
 import { supabase } from "@/app/lib/supabaseClient";
+import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { getNextMove, type NextMove } from "@/app/types/siteFinance";
 import type { RiskLevel } from "@/lib/risk/types";
+import { SiteUsageTracker } from "./SiteUsageTracker";
 
 type SiteRow = {
   id: string;
@@ -111,6 +113,23 @@ async function getSites(): Promise<SiteRow[]> {
 
 export default async function SitesPage() {
   const sites = await getSites();
+  const supabaseServer = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabaseServer.auth.getUser();
+  const { data: profile } = user
+    ? await supabaseServer
+        .from("profiles")
+        .select("subscription_tier")
+        .eq("id", user.id)
+        .single()
+    : { data: null };
+  const tier = (profile?.subscription_tier as
+    | "free"
+    | "starter"
+    | "pro"
+    | "enterprise"
+    | undefined) ?? "free";
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
@@ -127,6 +146,14 @@ export default async function SitesPage() {
             </Link>
           </div>
         </div>
+
+        {user && (
+          <SiteUsageTracker
+            userId={user.id}
+            currentTier={tier}
+            className="mb-6"
+          />
+        )}
 
         <div className="mb-4 rounded-lg border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
           <p className="font-semibold">Zero-Bill preset</p>
