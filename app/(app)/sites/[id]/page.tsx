@@ -1,18 +1,10 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import Link from "next/link";
 import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { runFullAnalysis, updateSite } from "./actions";
 import { RunAnalysisButton } from "./RunAnalysisButton";
-import { ConfidenceScoreSection } from "./ConfidenceScoreSection";
-import { RiskRationaleSection } from "./RiskRationaleSection";
-import { SiteKillersSection } from "./SiteKillersSection";
-import { FinancePackButton } from "./FinancePackButton";
-import { FinancePackPdfButton } from "./FinancePackPdfButton";
 import { getNextMove, getFrictionHint, type NextMove } from "@/app/types/siteFinance";
-import { BrokerSendForm } from "./BrokerSendForm";
 import { getPlanningForPostcode, type LandTechPlanningApplication } from "@/app/lib/landtech";
-import PlanningDocumentsPanel from "./PlanningDocumentsPanel";
 import { PlanningRiskCard } from "./PlanningRiskCard";
 import { ComparableApprovalsMap } from "./ComparableApprovalsMap";
 
@@ -102,25 +94,6 @@ type Site = {
   asking_price: number | null;
 };
 
-type Broker = {
-  id: string;
-  name: string;
-  firm: string | null;
-  email: string | null;
-  phone: string | null;
-};
-
-type BrokerPack = {
-  id: string;
-  pack_version: number;
-  pack_url: string;
-  csv_url: string | null;
-  created_at: string;
-  headline_ask: string | null;
-  broker_name: string | null;
-  broker_firm: string | null;
-};
-
 const PRODUCT_LABELS = {
   homeBuildingFund: "Home Building Fund (development finance)",
   smeAccelerator: "SME Accelerator",
@@ -174,7 +147,6 @@ function viabilityFlagClass(value: number | null, goodRange: [number, number]) {
 
 type PageProps = {
   params: { id: string };
-  searchParams?: { planningDocId?: string };
 };
 
 async function getSite(id: string): Promise<Site | null> {
@@ -261,67 +233,6 @@ async function getSite(id: string): Promise<Site | null> {
   };
 
   return site as Site;
-}
-
-async function getBrokersForCurrentUser(): Promise<Broker[]> {
-  const supabaseServer = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabaseServer.auth.getUser();
-
-  if (userError || !user) {
-    if (userError) console.error("❌ Error loading user for brokers:", userError);
-    return [];
-  }
-
-  const { data, error } = await supabaseServer
-    .from("broker_contacts")
-    .select("id, name, firm, email, phone")
-    .eq("user_id", user.id)
-    .order("name");
-
-  if (error) {
-    console.error("❌ Error loading brokers:", error);
-    return [];
-  }
-
-  return data ?? [];
-}
-
-async function getLatestBrokerPack(siteId: string): Promise<BrokerPack | null> {
-  const supabaseServer = await createSupabaseServerClient();
-  const { data, error } = await supabaseServer
-    .from("broker_packs")
-    .select("id, pack_version, pack_url, csv_url, created_at, headline_ask, broker:broker_contacts(name, firm)")
-    .eq("site_id", siteId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    console.error("❌ Error loading broker pack:", error);
-    return null;
-  }
-
-  if (!data) return null;
-
-  const pdfUrl = supabaseServer.storage.from("broker-packs").getPublicUrl(data.pack_url).data
-    .publicUrl;
-  const csvUrl = data.csv_url
-    ? supabaseServer.storage.from("broker-packs").getPublicUrl(data.csv_url).data.publicUrl
-    : null;
-
-  return {
-    id: data.id,
-    pack_version: data.pack_version,
-    pack_url: pdfUrl,
-    csv_url: csvUrl,
-    created_at: data.created_at,
-    headline_ask: data.headline_ask,
-    broker_name: (data as any).broker?.name ?? null,
-    broker_firm: (data as any).broker?.firm ?? null,
-  };
 }
 
 // Reusable fetch for lender contexts; narrowed to fields the lender page consumes.
@@ -416,17 +327,9 @@ export async function deleteSite(id: string) {
   redirect("/sites");
 }
 
-export default async function SiteDetailPage({ params, searchParams }: PageProps) {
+export default async function SiteDetailPage({ params }: PageProps) {
   const { id } = await params;
   const site = await getSite(id);
-  const brokers = await getBrokersForCurrentUser();
-  const brokerPack = await getLatestBrokerPack(id);
-  const supabaseServer = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabaseServer.auth.getUser();
-  const resolvedSearchParams = await searchParams;
-  const planningDocId = resolvedSearchParams?.planningDocId;
   const nextMove = site ? getNextMove(site.ai_outcome, site.eligibility_results ?? []) : null;
   const units = site ? site.proposed_units ?? site.ai_units_estimate ?? null : null;
   const viability = site
@@ -455,11 +358,13 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
   let planningApplications: LandTechPlanningApplication[] = [];
 
   if (site && postcode) {
+    let planningData: LandTechPlanningApplication[] | null = null;
     try {
-      planningApplications = (await getPlanningForPostcode(postcode)).slice(0, 3);
-    } catch (err) {
-      console.error("Failed to fetch planning applications for postcode", err);
+      planningData = await getPlanningForPostcode(postcode);
+    } catch (error) {
+      console.warn("LandTech data unavailable:", error);
     }
+    planningApplications = planningData ? planningData.slice(0, 3) : [];
   }
 
   if (!site) {
@@ -516,6 +421,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
           )}
         </div>
 
+        {/* DEPRIORITIZED: Planning Documents Upload
         {user && (
           <PlanningDocumentsPanel
             siteId={site.id}
@@ -539,7 +445,9 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             </Link>
           </div>
         )}
+        */}
 
+        {/* DEPRIORITIZED: Zero-Bill view
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/sites/${site.id}/zero-bill`}
@@ -548,7 +456,9 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             Open Zero-Bill view
           </Link>
         </div>
+        */}
 
+        {/* DEPRIORITIZED: Status/Outcome/Objection summary
         <section className="grid gap-4 md:grid-cols-3">
           <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm">
             <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
@@ -577,6 +487,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             </p>
           </div>
         </section>
+        */}
 
         <PlanningRiskCard siteId={site.id} />
 
@@ -647,38 +558,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
           </section>
         )}
 
-        <ConfidenceScoreSection
-          siteId={site.id}
-          siteName={site.site_name}
-          address={site.address}
-          localPlanningAuthority={site.local_planning_authority}
-          aiOutcome={site.ai_outcome}
-          aiRiskSummary={site.ai_risk_summary}
-          keyPlanningConsiderations={site.key_planning_considerations}
-          objectionLikelihood={site.objection_likelihood}
-        />
-
-        <SiteKillersSection
-          siteId={site.id}
-          siteName={site.site_name}
-          address={site.address}
-          localPlanningAuthority={site.local_planning_authority}
-          aiOutcome={site.ai_outcome}
-          aiRiskSummary={site.ai_risk_summary}
-          keyPlanningConsiderations={site.key_planning_considerations}
-          objectionLikelihood={site.objection_likelihood}
-        />
-
-        <RiskRationaleSection
-          siteId={site.id}
-          siteName={site.site_name}
-          address={site.address}
-          localPlanningAuthority={site.local_planning_authority}
-          riskStatus={site.status}
-          objectionLikelihood={site.objection_likelihood}
-          keyPlanningConsiderations={site.key_planning_considerations}
-        />
-
+        {/* DEPRIORITIZED: Edit planning analysis form
         <details className="mt-6 rounded-xl border border-zinc-200 bg-white p-4">
           <summary className="cursor-pointer text-sm font-semibold text-zinc-900">
             Edit planning analysis
@@ -769,7 +649,9 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             </button>
           </form>
         </details>
+        */}
 
+        {/* DEPRIORITIZED: Planning summary display
         <section className="space-y-4">
           <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm">
             <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
@@ -803,6 +685,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
             </p>
           </div>
         </section>
+        */}
 
         {hasViabilityData && (
           <section className="mt-6 rounded-lg border border-zinc-200 bg-white p-4 text-xs">
@@ -901,6 +784,7 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
           </section>
         )}
 
+        {/* DEPRIORITIZED: Run full analysis + broker pack section
         <section className="mt-8 space-y-8">
           <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
             <form action={runFullAnalysis}>
@@ -965,11 +849,12 @@ export default async function SiteDetailPage({ params, searchParams }: PageProps
               )}
             </div>
 
-          {brokers.length > 0 && (
-            <BrokerSendForm brokers={brokers} siteName={site.site_name} />
-          )}
-        </div>
+            {brokers.length > 0 && (
+              <BrokerSendForm brokers={brokers} siteName={site.site_name} />
+            )}
+          </div>
         </section>
+        */}
 
         <a
           href="/sites"
