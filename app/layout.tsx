@@ -115,7 +115,7 @@ export default async function RootLayout({
                   </details>
                 ) : (
                   <Link
-                    href="/login?next=/dashboard"
+                    href="/signin?next=/sites"
                     className="inline-flex items-center rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100"
                   >
                     Sign in

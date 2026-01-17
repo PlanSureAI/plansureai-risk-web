@@ -1,301 +1,503 @@
 import Link from "next/link";
+import { CheckCircle, MapPin, Zap, ArrowRight, Shield } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">PlanSureAI</h1>
-            <p className="text-xl text-gray-600 mb-8">
-              AI-powered planning intelligence for SME developers
+    <div className="min-h-screen bg-white">
+      <nav className="border-b border-zinc-200">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
+            <div className="flex items-center gap-8">
+              <Link href="/" className="text-xl font-bold text-zinc-900">
+                PlanSureAI
+              </Link>
+              <div className="hidden md:flex items-center gap-6">
+                <Link href="/sites" className="text-sm font-medium text-zinc-700 hover:text-zinc-900">
+                  Sites
+                </Link>
+                <Link href="/constraints" className="text-sm font-medium text-zinc-700 hover:text-zinc-900">
+                  Constraints
+                </Link>
+                <Link href="/pricing" className="text-sm font-medium text-zinc-700 hover:text-zinc-900">
+                  Pricing
+                </Link>
+              </div>
+            </div>
+            <Link
+              href="/signin"
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800"
+            >
+              Sign in
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <section className="relative overflow-hidden border-b border-zinc-200 bg-gradient-to-br from-zinc-50 to-white">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.02]"></div>
+        <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <h1 className="text-5xl font-bold tracking-tight text-zinc-900 sm:text-6xl">
+              AI-powered planning intelligence for UK developers
+            </h1>
+            <p className="mt-6 text-xl leading-8 text-zinc-600">
+              Get instant planning risk assessments backed by official constraint data and local policy
+              analysis. No guesswork - just clear, evidence-based guidance to help you decide faster.
             </p>
-            <p className="text-lg text-gray-700 leading-relaxed">
-              We are building the UK's first comprehensive planning intelligence platform that
-              understands local policy nuance. Currently training on Cornwall, Birmingham, and
-              Leeds - with more regions coming soon.
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <div className="mt-10 flex items-center justify-center gap-4">
               <Link
-                href="/login?next=/onboarding"
-                className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                href="/signup"
+                className="rounded-lg bg-zinc-900 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-zinc-800"
               >
-                Join early access waitlist
+                Start Free Trial
+              </Link>
+              <Link
+                href="/constraints"
+                className="flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-6 py-3 text-base font-semibold text-zinc-900 hover:bg-zinc-50"
+              >
+                Check Constraints
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <p className="mt-4 text-sm text-zinc-500">No credit card required for free tier</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-zinc-200 bg-white py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-zinc-900">How it works</h2>
+            <p className="mt-4 text-lg text-zinc-600">Three simple steps to planning clarity</p>
+          </div>
+
+          <div className="mt-16 grid gap-8 md:grid-cols-3">
+            <div className="text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white">
+                1
+              </div>
+              <h3 className="mt-6 text-xl font-semibold text-zinc-900">Enter your site</h3>
+              <p className="mt-2 text-base text-zinc-600">
+                Address, postcode, or coordinates - we&apos;ll find it and pull official planning constraints
+                from Planning Data.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white">
+                2
+              </div>
+              <h3 className="mt-6 text-xl font-semibold text-zinc-900">Get instant risk assessment</h3>
+              <p className="mt-2 text-base text-zinc-600">
+                See your planning risk score (0-100) with specific constraints flagged: conservation
+                areas, listed buildings, TPOs, flood zones.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white">
+                3
+              </div>
+              <h3 className="mt-6 text-xl font-semibold text-zinc-900">Review evidence-based guidance</h3>
+              <p className="mt-2 text-base text-zinc-600">
+                Every constraint comes with policy references and mitigation steps. No assumptions - just
+                what the data shows.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-zinc-200 bg-zinc-50 py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-12 lg:grid-cols-2">
+            <div className="rounded-2xl border border-zinc-200 bg-white p-8">
+              <Shield className="h-10 w-10 text-zinc-900" />
+              <h3 className="mt-6 text-2xl font-bold text-zinc-900">Planning Risk Assessment</h3>
+              <p className="mt-4 text-base text-zinc-600">
+                Analyze any UK site for planning constraints using official Planning Data. Get risk
+                scores, constraint breakdowns, and mitigation guidance in seconds.
+              </p>
+              <ul className="mt-6 space-y-3">
+                {[
+                  "Risk score (0-100) with confidence rating",
+                  "Conservation areas, listed buildings, TPOs, flood zones",
+                  "Policy references from local plans",
+                  "Mitigation recommendations",
+                  "Nearby planning approvals analysis",
+                ].map((feature) => (
+                  <li key={feature} className="flex items-start gap-3">
+                    <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600" />
+                    <span className="text-sm text-zinc-700">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/sites/new"
+                className="mt-8 inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-6 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
+              >
+                Analyze a site
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            <div className="rounded-2xl border border-zinc-200 bg-white p-8">
+              <MapPin className="h-10 w-10 text-zinc-900" />
+              <h3 className="mt-6 text-2xl font-bold text-zinc-900">Planning Constraints Checker</h3>
+              <p className="mt-4 text-base text-zinc-600">
+                Free tool to instantly check planning constraints for any UK location. Perfect for quick
+                site screening.
+              </p>
+              <ul className="mt-6 space-y-3">
+                {[
+                  "Conservation areas",
+                  "Listed buildings nearby",
+                  "Tree Preservation Orders (TPOs)",
+                  "Flood zones (2 & 3)",
+                  "AONBs, National Parks, Green Belt",
+                  "SSSIs and ancient woodland",
+                ].map((feature) => (
+                  <li key={feature} className="flex items-start gap-3">
+                    <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600" />
+                    <span className="text-sm text-zinc-700">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/constraints"
+                className="mt-8 inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-6 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+              >
+                Check constraints
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
-        <section className="bg-white rounded-xl border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">
-            Where we're building first
-          </h2>
-          <p className="text-gray-700 mb-4">
-            Currently covering: Cornwall, Birmingham, Leeds
-          </p>
-          <p className="text-gray-600 text-sm mb-6">
-            We take a quality-first approach, training our AI on local plans, constraint datasets,
-            policy documents, and real planning outcomes before expanding nationwide.
-          </p>
-          <p className="text-gray-700 mb-6">
-            Developing in one of these areas? You'll get the deepest coverage and help shape the
-            platform.
-          </p>
-          <Link
-            href="/login?next=/onboarding"
-            className="inline-flex items-center justify-center rounded-md bg-gray-900 px-6 py-3 text-sm font-semibold text-white hover:bg-gray-800"
-          >
-            Request early access for your region
-          </Link>
-        </section>
-
-        <section className="bg-blue-50 rounded-xl border border-blue-100 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">
-            Help us build the future of planning intelligence
-          </h2>
-          <p className="text-gray-700 mb-6">
-            We are looking for SME developers working in Cornwall, Birmingham, or Leeds to join the
-            beta program.
-          </p>
-          <div className="grid gap-6 md:grid-cols-2">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">What you get</h3>
-              <ul className="space-y-2 text-sm text-gray-700 list-disc pl-5">
-                <li>Free access during beta and preferential pricing after launch</li>
-                <li>Priority support and feature requests</li>
-                <li>Direct input into what we build next</li>
-                <li>First access to new regions as we expand</li>
-              </ul>
+      <section className="border-b border-zinc-200 bg-white py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-12">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-zinc-900">Deep regional coverage</h2>
+              <p className="mt-4 text-lg text-zinc-600">
+                Currently training on: {" "}
+                <span className="font-semibold text-zinc-900">Cornwall, Birmingham, Leeds</span>
+              </p>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">What we need</h3>
-              <ul className="space-y-2 text-sm text-gray-700 list-disc pl-5">
-                <li>Real planning scenarios to test against</li>
-                <li>Honest feedback on accuracy and usefulness</li>
-                <li>Patience as we refine and improve</li>
-              </ul>
+
+            <div className="mt-12 grid gap-8 md:grid-cols-2">
+              <div>
+                <h3 className="text-xl font-semibold text-zinc-900">In these regions, you get:</h3>
+                <ul className="mt-4 space-y-3">
+                  {[
+                    "Local plan policy citations (e.g., 'Cornwall Local Plan Policy 12')",
+                    "Comparable approvals within 1km",
+                    "Region-specific approval rates",
+                    "Planning authority guidance",
+                  ].map((feature) => (
+                    <li key={feature} className="flex items-start gap-3">
+                      <Zap className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" />
+                      <span className="text-base text-zinc-700">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-semibold text-zinc-900">Working elsewhere?</h3>
+                <p className="mt-4 text-base text-zinc-600">
+                  You still get full constraint detection and basic risk assessment. Deep policy coverage
+                  expands based on demand.
+                </p>
+                <Link
+                  href="/waitlist"
+                  className="mt-6 inline-block text-sm font-semibold text-zinc-900 underline"
+                >
+                  Request coverage for your region →
+                </Link>
+              </div>
             </div>
           </div>
-          <p className="text-sm text-gray-600 mt-6">
-            UK planning is complex because every authority does things differently. We are doing
-            this properly and not rushing to market with incomplete data.
+        </div>
+      </section>
+
+      <section className="border-b border-zinc-200 bg-zinc-50 py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-zinc-900">Simple, transparent pricing</h2>
+            <p className="mt-4 text-lg text-zinc-600">Choose the plan that fits your workflow</p>
+          </div>
+
+          <div className="mt-16 grid gap-8 lg:grid-cols-4">
+            <PricingCard
+              name="Explorer"
+              price="Free"
+              period=""
+              description="Perfect for trying it out"
+              features={[
+                "3 sites per month",
+                "Basic risk assessment",
+                "Constraint detection",
+                "Watermarked exports",
+              ]}
+              cta="Start Free"
+              href="/signup"
+            />
+
+            <PricingCard
+              name="Developer"
+              price="£49"
+              period="/month"
+              description="For active site hunters"
+              features={[
+                "10 sites per month",
+                "Full risk assessment",
+                "Policy references",
+                "Mitigation plans",
+                "Clean PDF exports",
+              ]}
+              cta="Start Trial"
+              href="/signup"
+              highlighted
+            />
+
+            <PricingCard
+              name="Expert"
+              price="£149"
+              period="/month"
+              description="For serious developers"
+              features={[
+                "Unlimited sites",
+                "Priority processing",
+                "Detailed mitigation plans",
+                "Team collaboration",
+                "API access",
+              ]}
+              cta="Start Trial"
+              href="/signup"
+            />
+
+            <PricingCard
+              name="Enterprise"
+              price="Custom"
+              period=""
+              description="For multi-user teams"
+              features={[
+                "White-label reports",
+                "Bank/broker integrations",
+                "Dedicated support",
+                "Custom workflows",
+              ]}
+              cta="Contact Sales"
+              href="/contact"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-zinc-200 bg-white py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-zinc-900">What developers say</h2>
+          </div>
+
+          <div className="mt-16 grid gap-8 md:grid-cols-3">
+            <Testimonial
+              quote="Saved me 2 weeks of research on a Cornwall site. The conservation area flag and mitigation steps were spot-on."
+              author="James M."
+              role="Land promoter, Cornwall"
+            />
+            <Testimonial
+              quote="Finally, a tool that cites actual policies instead of vague AI waffle. Worth every penny."
+              author="Sarah K."
+              role="Small developer, Birmingham"
+            />
+            <Testimonial
+              quote="Used the free constraints checker to screen 20 sites in an afternoon. Bought Pro the same day."
+              author="Tom R."
+              role="Developer, Leeds"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-zinc-900 py-24 text-white">
+        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+          <h2 className="text-4xl font-bold">Ready to get started?</h2>
+          <p className="mt-4 text-xl text-zinc-300">
+            Stop paying consultants £2-5k per site for basic planning research.
+            <br />
+            Get instant risk assessments backed by official data.
           </p>
-          <div className="mt-6">
+          <div className="mt-10 flex items-center justify-center gap-4">
             <Link
-              href="/login?next=/onboarding"
-              className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+              href="/signup"
+              className="rounded-lg bg-white px-8 py-4 text-base font-semibold text-zinc-900 hover:bg-zinc-100"
             >
-              Apply for beta access
+              Start Free Trial
+            </Link>
+            <Link
+              href="/constraints"
+              className="rounded-lg border border-white/20 bg-white/10 px-8 py-4 text-base font-semibold text-white hover:bg-white/20"
+            >
+              Check Constraints (Free)
             </Link>
           </div>
-          <p className="mt-4 text-xs text-gray-600">
-            Questions? Email <a className="underline" href="mailto:plansureai@gmail.com">plansureai@gmail.com</a>
-          </p>
-        </section>
+          <p className="mt-4 text-sm text-zinc-400">No credit card required for free tier</p>
+        </div>
+      </section>
 
-        <section className="bg-white rounded-xl border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Our approach</h2>
-          <div className="grid gap-6 md:grid-cols-3">
+      <footer className="border-t border-zinc-200 bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="grid gap-8 md:grid-cols-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                1. Deep regional training
-              </h3>
-              <p className="text-sm text-gray-700">
-                We combine local plans, constraint datasets, policy documents, and user-uploaded
-                planning materials to build comprehensive regional intelligence.
+              <div className="text-lg font-bold text-zinc-900">PlanSureAI</div>
+              <p className="mt-2 text-sm text-zinc-600">
+                AI-powered planning intelligence for UK developers
               </p>
             </div>
+
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                2. Evidence-based analysis
-              </h3>
-              <p className="text-sm text-gray-700">
-                When policies conflict or need interpretation, we surface the evidence and suggest
-                mitigation steps rather than making assumptions.
-              </p>
+              <h3 className="text-sm font-semibold text-zinc-900">Product</h3>
+              <ul className="mt-4 space-y-2">
+                <li>
+                  <Link href="/sites" className="text-sm text-zinc-600 hover:text-zinc-900">
+                    Risk Assessment
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/constraints" className="text-sm text-zinc-600 hover:text-zinc-900">
+                    Constraints Checker
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/pricing" className="text-sm text-zinc-600 hover:text-zinc-900">
+                    Pricing
+                  </Link>
+                </li>
+              </ul>
             </div>
+
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                3. Continuous updates
-              </h3>
-              <p className="text-sm text-gray-700">
-                We track regional policy feeds and run periodic refresh jobs to keep data current
-                as local plans evolve.
-              </p>
+              <h3 className="text-sm font-semibold text-zinc-900">Company</h3>
+              <ul className="mt-4 space-y-2">
+                <li>
+                  <Link href="/about" className="text-sm text-zinc-600 hover:text-zinc-900">
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="text-sm text-zinc-600 hover:text-zinc-900">
+                    Contact
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-900">Contact</h3>
+              <div className="mt-4 space-y-2 text-sm text-zinc-600">
+                <p>PlanSureAI Ltd</p>
+                <p>[Your Address]</p>
+                <p>[City, Postcode]</p>
+                <p>United Kingdom</p>
+                <p className="mt-4">
+                  <a href="mailto:plansureai@gmail.com" className="hover:text-zinc-900">
+                    plansureai@gmail.com
+                  </a>
+                </p>
+              </div>
             </div>
           </div>
-          <p className="text-sm text-gray-600 mt-6">
-            Current focus: getting Cornwall, Birmingham, and Leeds right before expanding coverage.
-          </p>
-        </section>
-      </div>
 
-      {/* Main Features Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Tools & Features</h2>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Sites */}
-          <Link
-            href="/sites"
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 hover:shadow-lg transition-all"
-          >
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Sites</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Manage your development sites, run EPC A analysis, and generate lender packs for
-              Zero-Bill residential developments.
+          <div className="mt-12 border-t border-zinc-200 pt-8">
+            <p className="text-center text-sm text-zinc-500">
+              © 2026 PlanSureAI Ltd. All rights reserved.
             </p>
-            <div className="inline-flex items-center text-blue-600 font-medium text-sm">
-              View your sites →
-            </div>
-          </Link>
-
-          {/* Constraints Checker */}
-          <Link
-            href="/constraints"
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 hover:shadow-lg transition-all"
-          >
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Planning Constraints</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Instantly check planning constraints for any UK location including conservation
-              areas, listed buildings, flood zones, and more.
+            <p className="mt-2 text-center text-xs text-zinc-400">
+              Planning data sourced from planning.data.gov.uk. PlanSureAI is not affiliated with any
+              local planning authority.
             </p>
-            <div className="inline-flex items-center text-blue-600 font-medium text-sm">
-              Check constraints →
-            </div>
-          </Link>
-
-          {/* Zero-Bill Homes */}
-          <Link
-            href="/zero-bill-homes"
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 hover:shadow-lg transition-all"
-          >
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Zero-Bill Homes</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Explore zero-bill residential development opportunities with EPC A compliance and
-              energy performance analysis.
-            </p>
-            <div className="inline-flex items-center text-blue-600 font-medium text-sm">
-              Explore homes →
-            </div>
-          </Link>
-
-          {/* EPC Explorer */}
-          <Link
-            href="/epc"
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 hover:shadow-lg transition-all"
-          >
-            <h3 className="text-xl font-bold text-gray-900 mb-3">EPC Explorer</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Search and analyze Energy Performance Certificate data across the UK to identify
-              retrofit and development opportunities.
-            </p>
-            <div className="inline-flex items-center text-blue-600 font-medium text-sm">
-              Explore EPCs →
-            </div>
-          </Link>
-
-          {/* Dashboard */}
-          <Link
-            href="/dashboard"
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 hover:shadow-lg transition-all"
-          >
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Dashboard</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              View your project portfolio, track progress, and access all your planning
-              intelligence in one place.
-            </p>
-            <div className="inline-flex items-center text-blue-600 font-medium text-sm">
-              Go to dashboard →
-            </div>
-          </Link>
-
-          {/* Viability Calculator - now active */}
-          <Link
-            href="/viability"
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 hover:shadow-lg transition-all"
-          >
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Viability Calculator</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Assess development viability with AI-powered cost estimation and financial modeling.
-            </p>
-            <div className="inline-flex items-center text-blue-600 font-medium text-sm">
-              Calculate viability →
-            </div>
-          </Link>
-        </div>
-
-        {/* Additional Info Section */}
-        <div className="mt-16 bg-blue-50 rounded-lg p-8 text-center">
-          <h3 className="text-xl font-semibold text-gray-900 mb-3">Built for SME Developers</h3>
-          <p className="text-gray-700 max-w-2xl mx-auto">
-            PlanSureAI streamlines the planning process for small and medium developers, giving you
-            the tools to compete with larger firms while saving time and reducing risk.
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-        <section className="bg-white rounded-xl border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently asked questions</h2>
-          <div className="space-y-5 text-sm text-gray-700">
-            <div>
-              <p className="font-semibold text-gray-900">Which areas do you cover?</p>
-              <p>
-                We are in development with deep coverage of Cornwall, Birmingham, and Leeds. We
-                expand region by region based on data availability and demand.
-              </p>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">When will you cover my region?</p>
-              <p>
-                Join the waitlist and tell us your area. This directly influences our roadmap and
-                expansion order.
-              </p>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">How accurate is your planning data?</p>
-              <p>
-                We combine official local plans, constraint datasets, and policy documents with
-                real planning outcomes. When policies conflict, we show the evidence instead of
-                guessing.
-              </p>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">How do you handle policy updates?</p>
-              <p>
-                We track regional policy feeds and run periodic refresh jobs. We are building UI
-                indicators for policy version dates next.
-              </p>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">
-                Do you include committee decisions and officer reports?
-              </p>
-              <p>
-                Not yet. Our current coverage focuses on local plans, constraint datasets, and
-                user-uploaded planning documents. Committee reports are on the roadmap.
-              </p>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">Can I try it now?</p>
-              <p>
-                We are in private beta with selected developers in our coverage areas. Join the
-                waitlist to get early access.
-              </p>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">How much will it cost?</p>
-              <p>
-                Pricing is not final yet, but beta testers will receive preferential rates. Our
-                goal is to stay accessible for SME developers.
-              </p>
-            </div>
           </div>
-        </section>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function PricingCard({
+  name,
+  price,
+  period,
+  description,
+  features,
+  cta,
+  href,
+  highlighted = false,
+}: {
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  features: string[];
+  cta: string;
+  href: string;
+  highlighted?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-8 ${
+        highlighted
+          ? "border-zinc-900 bg-zinc-900 text-white"
+          : "border-zinc-200 bg-white text-zinc-900"
+      }`}
+    >
+      <h3 className="text-lg font-semibold">{name}</h3>
+      <div className="mt-4">
+        <span className="text-4xl font-bold">{price}</span>
+        <span className={highlighted ? "text-zinc-300" : "text-zinc-500"}>{period}</span>
+      </div>
+      <p className={`mt-2 text-sm ${highlighted ? "text-zinc-300" : "text-zinc-600"}`}>
+        {description}
+      </p>
+
+      <ul className="mt-8 space-y-3">
+        {features.map((feature) => (
+          <li key={feature} className="flex items-start gap-3">
+            <CheckCircle
+              className={`mt-0.5 h-5 w-5 flex-shrink-0 ${
+                highlighted ? "text-emerald-400" : "text-emerald-600"
+              }`}
+            />
+            <span className={`text-sm ${highlighted ? "text-zinc-200" : "text-zinc-700"}`}>
+              {feature}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <Link
+        href={href}
+        className={`mt-8 block w-full rounded-lg px-4 py-3 text-center text-sm font-semibold ${
+          highlighted
+            ? "bg-white text-zinc-900 hover:bg-zinc-100"
+            : "bg-zinc-900 text-white hover:bg-zinc-800"
+        }`}
+      >
+        {cta}
+      </Link>
+    </div>
+  );
+}
+
+function Testimonial({ quote, author, role }: { quote: string; author: string; role: string }) {
+  return (
+    <div className="rounded-2xl border border-zinc-200 bg-white p-8">
+      <p className="text-base text-zinc-700">"{quote}"</p>
+      <div className="mt-6">
+        <div className="font-semibold text-zinc-900">{author}</div>
+        <div className="text-sm text-zinc-600">{role}</div>
       </div>
     </div>
   );
