@@ -57,6 +57,8 @@ export default async function RootLayout({
                   >
                     Add site
                   </Link>
+
+                  {/* User Menu */}
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-medium">
                     {userLabel}
                   </div>
