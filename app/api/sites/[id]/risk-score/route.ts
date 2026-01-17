@@ -6,6 +6,7 @@ import {
   type PlanningRiskSite,
   type ComparableInsights,
 } from "@/app/lib/planningRiskScoring";
+import { generateMitigationPlan } from "@/app/lib/generateMitigationPlan";
 import { getPoliciesForConstraints, attachPoliciesToRiskFactors } from "@/app/lib/policyLookup";
 
 type NearbyApplication = {

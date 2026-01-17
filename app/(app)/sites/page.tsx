@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { getNextMove, type NextMove } from "@/app/types/siteFinance";
 import type { RiskLevel } from "@/lib/risk/types";
 import { SiteUsageTracker } from "./SiteUsageTracker";
+import { Settings } from "lucide-react";
 
 type SiteRow = {
   id: string;
@@ -49,6 +50,8 @@ const MOVE_CLASS: Record<NextMove, string> = {
   hold: "bg-amber-100 text-amber-800",
   walk_away: "bg-rose-100 text-rose-800",
 };
+
+const ADMIN_EMAILS = ["your-email@domain.com", "admin@domain.com"];
 
 function getHeadlineFundingStatus(results: SiteRow["eligibility_results"]): string {
   const r = (results ?? []).find(
@@ -137,6 +140,15 @@ export default async function SitesPage() {
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-zinc-900">Sites</h1>
           <div className="flex items-center gap-3">
+            {user?.email && ADMIN_EMAILS.includes(user.email) ? (
+              <Link
+                href="/admin/policies"
+                className="inline-flex items-center gap-1 rounded-full border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
+              >
+                <Settings className="h-4 w-4" />
+                Admin: Policies
+              </Link>
+            ) : null}
             <SignOutButton />
             <Link
               href="/sites/new"

@@ -9,6 +9,14 @@ export type RiskFactor = {
   description: string;
   impact: number;
   mitigation?: string;
+  policy?: {
+    number: string;
+    title: string;
+    text: string;
+    plan: string;
+    year: number | null;
+    url: string | null;
+  };
   policy_reference?: string;
   policy_text?: string;
   policy_url?: string;
