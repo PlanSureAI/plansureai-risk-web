@@ -5,7 +5,6 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       <section className="relative overflow-hidden border-b border-zinc-200 bg-gradient-to-br from-zinc-50 to-white">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.02]"></div>
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <h1 className="text-5xl font-bold tracking-tight text-zinc-900 sm:text-6xl">

@@ -20,15 +20,15 @@ export default async function RootLayout({
 }) {
   const supabase = await createSupabaseServerClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const addSiteHref = session ? "/sites/new" : "/login?next=/sites/new";
-  const userLabel = session?.user?.email?.charAt(0)?.toUpperCase() ?? "U";
+    data: { user },
+  } = await supabase.auth.getUser();
+  const addSiteHref = user ? "/sites/new" : "/login?next=/sites/new";
+  const userLabel = user?.email?.charAt(0)?.toUpperCase() ?? "U";
 
   return (
     <html lang="en">
       <body className={inter.className}>
-        {session && (
+        {user && (
           <nav className="bg-white border-b border-gray-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between h-16 items-center">
