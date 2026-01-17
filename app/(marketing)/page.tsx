@@ -4,35 +4,6 @@ import { CheckCircle, MapPin, Zap, ArrowRight, Shield } from "lucide-react";
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
-      <nav className="border-b border-zinc-200">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-8">
-              <Link href="/" className="text-xl font-bold text-zinc-900">
-                PlanSureAI
-              </Link>
-              <div className="hidden md:flex items-center gap-6">
-                <Link href="/sites" className="text-sm font-medium text-zinc-700 hover:text-zinc-900">
-                  Sites
-                </Link>
-                <Link href="/constraints" className="text-sm font-medium text-zinc-700 hover:text-zinc-900">
-                  Constraints
-                </Link>
-                <Link href="/pricing" className="text-sm font-medium text-zinc-700 hover:text-zinc-900">
-                  Pricing
-                </Link>
-              </div>
-            </div>
-            <Link
-              href="/signin"
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800"
-            >
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </nav>
-
       <section className="relative overflow-hidden border-b border-zinc-200 bg-gradient-to-br from-zinc-50 to-white">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.02]"></div>
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">

@@ -37,18 +37,6 @@ export default function SignInPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50">
-      <div className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to home
-          </Link>
-        </div>
-      </div>
-
       <div className="flex min-h-[calc(100vh-73px)] items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="rounded-2xl border border-zinc-200 bg-white p-8">

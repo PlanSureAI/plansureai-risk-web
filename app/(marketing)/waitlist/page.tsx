@@ -35,18 +35,6 @@ export default function WaitlistPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="border-b border-zinc-200">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to home
-          </Link>
-        </div>
-      </div>
-
       <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
         {!submitted ? (
           <div className="grid gap-12 lg:grid-cols-2">
