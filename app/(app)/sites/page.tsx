@@ -123,19 +123,18 @@ export default async function SitesPage() {
   const {
     data: { user },
   } = await supabaseServer.auth.getUser();
-  const { data: profile } = user
+  const { data: subscription } = user
     ? await supabaseServer
-        .from("profiles")
-        .select("subscription_tier")
-        .eq("id", user.id)
+        .from("user_subscriptions")
+        .select("tier")
+        .eq("user_id", user.id)
         .single()
     : { data: null };
-  const tier = (profile?.subscription_tier as
+  const tier = (subscription?.tier ?? "free") as
     | "free"
     | "starter"
     | "pro"
-    | "enterprise"
-    | undefined) ?? "free";
+    | "enterprise";
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">

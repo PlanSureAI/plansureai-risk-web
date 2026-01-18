@@ -314,19 +314,18 @@ export default async function SiteDetailPage({ params }: PageProps) {
   const {
     data: { user },
   } = await supabaseServer.auth.getUser();
-  const { data: profile } = user
+  const { data: subscription } = user
     ? await supabaseServer
-        .from("profiles")
-        .select("subscription_tier")
-        .eq("id", user.id)
+        .from("user_subscriptions")
+        .select("tier")
+        .eq("user_id", user.id)
         .single()
     : { data: null };
-  const userTier = (profile?.subscription_tier as
+  const userTier = (subscription?.tier ?? "free") as
     | "free"
     | "starter"
     | "pro"
-    | "enterprise"
-    | undefined) ?? "free";
+    | "enterprise";
   const site = await getSite(id);
   const nextMove = site ? getNextMove(site.ai_outcome, site.eligibility_results ?? []) : null;
   const units = site ? site.proposed_units ?? site.ai_units_estimate ?? null : null;
@@ -465,7 +464,11 @@ export default async function SiteDetailPage({ params }: PageProps) {
         </section>
         */}
 
-        <PlanningRiskCard siteId={site.id} userTier={userTier} />
+        <PlanningRiskCard
+          siteId={site.id}
+          userTier={userTier}
+          councilName={site.local_planning_authority}
+        />
 
         <ComparableApprovalsMap
           site={{

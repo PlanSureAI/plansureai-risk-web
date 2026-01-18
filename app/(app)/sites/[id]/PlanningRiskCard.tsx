@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import type { RiskScore } from "@/app/lib/planningRiskScoring";
 import { MitigationPlan } from "@/app/components/MitigationPlan";
+import { ComparableAnalysisWithGating } from "@/app/components/ComparableAnalysisWithGating";
 import Link from "next/link";
 import { ArrowRight, Lock } from "lucide-react";
 
 type Props = {
   siteId: string;
   userTier?: "free" | "starter" | "pro" | "enterprise";
+  councilName?: string | null;
 };
 
 function riskLevelClasses(level: RiskScore["level"]) {
@@ -65,7 +67,20 @@ function mapRiskToCategory(risk: { title: string; constraint?: string }): string
   return "heritage";
 }
 
-export function PlanningRiskCard({ siteId, userTier = "free" }: Props) {
+function mapConstraintType(risk: { title: string; constraint?: string }): string | undefined {
+  const constraint = (risk.constraint ?? "").toLowerCase();
+  const title = risk.title.toLowerCase();
+
+  if (constraint.includes("conservation") || title.includes("conservation")) {
+    return "conservation_area";
+  }
+  if (constraint.includes("listed") || title.includes("listed")) {
+    return "listed_building";
+  }
+  return undefined;
+}
+
+export function PlanningRiskCard({ siteId, userTier = "free", councilName }: Props) {
   const [riskScore, setRiskScore] = useState<RiskScore | null>(null);
   const [loading, setLoading] = useState(false);
   const [showFullAnalysis, setShowFullAnalysis] = useState(false);
@@ -370,6 +385,23 @@ export function PlanningRiskCard({ siteId, userTier = "free" }: Props) {
                       compact
                     />
                   )}
+                  <ComparableAnalysisWithGating
+                    riskCategory={mapRiskToCategory(risk)}
+                    riskSeverity={risk.severity}
+                    councilName={councilName ?? undefined}
+                    constraintType={mapConstraintType(risk)}
+                    userTier={userTier}
+                    hasProfessionalReports={Boolean(risk.policy)}
+                    inConservationArea={
+                      (risk.constraint ?? "").toLowerCase().includes("conservation")
+                    }
+                    hasListedBuilding={(risk.constraint ?? "").toLowerCase().includes("listed")}
+                    hasTreeConstraints={
+                      (risk.constraint ?? "").toLowerCase().includes("tree") ||
+                      (risk.constraint ?? "").toLowerCase().includes("tpo")
+                    }
+                    inFloodZone={(risk.constraint ?? "").toLowerCase().includes("flood")}
+                  />
                 </div>
               </li>
             ))}

@@ -1,17 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
-
-export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    redirect("/sites");
-  }
-
+export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <nav className="border-b border-zinc-200 bg-white">
