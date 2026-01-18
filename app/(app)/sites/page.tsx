@@ -51,7 +51,10 @@ const MOVE_CLASS: Record<NextMove, string> = {
   walk_away: "bg-rose-100 text-rose-800",
 };
 
-const ADMIN_EMAILS = ["your-email@domain.com", "admin@domain.com"];
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
+  .split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
 
 function getHeadlineFundingStatus(results: SiteRow["eligibility_results"]): string {
   const r = (results ?? []).find(
@@ -140,7 +143,7 @@ export default async function SitesPage() {
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-zinc-900">Sites</h1>
           <div className="flex items-center gap-3">
-            {user?.email && ADMIN_EMAILS.includes(user.email) ? (
+            {user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase()) ? (
               <Link
                 href="/admin/policies"
                 className="inline-flex items-center gap-1 rounded-full border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"

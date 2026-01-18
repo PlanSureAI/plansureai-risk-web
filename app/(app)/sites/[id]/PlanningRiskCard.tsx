@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 import type { RiskScore } from "@/app/lib/planningRiskScoring";
+import { MitigationPlan } from "@/app/components/MitigationPlan";
+import Link from "next/link";
+import { ArrowRight, Lock } from "lucide-react";
 
 type Props = {
   siteId: string;
+  userTier?: "free" | "starter" | "pro" | "enterprise";
 };
 
 function riskLevelClasses(level: RiskScore["level"]) {
@@ -42,7 +46,26 @@ function formatDate(iso: string) {
   });
 }
 
-export function PlanningRiskCard({ siteId }: Props) {
+function mapRiskToCategory(risk: { title: string; constraint?: string }): string {
+  const constraint = (risk.constraint ?? "").toLowerCase();
+  const title = risk.title.toLowerCase();
+
+  if (constraint.includes("conservation") || constraint.includes("listed")) return "heritage";
+  if (constraint.includes("tpo") || constraint.includes("tree")) return "trees";
+  if (constraint.includes("flood")) return "flooding";
+  if (constraint.includes("parking")) return "parking";
+
+  if (title.includes("heritage") || title.includes("conservation") || title.includes("listed")) {
+    return "heritage";
+  }
+  if (title.includes("tree")) return "trees";
+  if (title.includes("flood") || title.includes("drainage")) return "flooding";
+  if (title.includes("parking")) return "parking";
+
+  return "heritage";
+}
+
+export function PlanningRiskCard({ siteId, userTier = "free" }: Props) {
   const [riskScore, setRiskScore] = useState<RiskScore | null>(null);
   const [loading, setLoading] = useState(false);
   const [showFullAnalysis, setShowFullAnalysis] = useState(false);
@@ -304,6 +327,49 @@ export function PlanningRiskCard({ siteId }: Props) {
                       <p className="mt-1 text-xs text-blue-700">{risk.policy.text}</p>
                     </div>
                   ) : null}
+                  {risk.severity === "high" || risk.severity === "critical" ? (
+                    userTier === "free" ? (
+                      <div className="mt-4 rounded-lg border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-purple-50 p-4 shadow-sm">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-600">
+                            <Lock className="h-5 w-5 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="mb-1 font-semibold text-gray-900">
+                              Unlock Detailed Mitigation Plan
+                            </h4>
+                            <p className="mb-3 text-sm text-gray-700">
+                              Get step-by-step guidance with cost estimates, timelines, and direct
+                              links to specialist consultants.
+                            </p>
+                            <Link
+                              href="/pricing"
+                              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                            >
+                              Upgrade to Developer
+                              <ArrowRight className="h-4 w-4" />
+                            </Link>
+                          </div>
+                        </div>
+                        <div className="mt-3 border-t border-blue-200 pt-3">
+                          <p className="text-xs text-gray-600">
+                            ✓ Used by 500+ successful planning applications
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <MitigationPlan
+                        riskCategory={mapRiskToCategory(risk)}
+                        riskTitle={risk.title}
+                      />
+                    )
+                  ) : (
+                    <MitigationPlan
+                      riskCategory={mapRiskToCategory(risk)}
+                      riskTitle={risk.title}
+                      compact
+                    />
+                  )}
                 </div>
               </li>
             ))}

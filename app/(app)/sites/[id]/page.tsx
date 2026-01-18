@@ -310,6 +310,23 @@ export async function deleteSite(id: string) {
 
 export default async function SiteDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const supabaseServer = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabaseServer.auth.getUser();
+  const { data: profile } = user
+    ? await supabaseServer
+        .from("profiles")
+        .select("subscription_tier")
+        .eq("id", user.id)
+        .single()
+    : { data: null };
+  const userTier = (profile?.subscription_tier as
+    | "free"
+    | "starter"
+    | "pro"
+    | "enterprise"
+    | undefined) ?? "free";
   const site = await getSite(id);
   const nextMove = site ? getNextMove(site.ai_outcome, site.eligibility_results ?? []) : null;
   const units = site ? site.proposed_units ?? site.ai_units_estimate ?? null : null;
@@ -448,7 +465,7 @@ export default async function SiteDetailPage({ params }: PageProps) {
         </section>
         */}
 
-        <PlanningRiskCard siteId={site.id} />
+        <PlanningRiskCard siteId={site.id} userTier={userTier} />
 
         <ComparableApprovalsMap
           site={{

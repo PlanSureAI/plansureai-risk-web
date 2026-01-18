@@ -9,6 +9,7 @@ export type RiskFactor = {
   description: string;
   impact: number;
   mitigation?: string;
+  constraint?: string;
   policy?: {
     number: string;
     title: string;
