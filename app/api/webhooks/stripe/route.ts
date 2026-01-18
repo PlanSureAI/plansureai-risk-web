@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { supabaseAdmin } from "@/app/lib/supabase";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-11-20.acacia",
+  apiVersion: "2023-10-16",
 });
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -12,7 +12,7 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 export async function POST(req: Request) {
   try {
     const body = await req.text();
-    const signature = headers().get("stripe-signature");
+    const signature = (await headers()).get("stripe-signature");
 
     if (!signature) {
       return NextResponse.json({ error: "No signature" }, { status: 400 });
@@ -175,7 +175,7 @@ async function handleInvoiceFailed(
 async function updateUserSubscription(
   userId: string,
   subscription: Stripe.Subscription,
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>
+  supabase: typeof supabaseAdmin
 ) {
   const priceId = subscription.items.data[0]?.price.id;
 

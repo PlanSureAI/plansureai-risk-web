@@ -1,16 +1,28 @@
-import "./globals.css";
 import { Inter } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { Analytics } from "@vercel/analytics/react";
+import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "PlanSureAI - Planning Intelligence for Developers",
-  description: "AI-powered planning intelligence for SME developers and property professionals",
+  title: "PlansurAI - Planning Risk Assessment",
+  description: "AI-powered planning permission risk analysis with policy citations and comparable data.",
+  keywords: "planning permission, risk assessment, UK planning, AI planning",
+  authors: [{ name: "PlansurAI" }],
+  openGraph: {
+    title: "PlansurAI - Planning Risk Assessment",
+    description: "AI-powered planning permission risk analysis",
+    type: "website",
+    locale: "en_GB",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PlansurAI - Planning Risk Assessment",
+    description: "AI-powered planning permission risk analysis",
+  },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;

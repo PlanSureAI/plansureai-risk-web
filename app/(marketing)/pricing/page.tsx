@@ -66,6 +66,7 @@ export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
+  const paymentsEnabled = process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === 'true';
 
   async function handleSubscribe(priceId: string, tierId: string) {
     try {
@@ -113,6 +114,11 @@ export default function PricingPage() {
           Get professional planning risk assessments with detailed mitigation guidance and real
           approval data.
         </p>
+        {!paymentsEnabled && (
+          <div className="mt-6 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-900">
+            Beta access: payments coming soon
+          </div>
+        )}
       </div>
 
       <div className="mb-12 grid grid-cols-1 gap-8 md:grid-cols-3">
@@ -174,7 +180,7 @@ export default function PricingPage() {
 
               <button
                 onClick={() => tier.priceId && handleSubscribe(tier.priceId, tier.id)}
-                disabled={!tier.priceId || loading === tier.id}
+                disabled={!paymentsEnabled || !tier.priceId || loading === tier.id}
                 className={`w-full rounded-lg px-6 py-3 font-medium transition-colors ${
                   tier.highlighted
                     ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -183,7 +189,11 @@ export default function PricingPage() {
                       : 'cursor-not-allowed bg-gray-100 text-gray-400'
                 }`}
               >
-                {loading === tier.id ? 'Loading...' : tier.cta}
+                {loading === tier.id
+                  ? 'Loading...'
+                  : paymentsEnabled
+                    ? tier.cta
+                    : 'Coming Soon'}
               </button>
             </div>
           );

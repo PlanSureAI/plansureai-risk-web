@@ -2,11 +2,25 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-11-20.acacia",
+  apiVersion: "2023-10-16",
 });
 
 export async function POST(req: Request) {
   try {
+    // Payments kill switch for pre-launch staging.
+    const paymentsEnabled = process.env.PAYMENTS_ENABLED === "true";
+
+    if (!paymentsEnabled) {
+      return NextResponse.json(
+        {
+          error:
+            "Payments are temporarily disabled while we finalize setup. Please check back soon!",
+          comingSoon: true,
+        },
+        { status: 503 }
+      );
+    }
+
     const { priceId, userId, userEmail } = await req.json();
 
     if (!priceId || !userId || !userEmail) {

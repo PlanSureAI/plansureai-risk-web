@@ -10,17 +10,23 @@ const anthropic = new Anthropic({
 const currentSigningKey = process.env.QSTASH_CURRENT_SIGNING_KEY;
 const nextSigningKey = process.env.QSTASH_NEXT_SIGNING_KEY ?? currentSigningKey;
 
-if (!currentSigningKey || !nextSigningKey) {
-  throw new Error("QStash signing keys are required");
-}
-
-const receiver = new Receiver({
-  currentSigningKey,
-  nextSigningKey,
-});
+const receiver =
+  currentSigningKey && nextSigningKey
+    ? new Receiver({
+        currentSigningKey,
+        nextSigningKey,
+      })
+    : null;
 
 export async function POST(request: NextRequest) {
   try {
+    if (!receiver) {
+      return NextResponse.json(
+        { error: "QStash signing keys are required" },
+        { status: 503 }
+      );
+    }
+
     const rawBody = await request.text();
     const signature = request.headers.get("upstash-signature");
 
