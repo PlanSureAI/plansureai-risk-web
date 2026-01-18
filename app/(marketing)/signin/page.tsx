@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
@@ -16,18 +17,18 @@ export default function SignInPage() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const supabase = createSupabaseBrowserClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      if (res.ok) {
-        window.location.href = "/sites";
-      } else {
-        const data = await res.json();
-        setError(data.error || "Invalid email or password");
+      if (signInError) {
+        setError(signInError.message || "Invalid email or password");
+        return;
       }
+
+      window.location.href = "/sites";
     } catch (err) {
       setError("Something went wrong. Please try again.");
     } finally {
