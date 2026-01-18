@@ -4,6 +4,8 @@ import { FormEvent, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 
+export const dynamic = "force-dynamic";
+
 export default function LoginPage() {
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
