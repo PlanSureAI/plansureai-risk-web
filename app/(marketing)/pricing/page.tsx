@@ -26,7 +26,7 @@ const tiers = [
     name: 'Starter',
     id: 'starter',
     price: '£49',
-    priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID!,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID || 'price_1SI4a3DveIc1wtstvmOnAwyG',
     description: 'For homeowners and small developers',
     features: [
       'Up to 10 projects',
@@ -45,7 +45,7 @@ const tiers = [
     name: 'Pro',
     id: 'pro',
     price: '£149',
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || 'price_1Sqos5DveIc1wtstZk4Leoeb',
     description: 'For professionals and agencies',
     features: [
       'Unlimited projects',

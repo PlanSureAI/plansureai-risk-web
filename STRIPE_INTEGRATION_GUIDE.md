@@ -59,8 +59,9 @@ WHERE tier = 'pro';
 5. Update Environment Variables
 ```
 # .env.local
-NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID=price_XXXXXXXXXXXXX
-NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=price_YYYYYYYYYYYYY
+STRIPE_STARTER_PRICE_ID=price_1SI4a3DveIc1wtstvmOnAwyG
+STRIPE_PRO_PRICE_ID=price_1Sqos5DveIc1wtstZk4Leoeb
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_...
 ```
 
 Step 3: Setup Webhooks (10 min)
