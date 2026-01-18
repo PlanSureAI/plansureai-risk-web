@@ -1,19 +1,27 @@
 "use client";
 
-import { FormEvent, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 
 export const dynamic = "force-dynamic";
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [nextPath, setNextPath] = useState("/dashboard");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const nextParam = params.get("next");
+    if (nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")) {
+      setNextPath(nextParam);
+    }
+  }, []);
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -34,12 +42,7 @@ export default function LoginPage() {
       }
 
       setMessage("Logged in");
-      const nextParam = searchParams.get("next");
-      const safeNext =
-        nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
-          ? nextParam
-          : "/dashboard";
-      router.push(safeNext);
+      router.push(nextPath);
       router.refresh();
     });
   };
