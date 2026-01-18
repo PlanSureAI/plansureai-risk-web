@@ -1,10 +1,78 @@
-import { getSiteForLender } from "../page";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 type PageProps = { params: { id: string } };
 
+type SiteKiller = {
+  risk: string | null;
+  impact: string | null;
+  mitigation: string | null;
+};
+
+type LenderSite = {
+  site_name: string | null;
+  address: string | null;
+  local_planning_authority: string | null;
+  gdv: number | null;
+  total_cost: number | null;
+  profit_on_cost_percent: number | null;
+  loan_amount: number | null;
+  ltc_percent: number | null;
+  ltgdv_percent: number | null;
+  interest_cover: number | null;
+  planning_confidence_score: number | null;
+  risk_rationale: string | null;
+  site_killers: SiteKiller[] | null;
+  status: string | null;
+  planning_outcome: string | null;
+  objection_likelihood: string | null;
+  key_planning_considerations: string | null;
+  planning_summary: string | null;
+  decision_summary: string | null;
+};
+
 export default async function LenderSummaryPage({ params }: PageProps) {
-  const { id } = await params;
-  const site = await getSiteForLender(id);
+  const { id } = params;
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data } = await supabase
+    .from("sites")
+    .select(
+      `
+        site_name,
+        address,
+        local_planning_authority,
+        gdv,
+        total_cost,
+        profit_on_cost_percent,
+        loan_amount,
+        ltc_percent,
+        ltgdv_percent,
+        interest_cover,
+        planning_confidence_score,
+        risk_rationale,
+        site_killers,
+        status,
+        planning_outcome,
+        objection_likelihood,
+        key_planning_considerations,
+        planning_summary,
+        decision_summary
+      `
+    )
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  const site = data as LenderSite | null;
 
   if (!site) {
     return (
@@ -71,7 +139,7 @@ export default async function LenderSummaryPage({ params }: PageProps) {
             </h2>
 
             <div className="space-y-3">
-              {site.site_killers.map((killer, idx) => (
+              {site.site_killers.map((killer: SiteKiller, idx: number) => (
                 <div
                   key={idx}
                   className="rounded-lg border border-red-200 bg-white/70 p-3 space-y-1"
@@ -81,12 +149,16 @@ export default async function LenderSummaryPage({ params }: PageProps) {
                       {idx + 1}
                     </span>
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-red-900">{killer.risk}</p>
+                      <p className="text-sm font-semibold text-red-900">
+                        {killer.risk || "Risk not specified"}
+                      </p>
                       <p className="text-sm text-red-800">
-                        <span className="font-medium">Impact:</span> {killer.impact}
+                        <span className="font-medium">Impact:</span>{" "}
+                        {killer.impact || "Not specified"}
                       </p>
                       <p className="text-sm text-red-700">
-                        <span className="font-medium">Mitigation:</span> {killer.mitigation}
+                        <span className="font-medium">Mitigation:</span>{" "}
+                        {killer.mitigation || "Not specified"}
                       </p>
                     </div>
                   </div>

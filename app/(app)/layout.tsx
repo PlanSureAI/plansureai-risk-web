@@ -1,32 +1,27 @@
-import type { ReactNode } from "react";
-import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+// APP LAYOUT - Wraps all authenticated pages with nav
 
-export const dynamic = "force-dynamic";
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { AppNav } from '@/components/AppNav'
 
-export default async function AppLayout({ children }: { children: ReactNode }) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    redirect("/login");
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("id", session.user.id)
-    .maybeSingle();
-
-  if (!profile) {
-    redirect("/onboarding");
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const supabase = await createClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  // Redirect to login if not authenticated
+  if (!user) {
+    redirect('/login')
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <>
+      <AppNav userEmail={user.email} />
       {children}
-    </div>
-  );
+    </>
+  )
 }

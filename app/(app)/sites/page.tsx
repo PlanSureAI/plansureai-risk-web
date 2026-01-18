@@ -1,316 +1,174 @@
-import Link from "next/link";
-import { SignOutButton } from "@/app/components/SignOutButton";
-import { RiskBadge } from "@/app/components/RiskBadge";
-import { supabase } from "@/app/lib/supabaseClient";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
-import { getNextMove, type NextMove } from "@/app/types/siteFinance";
-import type { RiskLevel } from "@/lib/risk/types";
-import { SiteUsageTracker } from "./SiteUsageTracker";
-import { Settings } from "lucide-react";
+// app/(app)/sites/page.tsx
+// CLEAN SITES DASHBOARD - Card-based layout with empty state
 
-type SiteRow = {
-  id: string;
-  site_name: string | null;
-  address: string | null;
-  reference_code: string | null;
-  local_planning_authority: string | null;
-  status: string | null;
-  planning_outcome: string | null;
-  planning_summary: string | null;
-  ai_outcome: string | null;
-  risk_score: number | null;
-  risk_level: string | null;
-  risk_profile: {
-    overallRiskScore?: number;
-    riskLevel?: RiskLevel;
-  } | null;
-  last_assessed_at: string | null;
-  eligibility_results:
-    | {
-        productId:
-          | "homeBuildingFund"
-          | "smeAccelerator"
-          | "greenerHomesAlliance"
-          | "housingGrowthPartnership";
-        status: "Eligible" | "Borderline" | "NotEligible";
-        passedCriteria: string[];
-        failedCriteria: string[];
-      }[]
-    | null;
-};
-
-const MOVE_LABEL: Record<NextMove, string> = {
-  proceed: "Proceed",
-  hold: "Hold & clarify",
-  walk_away: "Walk away",
-};
-
-const MOVE_CLASS: Record<NextMove, string> = {
-  proceed: "bg-emerald-100 text-emerald-800",
-  hold: "bg-amber-100 text-amber-800",
-  walk_away: "bg-rose-100 text-rose-800",
-};
-
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
-  .split(",")
-  .map((email) => email.trim().toLowerCase())
-  .filter(Boolean);
-
-function getHeadlineFundingStatus(results: SiteRow["eligibility_results"]): string {
-  const r = (results ?? []).find(
-    (x) =>
-      x.productId === "homeBuildingFund" ||
-      x.productId === "greenerHomesAlliance"
-  );
-  if (!r) return "—";
-  const prefix = r.productId === "homeBuildingFund" ? "HBF" : "GHA";
-  return `${prefix}: ${r.status}`;
-}
-
-function planningRiskBadge(level: string, score: number) {
-  const normalized = level.toLowerCase();
-  const classes =
-    normalized === "low"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-      : normalized === "medium"
-        ? "border-amber-200 bg-amber-50 text-amber-800"
-        : normalized === "high"
-          ? "border-orange-200 bg-orange-50 text-orange-800"
-          : "border-rose-200 bg-rose-50 text-rose-800";
-
-  return (
-    <span
-      className={`inline-flex items-center gap-2 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${classes}`}
-    >
-      {score}
-      <span className="uppercase">{level}</span>
-    </span>
-  );
-}
-
-async function getSites(): Promise<SiteRow[]> {
-  const { data, error } = await supabase
-    .from("sites")
-    .select(`
-      id,
-      site_name,
-      address,
-      reference_code,
-      local_planning_authority,
-      status,
-      planning_outcome,
-      planning_summary,
-      ai_outcome,
-      eligibility_results,
-      risk_score,
-      risk_level,
-      risk_profile,
-      last_assessed_at
-    `)
-    .order("submitted_at", { ascending: false });
-
-  if (error) {
-    console.error("Error loading sites", error);
-    return [];
-  }
-
-  return data ?? [];
-}
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { Plus, MapPin, Building2, FileText } from 'lucide-react'
 
 export default async function SitesPage() {
-  const sites = await getSites();
-  const supabaseServer = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabaseServer.auth.getUser();
-  const { data: subscription } = user
-    ? await supabaseServer
-        .from("user_subscriptions")
-        .select("tier")
-        .eq("user_id", user.id)
-        .single()
-    : { data: null };
-  const tier = (subscription?.tier ?? "free") as
-    | "free"
-    | "starter"
-    | "pro"
-    | "enterprise";
+  const supabase = await createClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  // Get user's sites
+  const { data: sites } = await supabase
+    .from('sites')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  // Get user's tier for project limits
+  const { data: subscription } = await supabase
+    .from('user_subscriptions')
+    .select('tier, projects_limit, projects_used')
+    .eq('user_id', user.id)
+    .single()
+
+  const canCreateProject = !subscription || 
+    (subscription.projects_used < subscription.projects_limit || subscription.projects_limit === -1)
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      <main className="mx-auto max-w-6xl px-4 py-10">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-zinc-900">Sites</h1>
-          <div className="flex items-center gap-3">
-            {user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase()) ? (
-              <Link
-                href="/admin/policies"
-                className="inline-flex items-center gap-1 rounded-full border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Your Projects</h1>
+              <p className="mt-1 text-sm text-gray-500">
+                {sites?.length || 0} of {subscription?.projects_limit === -1 ? '∞' : subscription?.projects_limit || 1} projects
+              </p>
+            </div>
+            
+            {canCreateProject ? (
+              <Link 
+                href="/sites/new"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
-                <Settings className="h-4 w-4" />
-                Admin: Policies
+                <Plus className="w-5 h-5" />
+                New Project
               </Link>
-            ) : null}
-            <SignOutButton />
-            <Link
-              href="/sites/new"
-              className="inline-flex items-center rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-            >
-              Analyse a site
-            </Link>
+            ) : (
+              <Link 
+                href="/pricing"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors font-medium"
+              >
+                Upgrade to Add More
+              </Link>
+            )}
           </div>
         </div>
+      </div>
 
-        {user && (
-          <SiteUsageTracker
-            userId={user.id}
-            currentTier={tier}
-            className="mb-6"
-          />
-        )}
-
-        <div className="mb-4 rounded-lg border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
-          <p className="font-semibold">Zero-Bill preset</p>
-          <p className="text-emerald-800">
-            Choose a site, then open the Zero-Bill view to run EPC A analysis and lender packs.
-          </p>
-        </div>
-
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
-          <table className="min-w-full divide-y divide-zinc-200 text-sm">
-            <thead className="bg-zinc-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  Site
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  Reference
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  Address
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  LPA
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  Risk
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  Outcome
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  Summary
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  Next move
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  Funding
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  Zero-Bill
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {sites.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={11}
-                    className="px-4 py-6 text-center text-sm text-zinc-500"
-                  >
-                    No sites found yet.
-                  </td>
-                </tr>
-              )}
-
-              {sites.map((site) => (
-                <tr key={site.id} className="hover:bg-zinc-50/60">
-                  <td className="px-4 py-3 font-medium text-zinc-900">
-                    <Link href={`/sites/${site.id}`} className="hover:underline">
-                      {site.site_name || "Untitled site"}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-xs font-mono text-zinc-700">
-                    {site.reference_code || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-700">
-                    {site.address || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-700">
-                    {site.local_planning_authority || "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700">
-                      {site.status || "—"}
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {!sites || sites.length === 0 ? (
+          /* Empty State */
+          <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Building2 className="w-8 h-8 text-blue-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              No projects yet
+            </h2>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              Create your first project to assess planning permission risks with AI-powered analysis
+            </p>
+            <Link 
+              href="/sites/new"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-lg"
+            >
+              <Plus className="w-5 h-5" />
+              Create First Project
+            </Link>
+            
+            {/* Quick info */}
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <p className="text-sm text-gray-500 mb-4">What you'll get:</p>
+              <div className="grid md:grid-cols-3 gap-4 max-w-2xl mx-auto">
+                <div className="text-left">
+                  <div className="text-2xl mb-1">🎯</div>
+                  <div className="text-sm font-medium text-gray-900">AI Risk Assessment</div>
+                  <div className="text-xs text-gray-500">Instant analysis of planning risks</div>
+                </div>
+                <div className="text-left">
+                  <div className="text-2xl mb-1">📋</div>
+                  <div className="text-sm font-medium text-gray-900">Mitigation Plans</div>
+                  <div className="text-xs text-gray-500">Step-by-step action guidance</div>
+                </div>
+                <div className="text-left">
+                  <div className="text-2xl mb-1">📊</div>
+                  <div className="text-sm font-medium text-gray-900">Approval Likelihood</div>
+                  <div className="text-xs text-gray-500">Based on real comparable data</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Sites Grid */
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sites.map(site => (
+              <Link 
+                key={site.id} 
+                href={`/sites/${site.id}`}
+                className="block"
+              >
+                <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg hover:border-blue-300 transition-all group">
+                  {/* Site Icon & Status */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                      <Building2 className="w-6 h-6 text-blue-600" />
+                    </div>
+                    
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      site.status === 'submitted' ? 'bg-green-100 text-green-700' :
+                      site.status === 'draft' ? 'bg-gray-100 text-gray-700' :
+                      site.status === 'reviewed' ? 'bg-blue-100 text-blue-700' :
+                      'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {site.status?.charAt(0).toUpperCase() + site.status?.slice(1) || 'Draft'}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs">
-                    {site.risk_score != null && site.risk_level ? (
-                      <Link href={`/sites/${site.id}`} className="inline-flex">
-                        {planningRiskBadge(site.risk_level, site.risk_score)}
-                      </Link>
-                    ) : site.risk_profile?.overallRiskScore != null &&
-                      site.risk_profile?.riskLevel ? (
-                      <Link href={`/sites/${site.id}/risk`} className="inline-flex">
-                        <RiskBadge
-                          riskLevel={site.risk_profile.riskLevel}
-                          riskScore={site.risk_profile.overallRiskScore}
-                        />
-                      </Link>
-                    ) : site.address ? (
-                      <Link
-                        href={`/viability?address=${encodeURIComponent(site.address)}&siteId=${site.id}`}
-                        className="text-blue-600 hover:text-blue-800 underline"
-                      >
-                        {'Assess Risk →'}
-                      </Link>
-                    ) : (
-                      <span className="text-zinc-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-700">
-                    {site.planning_outcome || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-700">
-                    {site.planning_summary || "—"}
-                  </td>
-                  {(() => {
-                    const next = getNextMove(site.ai_outcome, site.eligibility_results ?? []);
-                    return (
-                      <>
-                        <td className="px-4 py-3 text-xs">
-                          <span className="inline-flex rounded-full bg-zinc-100 px-2 py-0.5 font-medium">
-                            {next.move === "proceed"
-                              ? "Proceed"
-                              : next.move === "hold"
-                              ? "Hold & clarify"
-                              : "Walk away"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-zinc-700">
-                          {getHeadlineFundingStatus(site.eligibility_results)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <Link
-                            href={`/sites/${site.id}/zero-bill`}
-                            className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-inset ring-emerald-200 hover:bg-emerald-100"
-                          >
-                            Open Zero-Bill view
-                          </Link>
-                        </td>
-                      </>
-                    );
-                  })()}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </main>
+                  </div>
+
+                  {/* Site Name */}
+                  <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    {site.site_name || site.address || 'Untitled Project'}
+                  </h3>
+
+                  {/* Address */}
+                  <div className="flex items-start gap-2 text-sm text-gray-600 mb-3">
+                    <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span className="line-clamp-2">
+                      {site.address || 'No address'}
+                      {site.postcode && `, ${site.postcode}`}
+                    </span>
+                  </div>
+
+                  {/* Council */}
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                    <Building2 className="w-4 h-4" />
+                    <span>{site.local_planning_authority || 'Unknown Council'}</span>
+                  </div>
+
+                  {/* Action Button */}
+                  <div className="pt-4 border-t border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-blue-600 group-hover:text-blue-700">
+                        View Details
+                      </span>
+                      <svg className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
-  );
+  )
 }

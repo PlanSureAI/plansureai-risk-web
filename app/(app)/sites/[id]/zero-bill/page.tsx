@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 import { runZeroBillAnalysis, type ZeroBillAssessment } from "./actions";
 import { RunZeroBillButton } from "./RunZeroBillButton";
 import { ZeroBillPdfButton } from "./ZeroBillPdfButton";
@@ -26,7 +26,7 @@ type ZeroBillSite = {
 
 export default async function ZeroBillHomesPage({ params }: PageProps) {
   const { id } = await params;
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("sites")

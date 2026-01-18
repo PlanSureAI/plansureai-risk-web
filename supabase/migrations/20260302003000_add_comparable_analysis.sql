@@ -91,13 +91,14 @@ CREATE OR REPLACE FUNCTION calculate_weeks_to_decision()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.decision_date IS NOT NULL AND NEW.application_date IS NOT NULL THEN
-        NEW.weeks_to_decision := CEIL(EXTRACT(EPOCH FROM (NEW.decision_date - NEW.application_date)) / 604800);
+        NEW.weeks_to_decision := CEIL((NEW.decision_date - NEW.application_date)::NUMERIC / 7.0);
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger to auto-calculate weeks_to_decision
+DROP TRIGGER IF EXISTS set_weeks_to_decision ON planning_comparables;
 CREATE TRIGGER set_weeks_to_decision
     BEFORE INSERT OR UPDATE ON planning_comparables
     FOR EACH ROW
@@ -109,7 +110,7 @@ INSERT INTO planning_comparables (
     council_name, decision, decision_date, application_date,
     risk_categories, application_type, development_type,
     in_conservation_area, affects_listed_building,
-    approval_conditions, planning_portal_url
+    approval_conditions, refusal_reasons, planning_portal_url
 ) VALUES
 (
     'PA23/08734', '15 Trevethan Road, Bodmin', 'PL31 2AN',
@@ -119,6 +120,7 @@ INSERT INTO planning_comparables (
     'full', 'extension',
     true, false,
     ARRAY['Heritage statement required', 'Materials to match existing', 'No permitted development rights'],
+    NULL,
     'https://planning.cornwall.gov.uk/online-applications/applicationDetails.do?activeTab=summary&keyVal=PA23/08734'
 ),
 (
@@ -129,6 +131,7 @@ INSERT INTO planning_comparables (
     'listed_building', 'alterations',
     true, true,
     ARRAY['Heritage statement approved', 'Traditional timber windows required', 'Conservation officer site visit'],
+    NULL,
     'https://planning.cornwall.gov.uk/online-applications/applicationDetails.do?activeTab=summary&keyVal=PA23/09821'
 ),
 (
@@ -139,6 +142,7 @@ INSERT INTO planning_comparables (
     'full', 'new_dwelling',
     true, false,
     ARRAY['Heritage impact assessment submitted', 'Design reflects local character', 'Tree protection plan', 'Landscaping scheme'],
+    NULL,
     'https://planning.cornwall.gov.uk/online-applications/applicationDetails.do?activeTab=summary&keyVal=PA24/00456'
 ),
 (
@@ -171,6 +175,7 @@ INSERT INTO planning_comparables (
     'full', 'extension',
     false, false,
     ARRAY['BS5837 tree survey submitted', 'Tree protection plan', 'Arboricultural supervision during construction'],
+    NULL,
     'https://planning.cornwall.gov.uk/online-applications/applicationDetails.do?activeTab=summary&keyVal=PA24/01567'
 ),
 (
@@ -181,6 +186,7 @@ INSERT INTO planning_comparables (
     'full', 'change_of_use',
     false, false,
     ARRAY['Flood risk assessment approved', 'Flood resilience measures', 'Emergency evacuation plan'],
+    NULL,
     'https://planning.cornwall.gov.uk/online-applications/applicationDetails.do?activeTab=summary&keyVal=PA23/10234'
 ),
 (
@@ -202,6 +208,7 @@ INSERT INTO planning_comparables (
     'full', 'conversion',
     true, false,
     ARRAY['Transport statement accepted', 'Town center location', 'Cycle storage provided', 'Car club membership'],
+    NULL,
     'https://planning.cornwall.gov.uk/online-applications/applicationDetails.do?activeTab=summary&keyVal=PA23/08901'
 ),
 (
@@ -212,6 +219,7 @@ INSERT INTO planning_comparables (
     'full', 'change_of_use',
     true, true,
     ARRAY['Heritage statement', 'Noise management plan', 'Opening hours restriction', 'External terrace screening'],
+    NULL,
     'https://planning.cornwall.gov.uk/online-applications/applicationDetails.do?activeTab=summary&keyVal=PA24/03456'
 ),
 (
@@ -222,6 +230,7 @@ INSERT INTO planning_comparables (
     'full', 'extension',
     true, false,
     ARRAY['Dormer design approved', 'Materials to match existing', 'Not visible from street'],
+    NULL,
     'https://planning.cornwall.gov.uk/online-applications/applicationDetails.do?activeTab=summary&keyVal=PA23/09234'
 ),
 (
@@ -232,6 +241,7 @@ INSERT INTO planning_comparables (
     'full', 'extension',
     false, false,
     ARRAY['Revised design following neighbor concerns', 'Privacy screening', '45-degree rule satisfied'],
+    NULL,
     'https://planning.cornwall.gov.uk/online-applications/applicationDetails.do?activeTab=summary&keyVal=PA24/00789'
 );
 
