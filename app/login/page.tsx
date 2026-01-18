@@ -7,7 +7,6 @@ import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 export const dynamic = "force-dynamic";
 
 export default function LoginPage() {
-  const supabase = createSupabaseBrowserClient();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -22,6 +21,7 @@ export default function LoginPage() {
     setIsError(false);
 
     startTransition(async () => {
+      const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
