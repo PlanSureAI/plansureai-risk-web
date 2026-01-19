@@ -11,7 +11,7 @@ export function AppNav({ userEmail }: { userEmail?: string }) {
 
   const navItems = [
     { href: '/sites', label: 'Projects', icon: Building2 },
-    { href: '/settings', label: 'Settings', icon: Settings },
+    { href: '/settings/billing', label: 'Settings', icon: Settings },
   ]
 
   return (
