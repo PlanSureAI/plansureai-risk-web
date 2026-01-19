@@ -50,6 +50,20 @@ export async function createSite(
     return { error: "Status is required" };
   }
 
+  const { data: existingSite } = await supabase
+    .from("sites")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("site_name", site_name)
+    .eq("address", address)
+    .maybeSingle();
+
+  if (existingSite) {
+    return {
+      error: "A project with the same name and address already exists.",
+    };
+  }
+
   let data = null;
   try {
     const { data: insertData, error } = await supabase
@@ -88,6 +102,11 @@ export async function createSite(
         message: error?.message,
         details: error?.details,
       });
+      if (error?.code === "23505") {
+        return {
+          error: "A project with the same name and address already exists.",
+        };
+      }
       return {
         error: "Failed to create site. Please try again.",
       };
@@ -101,6 +120,11 @@ export async function createSite(
       message: (insertError as { message?: string })?.message,
       details: (insertError as { details?: string })?.details,
     });
+    if ((insertError as { code?: string })?.code === "23505") {
+      return {
+        error: "A project with the same name and address already exists.",
+      };
+    }
     return {
       error: "Failed to create site. Please try again.",
     };
