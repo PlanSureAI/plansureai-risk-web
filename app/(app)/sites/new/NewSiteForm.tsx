@@ -19,10 +19,11 @@ export function NewSiteForm() {
         </p>
       ) : null}
       <div>
-        <label className="block text-label">Site name</label>
+        <label htmlFor="site_name" className="block text-label">Site name</label>
         <input
           type="text"
           name="site_name"
+          id="site_name"
           required
           className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-body"
           placeholder="Helston"
@@ -30,10 +31,11 @@ export function NewSiteForm() {
       </div>
 
       <div>
-        <label className="block text-label">Address</label>
+        <label htmlFor="address" className="block text-label">Address</label>
         <input
           type="text"
           name="address"
+          id="address"
           required
           className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-body"
           placeholder="Street, town, postcode"
@@ -41,13 +43,14 @@ export function NewSiteForm() {
       </div>
 
       <div>
-        <label className="block text-label">
+        <label htmlFor="reference_code" className="block text-label">
           Reference code{" "}
           <span className="text-zinc-500 font-normal text-xs">(optional)</span>
         </label>
         <input
           type="text"
           name="reference_code"
+          id="reference_code"
           placeholder="e.g. 23/00123/FUL"
           className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-body"
         />
@@ -58,18 +61,20 @@ export function NewSiteForm() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <div>
-          <label className="block text-label">Local planning authority</label>
+          <label htmlFor="local_planning_authority" className="block text-label">Local planning authority</label>
           <input
             type="text"
             name="local_planning_authority"
+            id="local_planning_authority"
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-body"
             placeholder="Cornwall"
           />
         </div>
         <div>
-          <label className="block text-label">Status</label>
+          <label htmlFor="status" className="block text-label">Status</label>
           <select
             name="status"
+            id="status"
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-body"
             defaultValue="idea"
             required
@@ -85,10 +90,11 @@ export function NewSiteForm() {
           </select>
         </div>
         <div>
-          <label className="block text-label">Asking price</label>
+          <label htmlFor="asking_price" className="block text-label">Asking price</label>
           <input
             type="number"
             name="asking_price"
+            id="asking_price"
             min={0}
             step={1000}
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-body"
@@ -98,10 +104,11 @@ export function NewSiteForm() {
       </div>
 
       <div>
-        <label className="block text-label">Proposed units</label>
+        <label htmlFor="proposed_units" className="block text-label">Proposed units</label>
         <input
           type="number"
           name="proposed_units"
+          id="proposed_units"
           min={1}
           className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-body"
           placeholder="12"
@@ -112,9 +119,10 @@ export function NewSiteForm() {
       </div>
 
       <div>
-        <label className="block text-label">Initial notes / planning summary</label>
+        <label htmlFor="notes" className="block text-label">Initial notes / planning summary</label>
         <textarea
           name="notes"
+          id="notes"
           rows={4}
           className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-body"
           placeholder="High-level thoughts, constraints, comparable schemes…"
