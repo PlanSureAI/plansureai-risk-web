@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 import { buildSiteRiskProfileInput, type SitePlanningData } from "@/app/lib/planningDataProvider";
 
 export type RiskEngineInput = {
@@ -165,7 +165,7 @@ export async function buildRiskEngineInput({
   landtechApiKey,
   planningData,
 }: BuildRiskEngineInputArgs): Promise<RiskEngineInput & { financeProfileId: string }> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data: site, error: siteError } = await supabase
     .from("sites")
@@ -307,7 +307,7 @@ export async function saveRiskEngineOutput(args: {
   snapshotLabel?: string;
   modelName?: string;
 }): Promise<string> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("site_risks")

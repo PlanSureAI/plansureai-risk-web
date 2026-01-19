@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 import { getProfileForUser } from "@/app/lib/profile";
 
 export const dynamic = "force-dynamic";
@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 async function saveProfile(formData: FormData) {
   "use server";
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -39,7 +39,7 @@ async function saveProfile(formData: FormData) {
 }
 
 export default async function ProfilePage() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();

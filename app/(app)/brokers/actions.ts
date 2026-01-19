@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 
 function toNullableString(value: FormDataEntryValue | null) {
   const str = value?.toString().trim();
@@ -10,7 +10,7 @@ function toNullableString(value: FormDataEntryValue | null) {
 }
 
 export async function addBrokerContact(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -34,7 +34,7 @@ export async function addBrokerContact(formData: FormData) {
 }
 
 export async function deleteBrokerContact(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const id = formData.get("id") as string;
   if (!id) throw new Error("Missing broker id");
 

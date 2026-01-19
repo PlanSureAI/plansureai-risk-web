@@ -1,11 +1,11 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = 'force-dynamic';
 
 export default async function SitesLayout({ children }: { children: ReactNode }) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 import { RiskBadge } from "@/app/components/RiskBadge";
 
 function formatStatus(status: string | null) {
@@ -9,7 +9,7 @@ function formatStatus(status: string | null) {
 }
 
 export default async function SiteRiskPage({ params }: { params: { id: string } }) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const { data: site, error } = await supabase
     .from("sites")
     .select(

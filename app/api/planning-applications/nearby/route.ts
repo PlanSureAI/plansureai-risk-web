@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 
 type NearbyApplication = {
   id: string;
@@ -21,7 +21,7 @@ type NearbyApplication = {
 };
 
 export async function GET(request: Request) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

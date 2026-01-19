@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 import { getProfileForUser } from "@/app/lib/profile";
 import ProfileHeader from "@/app/components/ProfileHeader";
 import DashboardChartsClient from "./DashboardChartsClient";
@@ -25,7 +25,7 @@ type DashboardFilters = {
 async function saveProfile(formData: FormData) {
   "use server";
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -49,7 +49,7 @@ async function saveProfile(formData: FormData) {
 }
 
 async function getSites(filters: DashboardFilters): Promise<SiteSummary[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   let query = supabase
     .from("sites")
     .select(
@@ -118,7 +118,7 @@ function buildOptions(values: Array<string | null | undefined>): FilterOption[] 
 }
 
 async function getFilterOptions() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("sites")
     .select("local_planning_authority, status")
@@ -166,7 +166,7 @@ export default async function DashboardPage({
     getSites({ council, status }),
     getFilterOptions(),
   ]);
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

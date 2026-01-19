@@ -3,7 +3,7 @@
  * Fetch relevant local plan policies for constraints and planning authorities
  */
 
-import { createSupabaseServerClient } from "./supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 
 export interface LocalPlanPolicy {
   id: string;
@@ -27,7 +27,7 @@ export async function getPoliciesForConstraints(
   localPlanningAuthority: string,
   constraints: string[]
 ): Promise<LocalPlanPolicy[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("local_plan_policies")
@@ -51,7 +51,7 @@ export async function getPolicy(
   localPlanningAuthority: string,
   policyNumber: string
 ): Promise<LocalPlanPolicy | null> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("local_plan_policies")
@@ -74,7 +74,7 @@ export async function getPolicy(
 export async function getAllPolicies(
   localPlanningAuthority: string
 ): Promise<LocalPlanPolicy[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("local_plan_policies")
@@ -150,7 +150,7 @@ export function attachPoliciesToRiskFactors(
 export async function hasDeepCoverage(
   localPlanningAuthority: string
 ): Promise<boolean> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { count, error } = await supabase
     .from("local_plan_policies")

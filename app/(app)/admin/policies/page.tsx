@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 import PoliciesAdminClient from "./policies-admin-client";
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
@@ -8,7 +8,7 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
   .filter(Boolean);
 
 export default async function PoliciesAdminPage() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

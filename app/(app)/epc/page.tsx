@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,7 @@ function getRatingColor(rating: string) {
 }
 
 export default async function EPCListingPage() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   
   // Fetch properties with their EPC certificates
   const { data: properties, error } = await supabase

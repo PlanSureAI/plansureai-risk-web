@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -16,7 +16,7 @@ export interface TierFeatures {
 }
 
 export async function getUserTier(userId: string): Promise<UserTier> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data } = await supabase
     .from("user_subscriptions")
@@ -28,7 +28,7 @@ export async function getUserTier(userId: string): Promise<UserTier> {
 }
 
 export async function getUserTierFeatures(userId: string): Promise<TierFeatures | null> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data: subscription } = await supabase
     .from("user_subscriptions")
@@ -48,7 +48,7 @@ export async function getUserTierFeatures(userId: string): Promise<TierFeatures 
 }
 
 export async function canCreateProject(userId: string): Promise<boolean> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data } = await supabase
     .from("user_subscriptions")

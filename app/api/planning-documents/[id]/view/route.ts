@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 import type {
   PlanningDocumentAnalysis,
   PlanningDocumentSummary,
@@ -12,7 +12,7 @@ export async function GET(
   const viewType = req.nextUrl.searchParams.get("viewType") ?? "summary";
   const siteId = req.nextUrl.searchParams.get("siteId");
   const { id } = await params;
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("planning_documents")
@@ -78,7 +78,7 @@ function buildFeesView(summary: PlanningDocumentSummary) {
 }
 
 async function buildAnalysisView(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   id: string
 ): Promise<PlanningDocumentAnalysis | null> {
   const { data, error } = await supabase

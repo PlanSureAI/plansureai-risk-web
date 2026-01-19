@@ -3,7 +3,7 @@
 import OpenAI from "openai";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import { revalidatePath } from "next/cache";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 import {
   assertProfileForExport,
   formatProfileHeaderLines,
@@ -67,7 +67,7 @@ export async function runZeroBillAnalysis(formData: FormData): Promise<void> {
 
   if (!id) throw new Error("Missing site id");
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data: site, error } = await supabase
     .from("sites")
@@ -173,7 +173,7 @@ export async function generateZeroBillPdf(formData: FormData): Promise<string> {
   const id = formData.get("id") as string;
   if (!id) throw new Error("Missing site id");
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data: site, error } = await supabase
     .from("sites")

@@ -4,7 +4,7 @@ import OpenAI from "openai";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 import { buildSiteRiskProfileInput, type SitePlanningData } from "@/app/lib/planningDataProvider";
 import {
   assertProfileForExport,
@@ -127,7 +127,7 @@ export async function runSiteAnalysis(formData: FormData) {
 
   if (!id) throw new Error("Missing site id");
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data: site, error } = await supabase
     .from("sites")
@@ -242,7 +242,7 @@ export async function runFundingEligibility(formData: FormData) {
   const id = formData.get("id") as string;
   if (!id) throw new Error("Missing site id");
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data: site, error } = await supabase
     .from("sites")
@@ -384,7 +384,7 @@ export async function generateFinancePack(formData: FormData): Promise<FinancePa
   const id = formData.get("id") as string;
   if (!id) throw new Error("Missing site id");
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data: site, error } = await supabase
     .from("sites")
@@ -456,7 +456,7 @@ export async function generateFinancePackPdf(formData: FormData): Promise<string
   const id = formData.get("id") as string;
   if (!id) throw new Error("Missing site id");
 
-  const supabaseServer = await createSupabaseServerClient();
+  const supabaseServer = await createClient();
   const {
     data: { user },
   } = await supabaseServer.auth.getUser();
@@ -576,7 +576,7 @@ export async function updateSite(formData: FormData) {
 
   if (!id) throw new Error("Missing site id");
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const updates = {
     status: toNullableString(formData.get("status")),
@@ -607,7 +607,7 @@ export async function uploadSitePdf(formData: FormData) {
     throw new Error("Only PDF files are supported");
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const arrayBuffer = await file.arrayBuffer();
   const buffer = new Uint8Array(arrayBuffer);
@@ -661,7 +661,7 @@ export async function generateBrokerPackAction(
 
   if (!siteId) throw new Error("Missing site id");
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
 
   const { data: riskRow, error: riskError } = await supabase
     .from("site_risks")

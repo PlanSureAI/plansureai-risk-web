@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 import { calculatePlanningRiskScore } from "@/app/lib/planningRiskScoring";
 import type { CreateSiteState } from "./types";
 
@@ -10,7 +10,7 @@ export async function createSite(
   _prevState: CreateSiteState,
   formData: FormData
 ): Promise<CreateSiteState> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const {
     data: { user },
     error: userError,
@@ -50,37 +50,63 @@ export async function createSite(
     return { error: "Status is required" };
   }
 
-  const { data, error } = await supabase
-    .from("sites")
-    .insert([
-      {
-        user_id: user.id,
-        site_name,
-        address,
-        reference_code,
+  let data = null;
+  try {
+    const { data: insertData, error } = await supabase
+      .from("sites")
+      .insert([
+        {
+          user_id: user.id,
+          site_name,
+          address,
+          reference_code,
+          local_planning_authority,
+          status,
+          asking_price,
+          proposed_units,
+          planning_summary: notes,
+        },
+      ])
+      .select(
+        `
+        id,
         local_planning_authority,
-        status,
-        asking_price,
         proposed_units,
-        planning_summary: notes,
-      },
-    ])
-    .select(
-      `
-      id,
-      local_planning_authority,
-      proposed_units,
-      site_area_ha,
-      affordable_housing,
-      affordable_percentage,
-      rural_exception_site,
-      previously_developed
-      `
-    )
-    .single();
+        site_area_ha,
+        affordable_housing,
+        affordable_percentage,
+        rural_exception_site,
+        previously_developed
+        `
+      )
+      .single();
 
-  if (error || !data) {
-    console.error("Error creating site", error);
+    if (error || !insertData) {
+      console.error("Error creating site", {
+        error,
+        code: error?.code,
+        message: error?.message,
+        details: error?.details,
+      });
+      return {
+        error: "Failed to create site. Please try again.",
+      };
+    }
+
+    data = insertData;
+  } catch (insertError) {
+    console.error("Error creating site", {
+      error: insertError,
+      code: (insertError as { code?: string })?.code,
+      message: (insertError as { message?: string })?.message,
+      details: (insertError as { details?: string })?.details,
+    });
+    return {
+      error: "Failed to create site. Please try again.",
+    };
+  }
+
+  if (!data) {
     return {
       error: "Failed to create site. Please try again.",
     };

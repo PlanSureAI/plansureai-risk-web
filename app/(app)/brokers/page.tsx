@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { createClient } from "@/lib/supabase/server";
 import { addBrokerContact, deleteBrokerContact } from "./actions";
 
 export default async function BrokersPage() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
