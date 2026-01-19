@@ -54,13 +54,12 @@ export async function createSite(
     .from("sites")
     .select("id")
     .eq("user_id", user.id)
-    .eq("site_name", site_name)
     .eq("address", address)
     .maybeSingle();
 
   if (existingSite) {
     return {
-      error: "A project with the same name and address already exists.",
+      error: "A project with the same address already exists.",
     };
   }
 
@@ -104,7 +103,7 @@ export async function createSite(
       });
       if (error?.code === "23505") {
         return {
-          error: "A project with the same name and address already exists.",
+          error: "A project with the same address already exists.",
         };
       }
       return {
@@ -122,7 +121,7 @@ export async function createSite(
     });
     if ((insertError as { code?: string })?.code === "23505") {
       return {
-        error: "A project with the same name and address already exists.",
+        error: "A project with the same address already exists.",
       };
     }
     return {
