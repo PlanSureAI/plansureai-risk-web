@@ -6,6 +6,8 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, MapPin, Building2, Calendar, FileText, AlertCircle, CheckCircle, TrendingUp } from 'lucide-react'
 
+export const dynamic = 'force-dynamic';
+
 export default async function SiteDetailsPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
   
@@ -17,8 +19,7 @@ export default async function SiteDetailsPage({ params }: { params: { id: string
     .from('sites')
     .select('*')
     .eq('id', params.id)
-    .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (error || !site) {
     redirect("/sites?missing=1")
