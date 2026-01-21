@@ -6,7 +6,11 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, MapPin, Building2, FileText } from 'lucide-react'
 
-export default async function SitesPage() {
+export default async function SitesPage({
+  searchParams,
+}: {
+  searchParams?: { missing?: string }
+}) {
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -24,7 +28,7 @@ export default async function SitesPage() {
     .from('user_subscriptions')
     .select('tier, projects_limit, projects_used')
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   const canCreateProject = !subscription || 
     (subscription.projects_used < subscription.projects_limit || subscription.projects_limit === -1)
@@ -64,6 +68,11 @@ export default async function SitesPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {searchParams?.missing === "1" ? (
+          <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
+            That project was not found or you do not have access to it.
+          </div>
+        ) : null}
         {!sites || sites.length === 0 ? (
           /* Empty State */
           <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">

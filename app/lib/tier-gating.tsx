@@ -22,7 +22,7 @@ export async function getUserTier(userId: string): Promise<UserTier> {
     .from("user_subscriptions")
     .select("tier")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle();
 
   return (data?.tier as UserTier) || "free";
 }
@@ -34,7 +34,7 @@ export async function getUserTierFeatures(userId: string): Promise<TierFeatures 
     .from("user_subscriptions")
     .select("tier")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle();
 
   if (!subscription) return null;
 
@@ -54,7 +54,7 @@ export async function canCreateProject(userId: string): Promise<boolean> {
     .from("user_subscriptions")
     .select("projects_limit, projects_used")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle();
 
   if (!data) return false;
 
@@ -86,7 +86,7 @@ export function useTierGate() {
       .from("user_subscriptions")
       .select("tier")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (!subscription) return false;
 
@@ -109,7 +109,7 @@ export function useTierGate() {
       .from("user_subscriptions")
       .select("projects_limit, projects_used")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (!data) return false;
 
@@ -127,7 +127,7 @@ export function useTierGate() {
       .from("user_subscriptions")
       .select("tier")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
   return (data?.tier as UserTier) || "free";
   }

@@ -20,7 +20,9 @@ export default async function SiteDetailsPage({ params }: { params: { id: string
     .eq('user_id', user.id)
     .single()
 
-  if (error || !site) notFound()
+  if (error || !site) {
+    redirect("/sites?missing=1")
+  }
 
   // Check if risk assessment exists
   const { data: riskAssessment } = await supabase

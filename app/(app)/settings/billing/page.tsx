@@ -32,7 +32,7 @@ export default function BillingPage() {
         .from("user_subscriptions")
         .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (data) {
         setSubscription(data as Subscription);

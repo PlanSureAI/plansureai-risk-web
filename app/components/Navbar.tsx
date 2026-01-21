@@ -24,18 +24,32 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
   return (
     <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
       <div className="px-6 py-4 flex justify-between items-center">
-        {/* Left: Menu Toggle */}
-        <button
-          onClick={onToggleSidebar}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-
-        {/* Right: User & Settings */}
+        {/* Left: Menu Toggle + Primary Nav */}
         <div className="flex items-center gap-4">
+          <button
+            onClick={onToggleSidebar}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <Link
+            href="/sites"
+            className="text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-200"
+          >
+            Projects
+          </Link>
+        </div>
+
+        {/* Right: CTA + User & Settings */}
+        <div className="flex items-center gap-4">
+          <Link
+            href="/sites/new"
+            className="hidden sm:inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Create New Project
+          </Link>
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
@@ -63,6 +77,9 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
 
             {/* Dropdown Menu */}
             <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-gray-200 dark:border-gray-700">
+              <Link href="/sites/new" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 sm:hidden rounded-t-lg">
+                Create New Project
+              </Link>
               <Link href="/settings/billing" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg">
                 Settings
               </Link>
