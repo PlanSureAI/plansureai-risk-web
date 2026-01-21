@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { Building2, Settings, LogOut, User, Plus } from "lucide-react";
 
 export function AppNav({ userEmail }: { userEmail?: string }) {
@@ -51,16 +52,15 @@ export function AppNav({ userEmail }: { userEmail?: string }) {
                 <span className="hidden sm:inline">{userEmail}</span>
               </div>
 
-              <form action="/auth/signout" method="post">
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors"
-                  title="Sign out"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline">Sign out</span>
-                </button>
-              </form>
+              <button
+                type="button"
+                onClick={() => signOut({ redirect: true, callbackUrl: "/login" })}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Sign out</span>
+              </button>
             </div>
           </div>
         </div>
