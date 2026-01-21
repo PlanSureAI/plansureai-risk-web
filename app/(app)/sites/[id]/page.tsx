@@ -173,11 +173,18 @@ export default async function SiteDetailsPage({ params }: { params: { id: string
                   <dt className="text-sm font-medium text-gray-500">Created</dt>
                   <dd className="mt-1 flex items-center gap-2 text-sm text-gray-900">
                     <Calendar className="w-4 h-4 text-gray-400" />
-                    {new Date(site.created_at).toLocaleDateString('en-GB', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric'
-                    })}
+                    {(() => {
+                      const createdAt =
+                        site.submitted_at ||
+                        site.last_assessed_at ||
+                        site.ai_last_run_at;
+                      if (!createdAt) return "Unknown";
+                      return new Date(createdAt).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      });
+                    })()}
                   </dd>
                 </div>
               </dl>

@@ -17,11 +17,11 @@ export default async function SitesPage({
   if (!user) redirect('/login')
 
   // Get user's sites
-  const { data: sites } = await supabase
+  const { data: sites, error: sitesError } = await supabase
     .from('sites')
-    .select('*')
+    .select('id, site_name, address, postcode, local_planning_authority, status, submitted_at')
     .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
+    .order('submitted_at', { ascending: false })
 
   // Get user's tier for project limits
   const { data: subscription } = await supabase
@@ -68,6 +68,11 @@ export default async function SitesPage({
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {sitesError ? (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+            Failed to load sites: {sitesError.message}
+          </div>
+        ) : null}
         {searchParams?.missing === "1" ? (
           <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
             That project was not found or you do not have access to it.
