@@ -42,7 +42,7 @@ export default async function SitesPage({
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Your Projects</h1>
               <p className="mt-1 text-sm text-gray-500">
-                {sites?.length || 0} of {subscription?.projects_limit === -1 ? '∞' : subscription?.projects_limit || 1} projects
+                {sites?.length || 0} projects
               </p>
             </div>
             
