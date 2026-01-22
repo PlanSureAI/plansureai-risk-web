@@ -2,6 +2,7 @@
 // INDIVIDUAL SITE DETAILS PAGE - All info organized cleanly
 
 import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/app/lib/supabase'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, MapPin, Building2, Calendar, FileText, AlertCircle, CheckCircle, TrendingUp } from 'lucide-react'
@@ -15,10 +16,11 @@ export default async function SiteDetailsPage({ params }: { params: { id: string
   if (!user) redirect('/login')
 
   // Get site details
-  const { data: site, error } = await supabase
+  const { data: site, error } = await supabaseAdmin
     .from('sites')
     .select('*')
     .eq('id', params.id)
+    .eq('user_id', user.id)
     .maybeSingle()
 
   if (error || !site) {
