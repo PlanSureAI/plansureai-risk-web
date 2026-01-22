@@ -166,6 +166,8 @@ export function RiskClient() {
 
       if (!response.ok) {
         const error = await response.json();
+        console.log("FULL ERROR RESPONSE:", error);
+        alert(JSON.stringify(error, null, 2));
         setErrorMessage(error.error || "Failed to run assessment");
         setIsAssessing(false);
         return;
