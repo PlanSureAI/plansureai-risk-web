@@ -74,7 +74,7 @@ export function SiteDetailsClient() {
         return;
       }
 
-      const { data: riskAssessment } = await supabase
+      const { data: riskAssessment, error: riskError } = await supabase
         .from("risk_assessments")
         .select("*")
         .eq("site_id", siteData.id)
@@ -82,7 +82,11 @@ export function SiteDetailsClient() {
 
       if (!isMounted) return;
       setSite(siteData);
-      setHasAssessment(!!riskAssessment);
+      if (riskError && /does not exist/i.test(riskError.message)) {
+        setHasAssessment(false);
+      } else {
+        setHasAssessment(!!riskAssessment);
+      }
       setIsLoading(false);
     }
 
@@ -325,13 +329,14 @@ export function SiteDetailsClient() {
                   <TrendingUp className="w-4 h-4" />
                   Run Assessment
                 </Link>
-                <Link
-                  href={`/sites/${site.id}/edit`}
-                  className="flex items-center gap-2 w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm"
+                <button
+                  type="button"
+                  disabled
+                  className="flex items-center gap-2 w-full px-4 py-3 bg-gray-100 text-gray-400 rounded-lg font-medium text-sm cursor-not-allowed"
                 >
                   <FileText className="w-4 h-4" />
-                  Edit Details
-                </Link>
+                  Edit Details (coming soon)
+                </button>
               </div>
             </div>
 
