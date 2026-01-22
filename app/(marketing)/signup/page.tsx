@@ -109,11 +109,11 @@ export default function SignUpPage() {
               <div className="mt-8 border-t border-zinc-200 pt-8">
                 <p className="text-xs text-zinc-500">
                   By creating an account, you agree to our{" "}
-                  <Link href="/contact" className="underline hover:text-zinc-900">
+                  <Link href="/terms" className="underline hover:text-zinc-900">
                     Terms of Service
                   </Link>{" "}
                   and{" "}
-                  <Link href="/contact" className="underline hover:text-zinc-900">
+                  <Link href="/privacy" className="underline hover:text-zinc-900">
                     Privacy Policy
                   </Link>
                   .
