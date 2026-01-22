@@ -78,25 +78,94 @@ export function RiskClient() {
   const [userTier, setUserTier] = useState<"free" | "starter" | "pro" | "enterprise">("free");
   const [isAssessing, setIsAssessing] = useState(false);
 
+  async function fetchData() {
+    if (!siteId) {
+      setErrorMessage("Missing site id.");
+      setIsLoading(false);
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    const { data: siteData, error } = await supabase
+      .from("sites")
+      .select(
+        `
+          id,
+          site_name,
+          address,
+          risk_profile,
+          planning_route,
+          planning_route_status,
+          last_assessed_at
+        `
+      )
+      .eq("id", siteId)
+      .maybeSingle();
+
+    if (error) {
+      setErrorMessage(error.message);
+      setIsLoading(false);
+      return;
+    }
+
+    if (!siteData) {
+      setErrorMessage("Site not found.");
+      setIsLoading(false);
+      return;
+    }
+
+    const { data: subscription } = await supabase
+      .from("user_subscriptions")
+      .select("tier")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (subscription?.tier) {
+      setUserTier(subscription.tier);
+    }
+
+    const riskResponse = await fetch(`/api/sites/${siteId}/risk-score`);
+    if (riskResponse.ok) {
+      const data = (await riskResponse.json()) as RiskAnalysis & { calculated?: boolean };
+      if (data.calculated !== false) {
+        setRiskAnalysis(data);
+      } else {
+        setRiskAnalysis(null);
+      }
+    }
+
+    setSite(siteData as SiteRecord);
+    setIsLoading(false);
+  }
+
   const handleRunAssessment = async () => {
     setIsAssessing(true);
+    setErrorMessage(null);
     try {
       const response = await fetch(`/api/sites/${siteId}/risk-score`, {
-        method: 'POST',
+        method: "POST",
       });
 
       if (!response.ok) {
         const error = await response.json();
-        setErrorMessage(error.error || 'Failed to run assessment');
+        setErrorMessage(error.error || "Failed to run assessment");
         setIsAssessing(false);
         return;
       }
 
-      // Refresh the page to show the new assessment
-      window.location.reload();
+      await fetchData();
     } catch (error) {
-      console.error('Assessment failed:', error);
-      setErrorMessage('An error occurred while running the assessment. Please try again.');
+      console.error("Assessment failed:", error);
+      setErrorMessage("An error occurred while running the assessment. Please try again.");
+    } finally {
       setIsAssessing(false);
     }
   };
@@ -105,71 +174,9 @@ export function RiskClient() {
     let isMounted = true;
 
     async function load() {
-      if (!siteId) {
-        setErrorMessage("Missing site id.");
-        setIsLoading(false);
-        return;
-      }
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-
-      const { data: siteData, error } = await supabase
-        .from("sites")
-        .select(
-          `
-            id,
-            site_name,
-            address,
-            risk_profile,
-            planning_route,
-            planning_route_status,
-            last_assessed_at
-          `
-        )
-        .eq("id", siteId)
-        .maybeSingle();
-
       if (!isMounted) return;
-
-      if (error) {
-        setErrorMessage(error.message);
-        setIsLoading(false);
-        return;
-      }
-
-      if (!siteData) {
-        setErrorMessage("Site not found.");
-        setIsLoading(false);
-        return;
-      }
-
-      const { data: subscription } = await supabase
-        .from("user_subscriptions")
-        .select("tier")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (subscription?.tier) {
-        setUserTier(subscription.tier);
-      }
-
-      const riskResponse = await fetch(`/api/sites/${siteId}/risk-score`);
-      if (riskResponse.ok) {
-        const data = (await riskResponse.json()) as RiskAnalysis & { calculated?: boolean };
-        if (data.calculated !== false) {
-          setRiskAnalysis(data);
-        }
-      }
-
-      setSite(siteData as SiteRecord);
-      setIsLoading(false);
+      setIsLoading(true);
+      await fetchData();
     }
 
     load();
