@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   MapPin,
@@ -17,12 +17,10 @@ import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 
 type SiteRecord = Record<string, any>;
 
-interface Props {
-  siteId: string;
-}
-
-export function SiteDetailsClient({ siteId }: Props) {
+export function SiteDetailsClient() {
   const router = useRouter();
+  const params = useParams();
+  const siteId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
   const [site, setSite] = useState<SiteRecord | null>(null);
   const [hasAssessment, setHasAssessment] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +32,12 @@ export function SiteDetailsClient({ siteId }: Props) {
     let isMounted = true;
 
     async function load() {
+      if (!siteId) {
+        setDebugMessage("Site lookup failed. | siteId=missing");
+        setIsLoading(false);
+        return;
+      }
+
       const {
         data: { user },
         error: userError,
