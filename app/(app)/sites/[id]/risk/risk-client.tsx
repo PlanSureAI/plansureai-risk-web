@@ -45,6 +45,30 @@ export function RiskClient() {
   const [site, setSite] = useState<SiteRecord | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAssessing, setIsAssessing] = useState(false);
+
+  const handleRunAssessment = async () => {
+    setIsAssessing(true);
+    try {
+      const response = await fetch(`/api/sites/${siteId}/risk-score`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        setErrorMessage(error.error || 'Failed to run assessment');
+        setIsAssessing(false);
+        return;
+      }
+
+      // Refresh the page to show the new assessment
+      window.location.reload();
+    } catch (error) {
+      console.error('Assessment failed:', error);
+      setErrorMessage('An error occurred while running the assessment. Please try again.');
+      setIsAssessing(false);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -140,12 +164,13 @@ export function RiskClient() {
         </h1>
         <div className="mt-6 rounded-lg border border-yellow-200 bg-yellow-50 p-6 text-center">
           <p className="text-sm text-zinc-700">No risk assessment available for this site yet.</p>
-          <Link
-            href={`/viability?address=${encodeURIComponent(site.address || "")}&siteId=${site.id}`}
-            className="mt-4 inline-flex items-center rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+          <button
+            onClick={handleRunAssessment}
+            disabled={isAssessing}
+            className="mt-4 inline-flex items-center rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Run Viability Assessment
-          </Link>
+            {isAssessing ? 'Generating Assessment...' : 'Run Risk Assessment'}
+          </button>
         </div>
       </div>
     );

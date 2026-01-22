@@ -237,13 +237,31 @@ export async function POST(
     mitigation_plan: mitigationPlan,
   };
 
+  // Map the risk analysis to risk_profile format for compatibility with risk-client.tsx
+  const riskProfile = {
+    overallRiskScore: riskAnalysis.score,
+    riskLevel: riskAnalysis.level.toUpperCase(),
+    summary: riskAnalysis.tagline,
+    flags: riskAnalysis.topRisks.map((risk) => ({
+      id: risk.id,
+      level: risk.severity,
+      title: risk.title,
+      message: risk.description,
+      severity: risk.severity,
+      category: risk.category,
+    })),
+    calculatedAt: new Date().toISOString(),
+  };
+
   await supabase
     .from("sites")
     .update({
       risk_score: riskAnalysis.score,
       risk_level: riskAnalysis.level,
       risk_analysis: fullAnalysis,
+      risk_profile: riskProfile,
       risk_calculated_at: new Date().toISOString(),
+      last_assessed_at: new Date().toISOString(),
     })
     .eq("id", id);
 

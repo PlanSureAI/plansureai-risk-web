@@ -1,21 +1,20 @@
-// APP LAYOUT - Wraps all authenticated pages with nav
-
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { AppNav } from '@/components/AppNav'
+import { createSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { redirect } from "next/navigation";
+import { AppNav } from "@/components/AppNav";
 
 export default async function AppLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const supabase = await createClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  // Redirect to login if not authenticated
+  const supabase = await createSupabaseServerClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
-    redirect('/login')
+    redirect("/login");
   }
 
   return (
@@ -23,5 +22,5 @@ export default async function AppLayout({
       <AppNav userEmail={user.email} />
       {children}
     </>
-  )
+  );
 }
