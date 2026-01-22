@@ -26,6 +26,7 @@ export function SiteDetailsClient({ siteId }: Props) {
   const [site, setSite] = useState<SiteRecord | null>(null);
   const [hasAssessment, setHasAssessment] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [debugMessage, setDebugMessage] = useState<string | null>(null);
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -35,21 +36,37 @@ export function SiteDetailsClient({ siteId }: Props) {
     async function load() {
       const {
         data: { user },
+        error: userError,
       } = await supabase.auth.getUser();
+
+      if (userError) {
+        setDebugMessage(`Auth error: ${userError.message}`);
+        setIsLoading(false);
+        return;
+      }
 
       if (!user) {
         router.push("/login");
         return;
       }
 
-      const { data: siteData } = await supabase
+      const { data: siteData, error: siteError } = await supabase
         .from("sites")
         .select("*")
         .eq("id", siteId)
         .maybeSingle();
 
       if (!siteData || siteData.user_id !== user.id) {
-        router.push("/sites?missing=1");
+        setDebugMessage(
+          [
+            "Site lookup failed.",
+            `siteId=${siteId}`,
+            `userId=${user.id}`,
+            siteError ? `error=${siteError.message}` : "error=none",
+            siteData ? `siteUserId=${siteData.user_id}` : "siteUserId=null",
+          ].join(" | ")
+        );
+        setIsLoading(false);
         return;
       }
 
@@ -85,7 +102,24 @@ export function SiteDetailsClient({ siteId }: Props) {
   }
 
   if (!site) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg border border-red-200 p-6 text-sm text-red-700">
+            {debugMessage || "Site not found."}
+          </div>
+          <div className="mt-4">
+            <Link
+              href="/sites"
+              className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Projects
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const createdAt = site.submitted_at || site.last_assessed_at || site.ai_last_run_at;
