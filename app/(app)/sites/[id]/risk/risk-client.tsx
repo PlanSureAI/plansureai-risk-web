@@ -21,6 +21,23 @@ type RiskProfile = {
   calculatedAt?: string;
 };
 
+type MitigationPlan = {
+  summary: string;
+  steps: Array<{
+    title: string;
+    description: string;
+    cost_gbp_min?: number | null;
+    cost_gbp_max?: number | null;
+    timeline_weeks_min?: number | null;
+    timeline_weeks_max?: number | null;
+    specialist?: string | null;
+  }>;
+};
+
+type RiskAnalysis = {
+  mitigation_plan?: MitigationPlan | null;
+};
+
 type SiteRecord = {
   id: string;
   site_name: string | null;
@@ -36,6 +53,18 @@ function formatStatus(status: string | null) {
   return status.replace("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function formatCurrency(amount?: number | null) {
+  if (amount == null) return "—";
+  return `£${amount.toLocaleString("en-GB")}`;
+}
+
+function formatTimeline(min?: number | null, max?: number | null) {
+  if (min == null && max == null) return "—";
+  if (min != null && max != null) return `${min}-${max} weeks`;
+  if (min != null) return `${min}+ weeks`;
+  return `Up to ${max} weeks`;
+}
+
 export function RiskClient() {
   const router = useRouter();
   const params = useParams();
@@ -45,6 +74,8 @@ export function RiskClient() {
   const [site, setSite] = useState<SiteRecord | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [riskAnalysis, setRiskAnalysis] = useState<RiskAnalysis | null>(null);
+  const [userTier, setUserTier] = useState<"free" | "starter" | "pro" | "enterprise">("free");
   const [isAssessing, setIsAssessing] = useState(false);
 
   const handleRunAssessment = async () => {
@@ -119,6 +150,24 @@ export function RiskClient() {
         return;
       }
 
+      const { data: subscription } = await supabase
+        .from("user_subscriptions")
+        .select("tier")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (subscription?.tier) {
+        setUserTier(subscription.tier);
+      }
+
+      const riskResponse = await fetch(`/api/sites/${siteId}/risk-score`);
+      if (riskResponse.ok) {
+        const data = (await riskResponse.json()) as RiskAnalysis & { calculated?: boolean };
+        if (data.calculated !== false) {
+          setRiskAnalysis(data);
+        }
+      }
+
       setSite(siteData as SiteRecord);
       setIsLoading(false);
     }
@@ -177,6 +226,10 @@ export function RiskClient() {
   }
 
   const profile = site.risk_profile;
+  const mitigationPlan = riskAnalysis?.mitigation_plan ?? null;
+  const steps = mitigationPlan?.steps ?? [];
+  const isPaidTier = userTier !== "free";
+  const visibleSteps = isPaidTier ? steps : steps.slice(0, 5);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
@@ -229,6 +282,57 @@ export function RiskClient() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {mitigationPlan && steps.length > 0 && (
+        <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-zinc-900">Mitigation Plan</h3>
+            {!isPaidTier && (
+              <span className="text-xs font-semibold text-amber-700">Basic plan</span>
+            )}
+          </div>
+          <p className="mt-2 text-sm text-zinc-600">{mitigationPlan.summary}</p>
+
+          <div className="mt-4 space-y-4">
+            {visibleSteps.map((step, index) => (
+              <div key={`${step.title}-${index}`} className="rounded-lg border border-zinc-200 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-zinc-900">{step.title}</h4>
+                    <p className="mt-1 text-sm text-zinc-600">{step.description}</p>
+                    {isPaidTier && (
+                      <div className="mt-3 grid gap-2 text-xs text-zinc-500 md:grid-cols-3">
+                        <div>
+                          <span className="font-semibold text-zinc-700">Cost: </span>
+                          {formatCurrency(step.cost_gbp_min)} - {formatCurrency(step.cost_gbp_max)}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-zinc-700">Timeline: </span>
+                          {formatTimeline(step.timeline_weeks_min, step.timeline_weeks_max)}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-zinc-700">Specialist: </span>
+                          {step.specialist || "Not specified"}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {!isPaidTier && steps.length > visibleSteps.length && (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              Upgrade to Developer to unlock {steps.length - visibleSteps.length} more steps with
+              costs, timelines, and specialist guidance.
+            </div>
+          )}
         </div>
       )}
     </div>
