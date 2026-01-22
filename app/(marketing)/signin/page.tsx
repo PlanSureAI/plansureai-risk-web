@@ -74,7 +74,7 @@ export default function SignInPage() {
                     Password
                   </label>
                   <Link
-                    href="/forgot-password"
+                    href="/signin"
                     className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
                   >
                     Forgot password?

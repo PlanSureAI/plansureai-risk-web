@@ -28,12 +28,12 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/features" className="text-gray-600 dark:text-gray-400 hover:text-blue-600">
+                <Link href="/how-it-works" className="text-gray-600 dark:text-gray-400 hover:text-blue-600">
                   Features
                 </Link>
               </li>
               <li>
-                <Link href="/docs" className="text-gray-600 dark:text-gray-400 hover:text-blue-600">
+                <Link href="/how-it-works" className="text-gray-600 dark:text-gray-400 hover:text-blue-600">
                   Documentation
                 </Link>
               </li>
@@ -50,7 +50,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="text-gray-600 dark:text-gray-400 hover:text-blue-600">
+                <Link href="/about" className="text-gray-600 dark:text-gray-400 hover:text-blue-600">
                   Blog
                 </Link>
               </li>
@@ -67,12 +67,12 @@ export function Footer() {
             <h4 className="font-semibold mb-4">Legal</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/privacy" className="text-gray-600 dark:text-gray-400 hover:text-blue-600">
+                <Link href="/contact" className="text-gray-600 dark:text-gray-400 hover:text-blue-600">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="text-gray-600 dark:text-gray-400 hover:text-blue-600">
+                <Link href="/contact" className="text-gray-600 dark:text-gray-400 hover:text-blue-600">
                   Terms of Service
                 </Link>
               </li>

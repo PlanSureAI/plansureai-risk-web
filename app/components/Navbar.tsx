@@ -83,7 +83,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
               <Link href="/settings/billing" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg">
                 Settings
               </Link>
-              <Link href="/billing" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Link href="/settings/billing" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
                 Billing
               </Link>
               <button
