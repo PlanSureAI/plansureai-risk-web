@@ -229,7 +229,12 @@ export async function POST(
   const topRisksWithPolicies = attachPoliciesToRiskFactors(riskAnalysis.topRisks, policies);
   const allRisksWithPolicies = attachPoliciesToRiskFactors(riskAnalysis.allRisks, policies);
 
-  const mitigationPlan = await generateMitigationPlan(riskAnalysis, site);
+  let mitigationPlan = null;
+  try {
+    mitigationPlan = await generateMitigationPlan(riskAnalysis, site);
+  } catch (error) {
+    console.error("Failed to generate mitigation plan:", error);
+  }
   const fullAnalysis = {
     ...riskAnalysis,
     topRisks: topRisksWithPolicies,
@@ -253,7 +258,7 @@ export async function POST(
     calculatedAt: new Date().toISOString(),
   };
 
-  await supabase
+  const { error: updateError } = await supabase
     .from("sites")
     .update({
       risk_score: riskAnalysis.score,
@@ -263,7 +268,16 @@ export async function POST(
       risk_calculated_at: new Date().toISOString(),
       last_assessed_at: new Date().toISOString(),
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (updateError) {
+    console.error("Failed to save risk analysis:", updateError);
+    return NextResponse.json(
+      { error: "Failed to save risk analysis", details: updateError.message },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json(fullAnalysis);
 }
