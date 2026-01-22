@@ -177,21 +177,23 @@ export function SiteDetailsClient() {
 
             {/* Primary CTA */}
             {!hasAssessment ? (
-              <Link
-                href={`/sites/${site.id}/risk`}
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard")}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 <TrendingUp className="w-5 h-5" />
                 Run Risk Assessment
-              </Link>
+              </button>
             ) : (
-              <Link
-                href={`/sites/${site.id}/risk`}
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard")}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
               >
                 <CheckCircle className="w-5 h-5" />
                 View Risk Report
-              </Link>
+              </button>
             )}
           </div>
         </div>
@@ -216,12 +218,13 @@ export function SiteDetailsClient() {
                     <p className="text-sm text-gray-600 mb-3">
                       Your planning risk assessment is ready to view with detailed mitigation recommendations.
                     </p>
-                    <Link
-                      href={`/sites/${site.id}/risk`}
+                    <button
+                      type="button"
+                      onClick={() => router.push("/dashboard")}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm"
                     >
                       View Full Report →
-                    </Link>
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -234,13 +237,14 @@ export function SiteDetailsClient() {
                     <p className="text-sm text-gray-600 mb-3">
                       Run an AI-powered risk assessment to identify potential planning challenges and get actionable mitigation plans.
                     </p>
-                    <Link
-                      href={`/sites/${site.id}/risk`}
+                    <button
+                      type="button"
+                      onClick={() => router.push("/dashboard")}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
                     >
                       <TrendingUp className="w-4 h-4" />
                       Start Assessment
-                    </Link>
+                    </button>
                   </div>
                 </div>
               )}
@@ -322,13 +326,14 @@ export function SiteDetailsClient() {
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Next Actions</h3>
               <div className="space-y-3">
-                <Link
-                  href={`/sites/${site.id}/risk`}
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard")}
                   className="flex items-center gap-2 w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
                 >
                   <TrendingUp className="w-4 h-4" />
                   Run Assessment
-                </Link>
+                </button>
                 <button
                   type="button"
                   disabled
@@ -345,7 +350,7 @@ export function SiteDetailsClient() {
               <p className="text-sm text-gray-600 mb-4">
                 Our AI analyzes your site against local planning policies and comparable applications to identify risks.
               </p>
-              <Link href="/contact" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+              <Link href="/contact" className="text-sm font-medium text-blue-600 hover:text-blue-800">
                 Contact support →
               </Link>
             </div>
