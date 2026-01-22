@@ -74,19 +74,9 @@ export function SiteDetailsClient() {
         return;
       }
 
-      const { data: riskAssessment, error: riskError } = await supabase
-        .from("risk_assessments")
-        .select("*")
-        .eq("site_id", siteData.id)
-        .maybeSingle();
-
       if (!isMounted) return;
       setSite(siteData);
-      if (riskError && /does not exist/i.test(riskError.message)) {
-        setHasAssessment(false);
-      } else {
-        setHasAssessment(!!riskAssessment);
-      }
+      setHasAssessment(!!siteData.risk_profile || !!siteData.risk_analysis);
       setIsLoading(false);
     }
 
