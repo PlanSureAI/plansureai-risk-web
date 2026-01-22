@@ -3,7 +3,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-zinc-50">
       <main className="mx-auto max-w-3xl px-4 py-12">
         <h1 className="text-3xl font-bold text-zinc-900">Privacy Policy</h1>
-        <p className="mt-2 text-sm text-zinc-600">Last updated: 2026-01-22</p>
+        <p className="mt-2 text-sm text-zinc-600">Last updated: January 22, 2026</p>
 
         <div className="mt-8 space-y-6 text-sm text-zinc-700">
           <section>
@@ -65,10 +65,13 @@ export default function PrivacyPage() {
             <h2 className="text-lg font-semibold text-zinc-900">8. Contact</h2>
             <p className="mt-2">
               Questions about privacy? Contact us at{" "}
-              <a className="text-zinc-900 underline" href="mailto:hello@plansureai.com">
-                hello@plansureai.com
+              <a className="text-zinc-900 underline" href="mailto:plansureai@gmail.com">
+                plansureai@gmail.com
               </a>
               .
+            </p>
+            <p className="mt-2 text-zinc-700">
+              <strong>Address:</strong> PlanSureAI<br />United Kingdom
             </p>
           </section>
         </div>

@@ -315,9 +315,9 @@ export default function TermsPage() {
                 For questions about these Terms:
               </p>
               <p className="text-gray-700">
-                <strong>Email:</strong> <a href="mailto:legal@plansureai.com" className="text-blue-600 hover:underline">legal@plansureai.com</a><br />
-                <strong>Support:</strong> <a href="mailto:support@plansureai.com" className="text-blue-600 hover:underline">support@plansureai.com</a><br />
-                <strong>Address:</strong> [Your Company Address]
+                <strong>Email:</strong> <a href="mailto:plansureai@gmail.com" className="text-blue-600 hover:underline">plansureai@gmail.com</a><br />
+                <strong>Support:</strong> <a href="mailto:plansureai@gmail.com" className="text-blue-600 hover:underline">plansureai@gmail.com</a><br />
+                <strong>Address:</strong> PlanSureAI<br />United Kingdom
               </p>
             </section>
 
