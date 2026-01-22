@@ -268,8 +268,7 @@ export async function POST(
       risk_calculated_at: new Date().toISOString(),
       last_assessed_at: new Date().toISOString(),
     })
-    .eq("id", id)
-    .eq("user_id", user.id);
+    .eq("id", id);
 
   if (updateError) {
     console.error("Failed to save risk analysis:", updateError);
