@@ -35,6 +35,16 @@ type MitigationPlan = {
 };
 
 type RiskAnalysis = {
+  score?: number;
+  level?: string;
+  tagline?: string;
+  topRisks?: Array<{
+    id: string;
+    severity: string;
+    title: string;
+    description: string;
+    category?: string;
+  }>;
   mitigation_plan?: MitigationPlan | null;
 };
 
@@ -209,7 +219,26 @@ export function RiskClient() {
     );
   }
 
-  if (!site.risk_profile) {
+  const derivedProfile: RiskProfile | null = site.risk_profile
+    ? site.risk_profile
+    : riskAnalysis
+      ? {
+          overallRiskScore: riskAnalysis.score ?? 0,
+          riskLevel: (riskAnalysis.level ?? "low").toUpperCase() as RiskProfile["riskLevel"],
+          summary: riskAnalysis.tagline,
+          flags: (riskAnalysis.topRisks ?? []).map((risk) => ({
+            id: risk.id,
+            level: risk.severity,
+            title: risk.title,
+            message: risk.description,
+            severity: risk.severity,
+            category: risk.category,
+          })),
+          calculatedAt: new Date().toISOString(),
+        }
+      : null;
+
+  if (!derivedProfile) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-10">
         <Link href="/sites" className="text-sm text-blue-600 hover:text-blue-800">
@@ -232,7 +261,7 @@ export function RiskClient() {
     );
   }
 
-  const profile = site.risk_profile;
+  const profile = derivedProfile;
   const mitigationPlan = riskAnalysis?.mitigation_plan ?? null;
   const steps = mitigationPlan?.steps ?? [];
   const isPaidTier = userTier !== "free";
