@@ -19,8 +19,10 @@ export default async function AppLayout({
 
   return (
     <>
-      <AppNav userEmail={user.email} />
-      {children}
+      <div className="min-h-screen bg-white text-zinc-900">
+        <AppNav userEmail={user.email} />
+        {children}
+      </div>
     </>
   );
 }
