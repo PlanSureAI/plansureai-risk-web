@@ -62,6 +62,55 @@ type SiteRecord = {
   last_assessed_at: string | null;
 };
 
+function mapRiskToCategory(risk: { title: string; constraint?: string }): string {
+  const constraint = (risk.constraint ?? "").toLowerCase();
+  const title = risk.title.toLowerCase();
+
+  if (constraint.includes("conservation") || constraint.includes("listed")) return "heritage";
+  if (constraint.includes("tpo") || constraint.includes("tree")) return "trees";
+  if (constraint.includes("flood")) return "flooding";
+  if (constraint.includes("parking")) return "parking";
+
+  if (title.includes("heritage") || title.includes("conservation") || title.includes("listed")) {
+    return "heritage";
+  }
+  if (title.includes("tree")) return "trees";
+  if (title.includes("flood") || title.includes("drainage")) return "flooding";
+  if (title.includes("parking")) return "parking";
+
+  return "heritage";
+}
+
+function mapConstraintType(risk: { title: string; constraint?: string }): string | undefined {
+  const constraint = (risk.constraint ?? "").toLowerCase();
+  const title = risk.title.toLowerCase();
+
+  if (constraint.includes("conservation") || title.includes("conservation")) {
+    return "conservation_area";
+  }
+  if (constraint.includes("listed") || title.includes("listed")) {
+    return "listed_building";
+  }
+  return undefined;
+}
+
+function mapRiskLevelToSeverity(
+  level: RiskProfile["riskLevel"]
+): "low" | "medium" | "high" | "critical" {
+  switch (level) {
+    case "LOW":
+      return "low";
+    case "MEDIUM":
+      return "medium";
+    case "HIGH":
+      return "high";
+    case "EXTREME":
+      return "critical";
+    default:
+      return "medium";
+  }
+}
+
 function formatStatus(status: string | null) {
   if (!status) return "Unknown";
   return status.replace("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -274,6 +323,9 @@ export function RiskClient() {
   const steps = mitigationPlan?.steps ?? [];
   const isPaidTier = userTier !== "free";
   const visibleSteps = isPaidTier ? steps : steps.slice(0, 5);
+  const primaryRisk = riskAnalysis?.topRisks?.[0];
+  const comparableRiskCategory = primaryRisk ? mapRiskToCategory(primaryRisk) : "heritage";
+  const comparableRiskSeverity = primaryRisk?.severity ?? mapRiskLevelToSeverity(profile.riskLevel);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
@@ -387,7 +439,7 @@ export function RiskClient() {
       {/* Nearby Planning Applications Map - NEW SECTION */}
       {site.address && (
         <div className="mt-6">
-          <NearbyApprovalsMap site={{ id: site.id, address: site.address }} />
+          <NearbyApprovalsMap siteId={site.id} radiusKm={0.5} />
         </div>
       )}
 
@@ -395,10 +447,21 @@ export function RiskClient() {
       {site.latitude && site.longitude && (
         <div className="mt-6">
           <ComparableAnalysisWithGating
-            siteId={site.id}
-            latitude={site.latitude}
-            longitude={site.longitude}
+            riskCategory={comparableRiskCategory}
+            riskSeverity={comparableRiskSeverity}
+            councilName={undefined}
+            constraintType={primaryRisk ? mapConstraintType(primaryRisk) : undefined}
             userTier={userTier}
+            hasProfessionalReports={Boolean(primaryRisk?.policy)}
+            inConservationArea={
+              (primaryRisk?.constraint ?? "").toLowerCase().includes("conservation")
+            }
+            hasListedBuilding={(primaryRisk?.constraint ?? "").toLowerCase().includes("listed")}
+            hasTreeConstraints={
+              (primaryRisk?.constraint ?? "").toLowerCase().includes("tree") ||
+              (primaryRisk?.constraint ?? "").toLowerCase().includes("tpo")
+            }
+            inFloodZone={(primaryRisk?.constraint ?? "").toLowerCase().includes("flood")}
           />
         </div>
       )}
