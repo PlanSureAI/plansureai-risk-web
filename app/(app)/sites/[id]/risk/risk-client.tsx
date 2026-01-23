@@ -94,21 +94,12 @@ function mapConstraintType(risk: { title: string; constraint?: string }): string
   return undefined;
 }
 
-function mapRiskLevelToSeverity(
-  level: RiskProfile["riskLevel"]
-): "low" | "medium" | "high" | "critical" {
-  switch (level) {
-    case "LOW":
-      return "low";
-    case "MEDIUM":
-      return "medium";
-    case "HIGH":
-      return "high";
-    case "EXTREME":
-      return "critical";
-    default:
-      return "medium";
-  }
+function mapRiskLevelToSeverity(level: string): "low" | "medium" | "high" | "critical" {
+  const normalized = level.toLowerCase();
+  if (normalized === "critical" || normalized === "extreme") return "critical";
+  if (normalized === "high") return "high";
+  if (normalized === "medium") return "medium";
+  return "low";
 }
 
 function formatStatus(status: string | null) {
@@ -325,7 +316,9 @@ export function RiskClient() {
   const visibleSteps = isPaidTier ? steps : steps.slice(0, 5);
   const primaryRisk = riskAnalysis?.topRisks?.[0];
   const comparableRiskCategory = primaryRisk ? mapRiskToCategory(primaryRisk) : "heritage";
-  const comparableRiskSeverity = primaryRisk?.severity ?? mapRiskLevelToSeverity(profile.riskLevel);
+  const comparableRiskSeverity = primaryRisk
+    ? mapRiskLevelToSeverity(primaryRisk.severity)
+    : "low";
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
