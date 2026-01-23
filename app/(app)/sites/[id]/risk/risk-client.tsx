@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 import { RiskBadge } from "@/app/components/RiskBadge";
-import { NearbyApprovalsMap } from "@/app/components/NearbyApprovalsMap";
+import { ComparableApprovalsMap } from "../ComparableApprovalsMap";
 import { ComparableAnalysisWithGating } from "@/app/components/ComparableAnalysisWithGating";
 
 type RiskProfile = {
@@ -432,7 +432,7 @@ export function RiskClient() {
       {/* Nearby Planning Applications Map - NEW SECTION */}
       {site.address && (
         <div className="mt-6">
-          <NearbyApprovalsMap siteId={site.id} radiusKm={0.5} />
+          <ComparableApprovalsMap site={{ id: site.id, address: site.address }} />
         </div>
       )}
 
