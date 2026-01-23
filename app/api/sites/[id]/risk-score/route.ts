@@ -192,48 +192,32 @@ export async function POST(
   let historySummary: PlanningHistorySummary | null = null;
   let comparableInsights: ComparableInsights | null = null;
   
-  const { data: constraintRows, error: constraintError } = await supabase
-    .from("planning_constraint")
-    .select("constraint_type")
-    .eq("site_id", id);
-
-  if (constraintError) {
-    console.error("Failed to load planning constraints:", constraintError);
-  }
-
-  let constraints =
-    constraintRows && constraintRows.length > 0
-      ? constraintRows.map((row: any) => row.constraint_type)
-      : (((site as any).constraints ?? []) as string[]);
+  let constraints = (((site as any).constraints ?? []) as string[]);
   const address = (site as any).address as string | null;
 
-  if (constraints.length === 0) {
-    const siteLat = (site as any).latitude as number | null;
-    const siteLng = (site as any).longitude as number | null;
-    const lookupCoords =
-      siteLat != null && siteLng != null
-        ? { lat: siteLat, lng: siteLng }
-        : address
-          ? await geocodeAddress(address)
-          : null;
+  const siteLat = (site as any).latitude as number | null;
+  const siteLng = (site as any).longitude as number | null;
+  const lookupCoords =
+    siteLat != null && siteLng != null
+      ? { lat: siteLat, lng: siteLng }
+      : address
+        ? await geocodeAddress(address)
+        : null;
 
-    if (lookupCoords) {
-      const fetchedConstraints = await fetchPlanningConstraints(
-        lookupCoords.lat,
-        lookupCoords.lng
-      );
-      if (fetchedConstraints.length > 0) {
-        constraints = fetchedConstraints;
-        const { error: constraintsUpdateError } = await supabase
-          .from("sites")
-          .update({ constraints: fetchedConstraints })
-          .eq("id", id)
-          .eq("user_id", user.id);
+  if (lookupCoords) {
+    const fetchedConstraints = await fetchPlanningConstraints(
+      lookupCoords.lat,
+      lookupCoords.lng
+    );
+    constraints = fetchedConstraints;
+    const { error: constraintsUpdateError } = await supabase
+      .from("sites")
+      .update({ constraints: fetchedConstraints })
+      .eq("id", id)
+      .eq("user_id", user.id);
 
-        if (constraintsUpdateError) {
-          console.error("Failed to persist constraints:", constraintsUpdateError);
-        }
-      }
+    if (constraintsUpdateError) {
+      console.error("Failed to persist constraints:", constraintsUpdateError);
     }
   }
 
