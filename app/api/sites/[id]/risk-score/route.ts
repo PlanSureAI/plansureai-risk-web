@@ -8,6 +8,7 @@ import {
 } from "@/app/lib/planningRiskScoring";
 import { generateMitigationPlan } from "@/app/lib/generateMitigationPlan";
 import { getPoliciesForConstraints, attachPoliciesToRiskFactors } from "@/app/lib/policyLookup";
+import { fetchPlanningConstraints } from "@/app/lib/planningDataClient";
 
 type NearbyApplication = {
   decision: string | null;
@@ -200,11 +201,42 @@ export async function POST(
     console.error("Failed to load planning constraints:", constraintError);
   }
 
-  const constraints =
+  let constraints =
     constraintRows && constraintRows.length > 0
       ? constraintRows.map((row: any) => row.type)
       : (((site as any).constraints ?? []) as string[]);
   const address = (site as any).address as string | null;
+
+  if (constraints.length === 0) {
+    const siteLat = (site as any).latitude as number | null;
+    const siteLng = (site as any).longitude as number | null;
+    const lookupCoords =
+      siteLat != null && siteLng != null
+        ? { lat: siteLat, lng: siteLng }
+        : address
+          ? await geocodeAddress(address)
+          : null;
+
+    if (lookupCoords) {
+      const fetchedConstraints = await fetchPlanningConstraints(
+        lookupCoords.lat,
+        lookupCoords.lng
+      );
+      if (fetchedConstraints.length > 0) {
+        constraints = fetchedConstraints;
+        const { error: constraintsUpdateError } = await supabase
+          .from("sites")
+          .update({ constraints: fetchedConstraints })
+          .eq("id", id)
+          .eq("user_id", user.id);
+
+        if (constraintsUpdateError) {
+          console.error("Failed to persist constraints:", constraintsUpdateError);
+        }
+      }
+    }
+  }
+
   const coords = address ? await geocodeAddress(address) : null;
 
   if (coords) {
