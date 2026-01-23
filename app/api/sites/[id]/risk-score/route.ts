@@ -194,7 +194,7 @@ export async function POST(
   
   const { data: constraintRows, error: constraintError } = await supabase
     .from("planning_constraint")
-    .select("type")
+    .select("constraint_type")
     .eq("site_id", id);
 
   if (constraintError) {
@@ -203,7 +203,7 @@ export async function POST(
 
   let constraints =
     constraintRows && constraintRows.length > 0
-      ? constraintRows.map((row: any) => row.type)
+      ? constraintRows.map((row: any) => row.constraint_type)
       : (((site as any).constraints ?? []) as string[]);
   const address = (site as any).address as string | null;
 
