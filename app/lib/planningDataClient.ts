@@ -32,9 +32,13 @@ export async function fetchPlanningConstraints(
       "flood-zone-3": "flood_zone_3",
       "area-of-outstanding-natural-beauty": "AONB",
       "national-park": "national_park",
-      "green-belt": "green_belt",
-      "site-of-special-scientific-interest": "SSSI",
-    };
+  "green-belt": "green_belt",
+  "site-of-special-scientific-interest": "SSSI",
+  "coal-mining-area": "mining_legacy",
+  "coal-mining-referral-area": "mining_legacy",
+  "mining-area": "mining_legacy",
+  "development-high-risk-area": "mining_legacy",
+};
 
     const constraints = new Set<string>();
 

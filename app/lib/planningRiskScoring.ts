@@ -217,6 +217,21 @@ export function calculatePlanningRiskScore(
     addRisk(risk);
   }
 
+  if (constraints.includes("mining_legacy")) {
+    addRisk({
+      id: "mining-legacy",
+      title: "Mining Risk Assessment Required",
+      description:
+        "Site located in historic mining area. Mining Risk Assessment and potential ground investigation required for Building Regulations approval. Failure to provide may prevent foundation approval and delay construction start.",
+      severity: "high",
+      impact: -15,
+      weight: 2,
+      category: "constraint",
+      mitigation:
+        "Commission Mining Risk Assessment: £400-£1,200 for desk study, £2,500-£8,000+ for intrusive investigation if required. Early assessment recommended to avoid delays.",
+    });
+  }
+
   if (constraints.includes("green_belt")) {
     const risk = attachPolicy(
       {
