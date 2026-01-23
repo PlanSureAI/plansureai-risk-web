@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 import { RiskBadge } from "@/app/components/RiskBadge";
+import { NearbyApprovalsMap } from "@/app/components/NearbyApprovalsMap";
+import { ComparableAnalysisWithGating } from "@/app/components/ComparableAnalysisWithGating";
 
 type RiskProfile = {
   overallRiskScore: number;
@@ -52,6 +54,8 @@ type SiteRecord = {
   id: string;
   site_name: string | null;
   address: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   risk_profile: RiskProfile | null;
   planning_route: string | null;
   planning_route_status: string | null;
@@ -111,6 +115,8 @@ export function RiskClient() {
           id,
           site_name,
           address,
+          latitude,
+          longitude,
           risk_profile,
           planning_route,
           planning_route_status,
@@ -256,7 +262,7 @@ export function RiskClient() {
             disabled={isAssessing}
             className="mt-4 inline-flex items-center rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isAssessing ? 'Generating Assessment...' : 'Run Risk Assessment'}
+            {isAssessing ? "Generating Assessment..." : "Run Risk Assessment"}
           </button>
         </div>
       </div>
@@ -284,6 +290,7 @@ export function RiskClient() {
         )}
       </div>
 
+      {/* Overall Risk Status */}
       <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-zinc-900">Overall Risk Status</h2>
@@ -292,6 +299,7 @@ export function RiskClient() {
         {profile.summary && <p className="mt-3 text-sm text-zinc-600">{profile.summary}</p>}
       </div>
 
+      {/* Planning Route */}
       {site.planning_route && site.planning_route !== "none" && (
         <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-6">
           <h3 className="text-sm font-semibold text-zinc-900">Planning Route</h3>
@@ -306,6 +314,7 @@ export function RiskClient() {
         </div>
       )}
 
+      {/* Risk Flags */}
       {profile.flags && profile.flags.length > 0 && (
         <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-6">
           <h3 className="text-sm font-semibold text-zinc-900">Risk Flags</h3>
@@ -323,6 +332,7 @@ export function RiskClient() {
         </div>
       )}
 
+      {/* Mitigation Plan */}
       {mitigationPlan && steps.length > 0 && (
         <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-6">
           <div className="flex items-center justify-between">
@@ -371,6 +381,25 @@ export function RiskClient() {
               costs, timelines, and specialist guidance.
             </div>
           )}
+        </div>
+      )}
+
+      {/* Nearby Planning Applications Map - NEW SECTION */}
+      {site.address && (
+        <div className="mt-6">
+          <NearbyApprovalsMap site={{ id: site.id, address: site.address }} />
+        </div>
+      )}
+
+      {/* Comparable Analysis - NEW SECTION */}
+      {site.latitude && site.longitude && (
+        <div className="mt-6">
+          <ComparableAnalysisWithGating
+            siteId={site.id}
+            latitude={site.latitude}
+            longitude={site.longitude}
+            userTier={userTier}
+          />
         </div>
       )}
     </div>
