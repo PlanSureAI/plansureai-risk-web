@@ -112,6 +112,31 @@ export async function createSite(
     }
 
     data = insertData;
+
+    if (address) {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.plansureai.com";
+        const geocodeResponse = await fetch(
+          `${baseUrl}/api/geocode?q=${encodeURIComponent(address)}`
+        );
+
+        if (geocodeResponse.ok) {
+          const geocodeData = await geocodeResponse.json();
+
+          if (geocodeData.lat && geocodeData.lng) {
+            await supabase
+              .from("sites")
+              .update({
+                latitude: geocodeData.lat,
+                longitude: geocodeData.lng,
+              })
+              .eq("id", data.id);
+          }
+        }
+      } catch (geocodeError) {
+        console.error("Geocoding failed (non-fatal):", geocodeError);
+      }
+    }
   } catch (insertError) {
     console.error("Error creating site", {
       error: insertError,
