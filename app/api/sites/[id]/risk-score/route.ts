@@ -191,13 +191,7 @@ export async function POST(
   let historySummary: PlanningHistorySummary | null = null;
   let comparableInsights: ComparableInsights | null = null;
   
-  // Fetch planning constraints for this site
-  const { data: constraintsData } = await supabase
-    .from("planning_constraints")
-    .select("type")
-    .eq("site_id", id);
-  
-  const constraints = (constraintsData ?? []).map((c: any) => c.type) as string[];
+  const constraints = ((site as any).constraints ?? []) as string[];
   const address = (site as any).address as string | null;
   const coords = address ? await geocodeAddress(address) : null;
 
