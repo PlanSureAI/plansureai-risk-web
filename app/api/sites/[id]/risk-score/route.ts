@@ -262,13 +262,14 @@ export async function POST(
     .from("sites")
     .update({
       risk_score: riskAnalysis.score,
-      risk_level: riskAnalysis.level,
+      risk_level: riskAnalysis.level.toUpperCase(),
       risk_analysis: fullAnalysis,
       risk_profile: riskProfile,
       risk_calculated_at: new Date().toISOString(),
       last_assessed_at: new Date().toISOString(),
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", user.id);
 
   if (updateError) {
     console.error("Failed to save risk analysis:", updateError);
