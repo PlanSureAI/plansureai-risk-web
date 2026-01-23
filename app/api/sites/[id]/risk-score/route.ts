@@ -191,7 +191,19 @@ export async function POST(
   let historySummary: PlanningHistorySummary | null = null;
   let comparableInsights: ComparableInsights | null = null;
   
-  const constraints = ((site as any).constraints ?? []) as string[];
+  const { data: constraintRows, error: constraintError } = await supabase
+    .from("planning_constraint")
+    .select("type")
+    .eq("site_id", id);
+
+  if (constraintError) {
+    console.error("Failed to load planning constraints:", constraintError);
+  }
+
+  const constraints =
+    constraintRows && constraintRows.length > 0
+      ? constraintRows.map((row: any) => row.type)
+      : (((site as any).constraints ?? []) as string[]);
   const address = (site as any).address as string | null;
   const coords = address ? await geocodeAddress(address) : null;
 
