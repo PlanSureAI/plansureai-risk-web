@@ -445,16 +445,28 @@ export function RiskClient() {
             councilName={undefined}
             constraintType={primaryRisk ? mapConstraintType(primaryRisk) : undefined}
             userTier={userTier}
-            hasProfessionalReports={Boolean(primaryRisk?.policy)}
+            hasProfessionalReports={false}
+            hasPreAppAdvice={false}
             inConservationArea={
-              (primaryRisk?.constraint ?? "").toLowerCase().includes("conservation")
+              primaryRisk?.title?.toLowerCase().includes("conservation") ||
+              primaryRisk?.description?.toLowerCase().includes("conservation") ||
+              false
             }
-            hasListedBuilding={(primaryRisk?.constraint ?? "").toLowerCase().includes("listed")}
+            hasListedBuilding={
+              primaryRisk?.title?.toLowerCase().includes("listed") ||
+              primaryRisk?.description?.toLowerCase().includes("listed") ||
+              false
+            }
             hasTreeConstraints={
-              (primaryRisk?.constraint ?? "").toLowerCase().includes("tree") ||
-              (primaryRisk?.constraint ?? "").toLowerCase().includes("tpo")
+              primaryRisk?.title?.toLowerCase().includes("tree") ||
+              primaryRisk?.description?.toLowerCase().includes("tree") ||
+              false
             }
-            inFloodZone={(primaryRisk?.constraint ?? "").toLowerCase().includes("flood")}
+            inFloodZone={
+              primaryRisk?.title?.toLowerCase().includes("flood") ||
+              primaryRisk?.description?.toLowerCase().includes("flood") ||
+              false
+            }
           />
         </div>
       )}
