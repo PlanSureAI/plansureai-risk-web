@@ -266,32 +266,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="border-b border-zinc-200 bg-white py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-zinc-900">What developers say</h2>
-          </div>
-
-          <div className="mt-16 grid gap-8 md:grid-cols-3">
-            <Testimonial
-              quote="Saved me 2 weeks of research on a Cornwall site. The conservation area flag and mitigation steps were spot-on."
-              author="James M."
-              role="Land promoter, Cornwall"
-            />
-            <Testimonial
-              quote="Finally, a tool that cites actual policies instead of vague AI waffle. Worth every penny."
-              author="Sarah K."
-              role="Small developer, Birmingham"
-            />
-            <Testimonial
-              quote="Used the free constraints checker to screen 20 sites in an afternoon. Bought Pro the same day."
-              author="Tom R."
-              role="Developer, Leeds"
-            />
-          </div>
-        </div>
-      </section>
-
       <section className="bg-zinc-900 py-24 text-white">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold">Ready to get started?</h2>
@@ -457,18 +431,6 @@ function PricingCard({
       >
         {cta}
       </Link>
-    </div>
-  );
-}
-
-function Testimonial({ quote, author, role }: { quote: string; author: string; role: string }) {
-  return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-8">
-      <p className="text-base text-zinc-700">"{quote}"</p>
-      <div className="mt-6">
-        <div className="font-semibold text-zinc-900">{author}</div>
-        <div className="text-sm text-zinc-600">{role}</div>
-      </div>
     </div>
   );
 }
