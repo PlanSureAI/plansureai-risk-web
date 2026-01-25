@@ -1,9 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 const RAILWAY_BASE = "https://empowering-cooperation-production.up.railway.app";
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
   const supabase = await createClient();
 
   const {
@@ -18,7 +22,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   const { data: site, error: siteError } = await supabase
     .from("sites")
     .select("id, address, postcode, local_planning_authority, user_id")
-    .eq("id", params.id)
+    .eq("id", id)
     .maybeSingle();
 
   if (siteError || !site) {
