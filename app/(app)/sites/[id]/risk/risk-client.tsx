@@ -9,6 +9,7 @@ import { ComparableApprovalsMap } from "../ComparableApprovalsMap";
 import { ComparableAnalysisWithGating } from "@/app/components/ComparableAnalysisWithGating";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { ConfidenceScoreSection } from "../ConfidenceScoreSection";
 
 type RiskProfile = {
   overallRiskScore: number;
@@ -56,6 +57,11 @@ type SiteRecord = {
   id: string;
   site_name: string | null;
   address: string | null;
+  local_planning_authority: string | null;
+  ai_outcome: string | null;
+  ai_risk_summary: string | null;
+  key_planning_considerations: string | null;
+  objection_likelihood: string | null;
   latitude?: number | null;
   longitude?: number | null;
   risk_profile: RiskProfile | null;
@@ -160,6 +166,11 @@ export function RiskClient() {
           id,
           site_name,
           address,
+          local_planning_authority,
+          ai_outcome,
+          ai_risk_summary,
+          key_planning_considerations,
+          objection_likelihood,
           latitude,
           longitude,
           risk_profile,
@@ -425,6 +436,19 @@ export function RiskClient() {
           <RiskBadge riskLevel={profile.riskLevel} riskScore={overallScore} />
         </div>
         {profile.summary && <p className="mt-3 text-sm text-zinc-600">{profile.summary}</p>}
+      </div>
+
+      <div className="mt-6">
+        <ConfidenceScoreSection
+          siteId={site.id}
+          siteName={site.site_name}
+          address={site.address}
+          localPlanningAuthority={site.local_planning_authority}
+          aiOutcome={site.ai_outcome}
+          aiRiskSummary={site.ai_risk_summary}
+          keyPlanningConsiderations={site.key_planning_considerations}
+          objectionLikelihood={site.objection_likelihood}
+        />
       </div>
 
       {/* Planning Route */}
