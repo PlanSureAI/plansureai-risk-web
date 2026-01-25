@@ -2,13 +2,14 @@
 
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Building2, Settings, LogOut, User, Plus } from "lucide-react";
+import { Building2, Settings, LogOut, User, Plus, Landmark } from "lucide-react";
 
 export function AppNav({ userEmail }: { userEmail?: string }) {
   const pathname = usePathname();
 
   const navItems = [
     { href: "/sites", label: "Projects", icon: Building2 },
+    { href: "/finance", label: "Finance Readiness", icon: Landmark },
     { href: "/sites/new", label: "Create New Project", icon: Plus },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
