@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 
 const API_BASE = "https://empowering-cooperation-production.up.railway.app";
 
@@ -24,15 +25,16 @@ type SiteData = {
 };
 
 type FinanceClientProps = {
-  site: SiteData;
+  siteId: string;
 };
 
-export default function FinanceClient({ site }: FinanceClientProps) {
+export default function FinanceClient({ siteId }: FinanceClientProps) {
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [form, setForm] = useState(() => ({
     site: {
-      address: site.address ?? "",
-      postcode: site.postcode ?? "",
-      local_authority: site.local_planning_authority ?? "",
+      address: "",
+      postcode: "",
+      local_authority: "",
     },
     planning: {
       status: "PENDING" as (typeof planningStatusOptions)[number],
@@ -62,6 +64,46 @@ export default function FinanceClient({ site }: FinanceClientProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [response, setResponse] = useState<any | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSite() {
+      if (!siteId) return;
+
+      const { data, error: siteError } = await supabase
+        .from("sites")
+        .select("id, site_name, address, postcode, local_planning_authority")
+        .eq("id", siteId)
+        .maybeSingle();
+
+      if (!isMounted) return;
+
+      if (siteError) {
+        return;
+      }
+
+      if (data) {
+        setForm((prev) => ({
+          ...prev,
+          site: {
+            address: prev.site.address || data.address || "",
+            postcode: prev.site.postcode || data.postcode || "",
+            local_authority:
+              prev.site.local_authority ||
+              data.local_planning_authority ||
+              "",
+          },
+        }));
+      }
+    }
+
+    loadSite();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [siteId, supabase]);
 
   const payload = useMemo(() => {
     return {
