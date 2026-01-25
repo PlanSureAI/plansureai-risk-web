@@ -1,601 +1,327 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
+import Link from "next/link";
 
-const API_BASE = "https://empowering-cooperation-production.up.railway.app";
-
-const planningStatusOptions = [
-  "GRANTED",
-  "PENDING",
-  "NOT_APPLIED",
-] as const;
-const accessRightsOptions = ["FULL", "UNCLEAR", "NONE"] as const;
-const contaminationRiskOptions = ["LOW", "UNKNOWN", "HIGH"] as const;
-const floodZoneOptions = ["ZONE_1", "ZONE_2", "ZONE_3", "UNKNOWN"] as const;
-const groundConditionsOptions = ["GOOD", "UNKNOWN", "POOR"] as const;
-const drawingsSetOptions = ["FULL", "PARTIAL", "NONE"] as const;
-
-type SiteData = {
-  id: string;
-  site_name?: string | null;
-  address?: string | null;
-  postcode?: string | null;
-  local_planning_authority?: string | null;
-};
-
-type FinanceClientProps = {
-  siteId: string;
-};
-
-export default function FinanceClient({ siteId }: FinanceClientProps) {
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const [form, setForm] = useState(() => ({
-    site: {
-      address: "",
-      postcode: "",
-      local_authority: "",
-    },
-    planning: {
-      status: "PENDING" as (typeof planningStatusOptions)[number],
-      reference: "",
-      refused: false,
-    },
+export default function FinanceClient({ siteId }: { siteId: string }) {
+  const [formData, setFormData] = useState({
+    site: { address: "", postcode: "", local_authority: "" },
+    planning: { status: "PENDING", reference: "", refused: false },
     land: {
       ownership_confirmed: false,
-      access_rights: "UNCLEAR" as (typeof accessRightsOptions)[number],
-      contamination_risk: "UNKNOWN" as (typeof contaminationRiskOptions)[number],
-      flood_zone: "UNKNOWN" as (typeof floodZoneOptions)[number],
-      ground_conditions: "UNKNOWN" as (typeof groundConditionsOptions)[number],
+      access_rights: "UNCLEAR",
+      contamination_risk: "UNKNOWN",
+      flood_zone: "UNKNOWN",
+      ground_conditions: "UNKNOWN",
     },
     technical: {
       cost_plan_exists: false,
-      cost_plan_professional: null as boolean | null,
-      drawings_set: "PARTIAL" as (typeof drawingsSetOptions)[number],
+      cost_plan_professional: false,
+      drawings_set: "NONE",
       spec_document: false,
     },
     financial: {
-      budget_total: "" as unknown as number | "",
-      equity_available: "" as unknown as number | "",
+      budget_total: 0,
+      equity_available: 0,
       income_verified: false,
     },
-  }));
-
-  const [submitting, setSubmitting] = useState(false);
+  });
+  
+  const [loading, setLoading] = useState(false);
+  const [response, setResponse] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [response, setResponse] = useState<any | null>(null);
+  const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function loadSite() {
-      if (!siteId) return;
-
-      const { data, error: siteError } = await supabase
+    async function loadSiteData() {
+      const { data: site } = await supabase
         .from("sites")
-        .select("id, site_name, address, postcode, local_planning_authority")
+        .select("address, postcode, local_planning_authority")
         .eq("id", siteId)
-        .maybeSingle();
+        .single();
 
-      if (!isMounted) return;
-
-      if (siteError) {
-        return;
-      }
-
-      if (data) {
-        setForm((prev) => ({
+      if (site) {
+        setFormData((prev) => ({
           ...prev,
           site: {
-            address: prev.site.address || data.address || "",
-            postcode: prev.site.postcode || data.postcode || "",
-            local_authority:
-              prev.site.local_authority ||
-              data.local_planning_authority ||
-              "",
+            address: site.address || "",
+            postcode: site.postcode || "",
+            local_authority: site.local_planning_authority || "",
           },
         }));
       }
     }
+    loadSiteData();
+  }, [siteId]);
 
-    loadSite();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [siteId, supabase]);
-
-  const payload = useMemo(() => {
-    return {
-      ...form,
-      planning: {
-        ...form.planning,
-        reference: form.planning.reference.trim() || null,
-      },
-      financial: {
-        budget_total:
-          form.financial.budget_total === ""
-            ? 0
-            : Number(form.financial.budget_total),
-        equity_available:
-          form.financial.equity_available === ""
-            ? 0
-            : Number(form.financial.equity_available),
-      },
-      technical: {
-        ...form.technical,
-        cost_plan_professional: form.technical.cost_plan_exists
-          ? form.technical.cost_plan_professional
-          : null,
-      },
-    };
-  }, [form]);
-
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSubmitting(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
     setError(null);
     setResponse(null);
 
     try {
-      const response = await fetch(`${API_BASE}/api/evaluate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        "https://empowering-cooperation-production.up.railway.app/api/evaluate",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        }
+      );
 
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        const message =
-          data?.error?.message ||
-          "Request failed. Check the console for details.";
-        setError(message);
+      const data = await res.json();
+      
+      if (!res.ok || data.error) {
+        setError(data.error?.message || data.message || "Evaluation failed");
+      } else {
         setResponse(data);
-        return;
       }
-
-      setResponse(data);
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError("Failed to connect to evaluation service");
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
-  }
+  };
 
-  function setValue(path: string, value: string | number | boolean | null) {
-    setForm((prev) => {
-      const next = structuredClone(prev) as typeof prev;
-      const parts = path.split(".");
-      let cursor: any = next;
-      for (let i = 0; i < parts.length - 1; i += 1) {
-        cursor = cursor[parts[i]];
-      }
-      cursor[parts[parts.length - 1]] = value as any;
-      return next;
-    });
+  if (response) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <Link href={`/sites/${siteId}`} className="text-blue-600 hover:text-blue-800 text-sm mb-4 inline-block">
+          ← Back to Site
+        </Link>
+
+        <div className="space-y-6">
+          {/* Verdict Header */}
+          <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center">
+            <div className="text-6xl mb-4">
+              {response.verdict === "PASS" ? "✅" :
+               response.verdict === "FATAL" ? "❌" :
+               response.verdict === "GATING" ? "🚧" : "⚠️"}
+            </div>
+            <h2 className="text-2xl font-bold text-zinc-900 mb-2">
+              {response.verdict === "PASS" ? "Finance-Ready!" :
+               response.verdict === "FATAL" ? "Not Fundable" :
+               response.verdict === "GATING" ? "Critical Items Blocking" : "Fixable Issues"}
+            </h2>
+            <p className="text-zinc-600">{response.summary}</p>
+            <div className="mt-4">
+              <span className="text-sm font-medium text-zinc-500">
+                {response.confidence}% Confidence ({response.confidence_level})
+              </span>
+            </div>
+          </div>
+
+          {/* Blocking Items */}
+          {response.blocking_items?.length > 0 && (
+            <div className="rounded-xl border border-zinc-200 bg-white p-6">
+              <h3 className="font-semibold text-zinc-900 mb-4">What You Need to Fix:</h3>
+              <div className="space-y-4">
+                {response.blocking_items.map((item: any, idx: number) => (
+                  <div key={idx} className="border-l-4 border-blue-500 pl-4 py-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="font-semibold text-zinc-900">{item.issue}</h4>
+                      <span className="text-xs font-semibold text-zinc-500 uppercase">
+                        {item.severity}
+                      </span>
+                    </div>
+                    <p className="text-sm text-zinc-600 mb-2">{item.action_required}</p>
+                    {(item.estimated_time || item.estimated_cost) && (
+                      <div className="flex gap-4 text-xs text-zinc-500">
+                        {item.estimated_time && <span>⏱️ {item.estimated_time}</span>}
+                        {item.estimated_cost && <span>💰 {item.estimated_cost}</span>}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-4">
+            <button
+              onClick={() => setResponse(null)}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+            >
+              Run Another Assessment
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-6 py-3 bg-zinc-200 text-zinc-900 rounded-lg hover:bg-zinc-300 font-semibold"
+            >
+              Print Report
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-6 py-10">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold">Finance Readiness</h1>
-        <p className="text-sm text-muted-foreground">
-          Submit a lightweight finance readiness check to the Railway API.
-        </p>
-      </header>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <Link href={`/sites/${siteId}`} className="text-blue-600 hover:text-blue-800 text-sm mb-4 inline-block">
+        ← Back to Site
+      </Link>
 
-      <form onSubmit={onSubmit} className="space-y-8">
-        <section className="space-y-4 rounded-xl border border-border/60 bg-background p-6">
-          <h2 className="text-lg font-semibold">Site</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <label className="flex flex-col gap-2 text-sm">
-              Address
-              <input
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.site.address}
-                onChange={(event) =>
-                  setValue("site.address", event.target.value)
-                }
-                placeholder="10 High Street"
-              />
-            </label>
-            <label className="flex flex-col gap-2 text-sm">
-              Postcode
-              <input
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.site.postcode}
-                onChange={(event) =>
-                  setValue("site.postcode", event.target.value)
-                }
-                placeholder="SW1A 1AA"
-              />
-            </label>
-            <label className="flex flex-col gap-2 text-sm">
-              Local authority
-              <input
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.site.local_authority}
-                onChange={(event) =>
-                  setValue("site.local_authority", event.target.value)
-                }
-                placeholder="Westminster"
-              />
-            </label>
-          </div>
-        </section>
+      <h1 className="text-3xl font-bold mb-6">Finance Readiness Assessment</h1>
 
-        <section className="space-y-4 rounded-xl border border-border/60 bg-background p-6">
-          <h2 className="text-lg font-semibold">Planning</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <label className="flex flex-col gap-2 text-sm">
-              Status
-              <select
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.planning.status}
-                onChange={(event) =>
-                  setValue("planning.status", event.target.value)
-                }
-              >
-                {planningStatusOptions.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-2 text-sm">
-              Reference (optional)
-              <input
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.planning.reference}
-                onChange={(event) =>
-                  setValue("planning.reference", event.target.value)
-                }
-                placeholder="21/00001/FUL"
-              />
-            </label>
-            <label className="flex flex-col gap-2 text-sm">
-              Refused
-              <select
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.planning.refused ? "yes" : "no"}
-                onChange={(event) =>
-                  setValue("planning.refused", event.target.value === "yes")
-                }
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </label>
-          </div>
-        </section>
-
-        <section className="space-y-4 rounded-xl border border-border/60 bg-background p-6">
-          <h2 className="text-lg font-semibold">Land</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <label className="flex flex-col gap-2 text-sm">
-              Ownership confirmed
-              <select
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.land.ownership_confirmed ? "yes" : "no"}
-                onChange={(event) =>
-                  setValue(
-                    "land.ownership_confirmed",
-                    event.target.value === "yes"
-                  )
-                }
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </label>
-            <label className="flex flex-col gap-2 text-sm">
-              Access rights
-              <select
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.land.access_rights}
-                onChange={(event) =>
-                  setValue("land.access_rights", event.target.value)
-                }
-              >
-                {accessRightsOptions.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-2 text-sm">
-              Contamination risk
-              <select
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.land.contamination_risk}
-                onChange={(event) =>
-                  setValue("land.contamination_risk", event.target.value)
-                }
-              >
-                {contaminationRiskOptions.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-2 text-sm">
-              Flood zone
-              <select
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.land.flood_zone}
-                onChange={(event) =>
-                  setValue("land.flood_zone", event.target.value)
-                }
-              >
-                {floodZoneOptions.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-2 text-sm">
-              Ground conditions
-              <select
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.land.ground_conditions}
-                onChange={(event) =>
-                  setValue("land.ground_conditions", event.target.value)
-                }
-              >
-                {groundConditionsOptions.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </section>
-
-        <section className="space-y-4 rounded-xl border border-border/60 bg-background p-6">
-          <h2 className="text-lg font-semibold">Technical</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <label className="flex flex-col gap-2 text-sm">
-              Cost plan exists
-              <select
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.technical.cost_plan_exists ? "yes" : "no"}
-                onChange={(event) =>
-                  setValue(
-                    "technical.cost_plan_exists",
-                    event.target.value === "yes"
-                  )
-                }
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </label>
-            <label className="flex flex-col gap-2 text-sm">
-              Cost plan professional
-              <select
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={
-                  form.technical.cost_plan_professional === null
-                    ? "unknown"
-                    : form.technical.cost_plan_professional
-                    ? "yes"
-                    : "no"
-                }
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setValue(
-                    "technical.cost_plan_professional",
-                    value === "unknown" ? null : value === "yes"
-                  );
-                }}
-                disabled={!form.technical.cost_plan_exists}
-              >
-                <option value="unknown">Unknown</option>
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </label>
-            <label className="flex flex-col gap-2 text-sm">
-              Drawings set
-              <select
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.technical.drawings_set}
-                onChange={(event) =>
-                  setValue("technical.drawings_set", event.target.value)
-                }
-              >
-                {drawingsSetOptions.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-2 text-sm">
-              Spec document
-              <select
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.technical.spec_document ? "yes" : "no"}
-                onChange={(event) =>
-                  setValue(
-                    "technical.spec_document",
-                    event.target.value === "yes"
-                  )
-                }
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </label>
-          </div>
-        </section>
-
-        <section className="space-y-4 rounded-xl border border-border/60 bg-background p-6">
-          <h2 className="text-lg font-semibold">Financial</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <label className="flex flex-col gap-2 text-sm">
-              Budget total
-              <input
-                type="number"
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.financial.budget_total}
-                onChange={(event) =>
-                  setValue("financial.budget_total", event.target.value)
-                }
-                placeholder="500000"
-                min={0}
-                step="1000"
-              />
-            </label>
-            <label className="flex flex-col gap-2 text-sm">
-              Equity available
-              <input
-                type="number"
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.financial.equity_available}
-                onChange={(event) =>
-                  setValue("financial.equity_available", event.target.value)
-                }
-                placeholder="125000"
-                min={0}
-                step="1000"
-              />
-            </label>
-            <label className="flex flex-col gap-2 text-sm">
-              Income verified
-              <select
-                className="rounded-md border border-border/60 bg-background px-3 py-2"
-                value={form.financial.income_verified ? "yes" : "no"}
-                onChange={(event) =>
-                  setValue(
-                    "financial.income_verified",
-                    event.target.value === "yes"
-                  )
-                }
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </label>
-          </div>
-        </section>
-
-        <div className="flex flex-wrap items-center gap-4">
-          <button
-            type="submit"
-            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
-            disabled={submitting}
-          >
-            {submitting ? "Submitting..." : "Run finance readiness"}
-          </button>
-          {error ? (
-            <span className="text-sm text-destructive">{error}</span>
-          ) : null}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+          {error}
         </div>
-      </form>
+      )}
 
-      <section className="space-y-3 rounded-xl border border-border/60 bg-muted/30 p-6">
-        <h2 className="text-lg font-semibold">Results</h2>
-        {!response ? (
-          <p className="text-sm text-muted-foreground">
-            Submit the form to see the Railway evaluation response.
-          </p>
-        ) : null}
-
-        {response ? (
-          <div className="mt-4 space-y-6">
-            <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center">
-              <div className="mb-4 text-6xl">
-                {response.verdict === "PASS"
-                  ? "✅"
-                  : response.verdict === "FATAL"
-                  ? "❌"
-                  : response.verdict === "GATING"
-                  ? "🚧"
-                  : "⚠️"}
-              </div>
-              <h2 className="mb-2 text-2xl font-bold text-zinc-900">
-                {response.verdict === "PASS"
-                  ? "Finance-Ready!"
-                  : response.verdict === "FATAL"
-                  ? "Not Fundable"
-                  : response.verdict === "GATING"
-                  ? "Critical Items Blocking"
-                  : "Fixable Issues"}
-              </h2>
-              <p className="text-zinc-600">{response.summary}</p>
-              <div className="mt-4">
-                <span className="text-sm font-medium text-zinc-500">
-                  {response.confidence}% Confidence ({response.confidence_level})
-                </span>
-              </div>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Site Section */}
+        <div className="bg-white rounded-lg border p-6">
+          <h2 className="text-xl font-semibold mb-4">Site Details</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Address *</label>
+              <input
+                type="text"
+                required
+                value={formData.site.address}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    site: { ...prev.site, address: e.target.value },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              />
             </div>
-
-            {response.blocking_items?.length > 0 ? (
-              <div className="rounded-xl border border-zinc-200 bg-white p-6">
-                <h3 className="mb-4 font-semibold text-zinc-900">
-                  What You Need to Fix:
-                </h3>
-                <div className="space-y-4">
-                  {response.blocking_items.map((item: any, idx: number) => (
-                    <div
-                      key={idx}
-                      className="border-l-4 border-blue-500 py-2 pl-4"
-                    >
-                      <div className="mb-1 flex items-center justify-between">
-                        <h4 className="font-semibold text-zinc-900">
-                          {item.issue}
-                        </h4>
-                        <span className="text-xs font-semibold uppercase text-zinc-500">
-                          {item.severity}
-                        </span>
-                      </div>
-                      <p className="mb-2 text-sm text-zinc-600">
-                        {item.action_required}
-                      </p>
-                      {item.estimated_time || item.estimated_cost ? (
-                        <div className="flex gap-4 text-xs text-zinc-500">
-                          {item.estimated_time ? (
-                            <span>⏱️ {item.estimated_time}</span>
-                          ) : null}
-                          {item.estimated_cost ? (
-                            <span>💰 {item.estimated_cost}</span>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            <div className="flex flex-wrap gap-4">
-              <button
-                type="button"
-                onClick={() => setResponse(null)}
-                className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700"
-              >
-                Run Another Assessment
-              </button>
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="rounded-lg bg-zinc-200 px-6 py-3 font-semibold text-zinc-900 hover:bg-zinc-300"
-              >
-                Print Report
-              </button>
+            <div>
+              <label className="block text-sm font-medium mb-1">Postcode *</label>
+              <input
+                type="text"
+                required
+                value={formData.site.postcode}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    site: { ...prev.site, postcode: e.target.value },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Local Authority *</label>
+              <input
+                type="text"
+                required
+                value={formData.site.local_authority}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    site: { ...prev.site, local_authority: e.target.value },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              />
             </div>
           </div>
-        ) : null}
-      </section>
+        </div>
+
+        {/* Planning Section */}
+        <div className="bg-white rounded-lg border p-6">
+          <h2 className="text-xl font-semibold mb-4">Planning</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Status *</label>
+              <select
+                value={formData.planning.status}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    planning: { ...prev.planning, status: e.target.value },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                <option value="GRANTED">Granted</option>
+                <option value="PENDING">Pending</option>
+                <option value="NOT_APPLIED">Not Applied</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Reference</label>
+              <input
+                type="text"
+                value={formData.planning.reference}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    planning: { ...prev.planning, reference: e.target.value },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Financial Section */}
+        <div className="bg-white rounded-lg border p-6">
+          <h2 className="text-xl font-semibold mb-4">Financial</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Total Budget *</label>
+              <input
+                type="number"
+                required
+                value={formData.financial.budget_total}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    financial: { ...prev.financial, budget_total: Number(e.target.value) },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Equity Available *</label>
+              <input
+                type="number"
+                required
+                value={formData.financial.equity_available}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    financial: { ...prev.financial, equity_available: Number(e.target.value) },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formData.financial.income_verified}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    financial: { ...prev.financial, income_verified: e.target.checked },
+                  }))
+                }
+              />
+              <label className="text-sm">Income Verified</label>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50"
+        >
+          {loading ? "Evaluating..." : "Get Finance Readiness Assessment"}
+        </button>
+      </form>
     </div>
   );
 }
