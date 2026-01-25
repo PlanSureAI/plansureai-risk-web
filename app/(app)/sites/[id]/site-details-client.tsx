@@ -137,7 +137,7 @@ export function SiteDetailsClient() {
             Back to Projects
           </Link>
 
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
                 {site.site_name || site.address || "Untitled Project"}
@@ -167,7 +167,7 @@ export function SiteDetailsClient() {
             </div>
 
             {/* Primary CTA */}
-            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
               {!hasAssessment ? (
                 <Link
                   href={`/sites/${site.id}/risk`}
@@ -328,6 +328,13 @@ export function SiteDetailsClient() {
                 >
                   <TrendingUp className="w-4 h-4" />
                   Run Assessment
+                </Link>
+                <Link
+                  href={`/sites/${site.id}/finance`}
+                  className="flex items-center gap-2 w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
+                >
+                  <Landmark className="w-4 h-4" />
+                  Finance Readiness
                 </Link>
                 <button
                   type="button"
