@@ -321,6 +321,13 @@ export function RiskClient() {
   const comparableRiskSeverity = primaryRisk
     ? mapRiskLevelToSeverity(primaryRisk.severity)
     : "low";
+  const overallScore = profile.overallRiskScore ?? 0;
+  const verdict =
+    overallScore < 30
+      ? { label: "✅ LIKELY LENDABLE", className: "bg-emerald-50 text-emerald-700 border-emerald-200" }
+      : overallScore < 60
+      ? { label: "⚠️ NEEDS WORK", className: "bg-amber-50 text-amber-700 border-amber-200" }
+      : { label: "❌ HIGH RISK", className: "bg-rose-50 text-rose-700 border-rose-200" };
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
@@ -337,11 +344,19 @@ export function RiskClient() {
         )}
       </div>
 
+      <div className="mt-6">
+        <div
+          className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold ${verdict.className}`}
+        >
+          {verdict.label}
+        </div>
+      </div>
+
       {/* Overall Risk Status */}
       <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-zinc-900">Overall Risk Status</h2>
-          <RiskBadge riskLevel={profile.riskLevel} riskScore={profile.overallRiskScore} />
+          <RiskBadge riskLevel={profile.riskLevel} riskScore={overallScore} />
         </div>
         {profile.summary && <p className="mt-3 text-sm text-zinc-600">{profile.summary}</p>}
       </div>
