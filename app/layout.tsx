@@ -10,9 +10,6 @@ export const metadata = {
   description: "AI-powered planning permission risk analysis with policy citations and comparable data.",
   keywords: "planning permission, risk assessment, UK planning, AI planning",
   authors: [{ name: "PlansurAI" }],
-  icons: {
-    icon: "/brand/plansureai-logo.png",
-  },
   openGraph: {
     title: "PlansurAI - Planning Risk Assessment",
     description: "AI-powered planning permission risk analysis",
