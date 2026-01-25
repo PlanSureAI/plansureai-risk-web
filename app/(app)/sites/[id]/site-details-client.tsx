@@ -12,6 +12,7 @@ import {
   AlertCircle,
   CheckCircle,
   TrendingUp,
+  Landmark,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 
@@ -166,23 +167,32 @@ export function SiteDetailsClient() {
             </div>
 
             {/* Primary CTA */}
-            {!hasAssessment ? (
+            <div className="flex flex-wrap items-center gap-3">
+              {!hasAssessment ? (
+                <Link
+                  href={`/sites/${site.id}/risk`}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  <TrendingUp className="w-5 h-5" />
+                  Run Risk Assessment
+                </Link>
+              ) : (
+                <Link
+                  href={`/sites/${site.id}/risk`}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  <CheckCircle className="w-5 h-5" />
+                  View Risk Report
+                </Link>
+              )}
               <Link
-                href={`/sites/${site.id}/risk`}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                href={`/sites/${site.id}/finance`}
+                className="inline-flex items-center gap-2 px-6 py-3 border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition-colors font-medium"
               >
-                <TrendingUp className="w-5 h-5" />
-                Run Risk Assessment
+                <Landmark className="w-5 h-5" />
+                Finance Readiness →
               </Link>
-            ) : (
-              <Link
-                href={`/sites/${site.id}/risk`}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-              >
-                <CheckCircle className="w-5 h-5" />
-                View Risk Report
-              </Link>
-            )}
+            </div>
           </div>
         </div>
       </div>
