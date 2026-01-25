@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 import { RiskBadge } from "@/app/components/RiskBadge";
 import { ComparableApprovalsMap } from "../ComparableApprovalsMap";
 import { ComparableAnalysisWithGating } from "@/app/components/ComparableAnalysisWithGating";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 type RiskProfile = {
   overallRiskScore: number;
@@ -131,6 +133,9 @@ export function RiskClient() {
   const [riskAnalysis, setRiskAnalysis] = useState<RiskAnalysis | null>(null);
   const [userTier, setUserTier] = useState<"free" | "starter" | "pro" | "enterprise">("free");
   const [isAssessing, setIsAssessing] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   async function fetchData() {
     if (!siteId) {
@@ -329,28 +334,89 @@ export function RiskClient() {
       ? { label: "⚠️ NEEDS WORK", className: "bg-amber-50 text-amber-700 border-amber-200" }
       : { label: "❌ HIGH RISK", className: "bg-rose-50 text-rose-700 border-rose-200" };
 
+  const handleDownloadPdf = async () => {
+    if (!reportRef.current) return;
+    setExportError(null);
+    setIsExporting(true);
+
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position -= pageHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const fileName = `${site.site_name || "planning-risk-report"}-report.pdf`
+        .toLowerCase()
+        .replace(/\\s+/g, "-");
+      pdf.save(fileName);
+    } catch (error) {
+      setExportError("Unable to generate PDF. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <Link href="/sites" className="text-sm text-blue-600 hover:text-blue-800">
-        {"← Back to Sites"}
-      </Link>
-      <div className="mt-4">
-        <h1 className="text-3xl font-semibold text-zinc-900">{site.site_name || "Site"}</h1>
-        <p className="text-sm text-zinc-600">{site.address || "—"}</p>
-        {site.last_assessed_at && (
-          <p className="mt-2 text-xs text-zinc-500">
-            Last assessed: {new Date(site.last_assessed_at).toLocaleDateString()}
-          </p>
-        )}
-      </div>
-
-      <div className="mt-6">
-        <div
-          className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold ${verdict.className}`}
-        >
-          {verdict.label}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link href="/sites" className="text-sm text-blue-600 hover:text-blue-800">
+          {"← Back to Sites"}
+        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          {exportError ? (
+            <span className="text-xs text-rose-600">{exportError}</span>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={isExporting}
+            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+          >
+            {isExporting ? "Preparing PDF..." : "Download PDF Report"}
+          </button>
         </div>
       </div>
+
+      <div ref={reportRef} className="mt-4">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
+              PlanSureAI Planning Risk Report
+            </p>
+            <h1 className="text-3xl font-semibold text-zinc-900">{site.site_name || "Site"}</h1>
+            <p className="text-sm text-zinc-600">{site.address || "—"}</p>
+            {site.last_assessed_at && (
+              <p className="mt-2 text-xs text-zinc-500">
+                Last assessed: {new Date(site.last_assessed_at).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+          <div
+            className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold ${verdict.className}`}
+          >
+            {verdict.label}
+          </div>
+        </div>
 
       {/* Overall Risk Status */}
       <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-6">
@@ -487,6 +553,7 @@ export function RiskClient() {
           />
         </div>
       )}
+      </div>
     </div>
   );
 }
