@@ -245,8 +245,12 @@ export function RiskClient() {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-10">
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 text-sm text-zinc-600">
-          Loading risk assessment...
+        <div className="rounded-lg border border-zinc-200 bg-white p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 w-56 rounded bg-zinc-200" />
+            <div className="h-4 w-80 rounded bg-zinc-100" />
+            <div className="h-32 w-full rounded bg-zinc-100" />
+          </div>
         </div>
       </div>
     );

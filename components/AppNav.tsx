@@ -25,7 +25,7 @@ export function AppNav({ userEmail }: { userEmail?: string }) {
             <span className="text-xl font-bold text-gray-900">PlansurAI</span>
           </a>
 
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname?.startsWith(item.href);
@@ -34,6 +34,7 @@ export function AppNav({ userEmail }: { userEmail?: string }) {
                 <a
                   key={item.href}
                   href={item.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-blue-50 text-blue-600"
