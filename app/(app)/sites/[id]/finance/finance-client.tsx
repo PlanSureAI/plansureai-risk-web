@@ -1,10 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 import Link from "next/link";
 
-export default function FinanceClient({ siteId }: { siteId: string }) {
+const accessRightsOptions = ["FULL", "UNCLEAR", "NONE"] as const;
+const contaminationRiskOptions = ["LOW", "UNKNOWN", "HIGH"] as const;
+const floodZoneOptions = ["ZONE_1", "ZONE_2", "ZONE_3", "UNKNOWN"] as const;
+const groundConditionsOptions = ["GOOD", "UNKNOWN", "POOR"] as const;
+const drawingsSetOptions = ["FULL", "PARTIAL", "NONE"] as const;
+
+export default function FinanceClient({ siteId }: { siteId?: string }) {
+  const params = useParams();
+  const resolvedSiteId =
+    siteId ?? (Array.isArray(params?.id) ? params?.id[0] : params?.id);
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+
   const [formData, setFormData] = useState({
     site: { address: "", postcode: "", local_authority: "" },
     planning: { status: "PENDING", reference: "", refused: false },
@@ -17,8 +29,8 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
     },
     technical: {
       cost_plan_exists: false,
-      cost_plan_professional: false,
-      drawings_set: "NONE",
+      cost_plan_professional: null as boolean | null,
+      drawings_set: "PARTIAL",
       spec_document: false,
     },
     financial: {
@@ -27,18 +39,19 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
       income_verified: false,
     },
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
     async function loadSiteData() {
+      if (!resolvedSiteId) return;
+
       const { data: site } = await supabase
         .from("sites")
         .select("address, postcode, local_planning_authority")
-        .eq("id", siteId)
+        .eq("id", resolvedSiteId)
         .single();
 
       if (site) {
@@ -53,7 +66,7 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
       }
     }
     loadSiteData();
-  }, [siteId]);
+  }, [resolvedSiteId, supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,18 +74,32 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
     setError(null);
     setResponse(null);
 
+    const payload = {
+      ...formData,
+      planning: {
+        ...formData.planning,
+        reference: formData.planning.reference.trim() || null,
+      },
+      technical: {
+        ...formData.technical,
+        cost_plan_professional: formData.technical.cost_plan_exists
+          ? formData.technical.cost_plan_professional
+          : null,
+      },
+    };
+
     try {
       const res = await fetch(
         "https://empowering-cooperation-production.up.railway.app/api/evaluate",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         }
       );
 
       const data = await res.json();
-      
+
       if (!res.ok || data.error) {
         setError(data.error?.message || data.message || "Evaluation failed");
       } else {
@@ -88,22 +115,32 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
   if (response) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <Link href={`/sites/${siteId}`} className="text-blue-600 hover:text-blue-800 text-sm mb-4 inline-block">
+        <Link
+          href={`/sites/${resolvedSiteId ?? ""}`}
+          className="text-blue-600 hover:text-blue-800 text-sm mb-4 inline-block"
+        >
           ← Back to Site
         </Link>
 
         <div className="space-y-6">
-          {/* Verdict Header */}
           <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center">
             <div className="text-6xl mb-4">
-              {response.verdict === "PASS" ? "✅" :
-               response.verdict === "FATAL" ? "❌" :
-               response.verdict === "GATING" ? "🚧" : "⚠️"}
+              {response.verdict === "PASS"
+                ? "✅"
+                : response.verdict === "FATAL"
+                ? "❌"
+                : response.verdict === "GATING"
+                ? "🚧"
+                : "⚠️"}
             </div>
             <h2 className="text-2xl font-bold text-zinc-900 mb-2">
-              {response.verdict === "PASS" ? "Finance-Ready!" :
-               response.verdict === "FATAL" ? "Not Fundable" :
-               response.verdict === "GATING" ? "Critical Items Blocking" : "Fixable Issues"}
+              {response.verdict === "PASS"
+                ? "Finance-Ready!"
+                : response.verdict === "FATAL"
+                ? "Not Fundable"
+                : response.verdict === "GATING"
+                ? "Critical Items Blocking"
+                : "Fixable Issues"}
             </h2>
             <p className="text-zinc-600">{response.summary}</p>
             <div className="mt-4">
@@ -113,10 +150,11 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
             </div>
           </div>
 
-          {/* Blocking Items */}
           {response.blocking_items?.length > 0 && (
             <div className="rounded-xl border border-zinc-200 bg-white p-6">
-              <h3 className="font-semibold text-zinc-900 mb-4">What You Need to Fix:</h3>
+              <h3 className="font-semibold text-zinc-900 mb-4">
+                What You Need to Fix:
+              </h3>
               <div className="space-y-4">
                 {response.blocking_items.map((item: any, idx: number) => (
                   <div key={idx} className="border-l-4 border-blue-500 pl-4 py-2">
@@ -126,11 +164,17 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
                         {item.severity}
                       </span>
                     </div>
-                    <p className="text-sm text-zinc-600 mb-2">{item.action_required}</p>
+                    <p className="text-sm text-zinc-600 mb-2">
+                      {item.action_required}
+                    </p>
                     {(item.estimated_time || item.estimated_cost) && (
                       <div className="flex gap-4 text-xs text-zinc-500">
-                        {item.estimated_time && <span>⏱️ {item.estimated_time}</span>}
-                        {item.estimated_cost && <span>💰 {item.estimated_cost}</span>}
+                        {item.estimated_time && (
+                          <span>⏱️ {item.estimated_time}</span>
+                        )}
+                        {item.estimated_cost && (
+                          <span>💰 {item.estimated_cost}</span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -139,7 +183,6 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex gap-4">
             <button
               onClick={() => setResponse(null)}
@@ -161,7 +204,10 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <Link href={`/sites/${siteId}`} className="text-blue-600 hover:text-blue-800 text-sm mb-4 inline-block">
+      <Link
+        href={`/sites/${resolvedSiteId ?? ""}`}
+        className="text-blue-600 hover:text-blue-800 text-sm mb-4 inline-block"
+      >
         ← Back to Site
       </Link>
 
@@ -174,7 +220,6 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Site Section */}
         <div className="bg-white rounded-lg border p-6">
           <h2 className="text-xl font-semibold mb-4">Site Details</h2>
           <div className="space-y-4">
@@ -226,7 +271,6 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
           </div>
         </div>
 
-        {/* Planning Section */}
         <div className="bg-white rounded-lg border p-6">
           <h2 className="text-xl font-semibold mb-4">Planning</h2>
           <div className="space-y-4">
@@ -261,10 +305,235 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
                 className="w-full px-3 py-2 border rounded-lg"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Refused</label>
+              <select
+                value={formData.planning.refused ? "yes" : "no"}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    planning: {
+                      ...prev.planning,
+                      refused: e.target.value === "yes",
+                    },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Financial Section */}
+        <div className="bg-white rounded-lg border p-6">
+          <h2 className="text-xl font-semibold mb-4">Land</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Ownership confirmed
+              </label>
+              <select
+                value={formData.land.ownership_confirmed ? "yes" : "no"}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    land: {
+                      ...prev.land,
+                      ownership_confirmed: e.target.value === "yes",
+                    },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Access rights</label>
+              <select
+                value={formData.land.access_rights}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    land: { ...prev.land, access_rights: e.target.value },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                {accessRightsOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Contamination risk
+              </label>
+              <select
+                value={formData.land.contamination_risk}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    land: {
+                      ...prev.land,
+                      contamination_risk: e.target.value,
+                    },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                {contaminationRiskOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Flood zone</label>
+              <select
+                value={formData.land.flood_zone}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    land: { ...prev.land, flood_zone: e.target.value },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                {floodZoneOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Ground conditions
+              </label>
+              <select
+                value={formData.land.ground_conditions}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    land: { ...prev.land, ground_conditions: e.target.value },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                {groundConditionsOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg border p-6">
+          <h2 className="text-xl font-semibold mb-4">Technical</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Cost plan exists
+              </label>
+              <select
+                value={formData.technical.cost_plan_exists ? "yes" : "no"}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    technical: {
+                      ...prev.technical,
+                      cost_plan_exists: e.target.value === "yes",
+                    },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Cost plan professional
+              </label>
+              <select
+                value={
+                  formData.technical.cost_plan_professional === null
+                    ? "unknown"
+                    : formData.technical.cost_plan_professional
+                    ? "yes"
+                    : "no"
+                }
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    technical: {
+                      ...prev.technical,
+                      cost_plan_professional:
+                        e.target.value === "unknown"
+                          ? null
+                          : e.target.value === "yes",
+                    },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+                disabled={!formData.technical.cost_plan_exists}
+              >
+                <option value="unknown">Unknown</option>
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Drawings set</label>
+              <select
+                value={formData.technical.drawings_set}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    technical: { ...prev.technical, drawings_set: e.target.value },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                {drawingsSetOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Spec document</label>
+              <select
+                value={formData.technical.spec_document ? "yes" : "no"}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    technical: {
+                      ...prev.technical,
+                      spec_document: e.target.value === "yes",
+                    },
+                  }))
+                }
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-white rounded-lg border p-6">
           <h2 className="text-xl font-semibold mb-4">Financial</h2>
           <div className="space-y-4">
@@ -277,14 +546,19 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    financial: { ...prev.financial, budget_total: Number(e.target.value) },
+                    financial: {
+                      ...prev.financial,
+                      budget_total: Number(e.target.value),
+                    },
                   }))
                 }
                 className="w-full px-3 py-2 border rounded-lg"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Equity Available *</label>
+              <label className="block text-sm font-medium mb-1">
+                Equity Available *
+              </label>
               <input
                 type="number"
                 required
@@ -292,7 +566,10 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    financial: { ...prev.financial, equity_available: Number(e.target.value) },
+                    financial: {
+                      ...prev.financial,
+                      equity_available: Number(e.target.value),
+                    },
                   }))
                 }
                 className="w-full px-3 py-2 border rounded-lg"
@@ -305,7 +582,10 @@ export default function FinanceClient({ siteId }: { siteId: string }) {
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    financial: { ...prev.financial, income_verified: e.target.checked },
+                    financial: {
+                      ...prev.financial,
+                      income_verified: e.target.checked,
+                    },
                   }))
                 }
               />
