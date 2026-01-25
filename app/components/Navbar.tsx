@@ -40,6 +40,12 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
           >
             Projects
           </Link>
+          <Link
+            href="/finance"
+            className="text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-200"
+          >
+            Finance Readiness
+          </Link>
         </div>
 
         {/* Right: CTA + User & Settings */}
