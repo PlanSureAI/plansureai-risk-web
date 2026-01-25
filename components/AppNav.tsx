@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Building2, Settings, LogOut, User, Plus, Landmark } from "lucide-react";
+import Image from "next/image";
 
 export function AppNav({ userEmail }: { userEmail?: string }) {
   const pathname = usePathname();
@@ -19,10 +20,17 @@ export function AppNav({ userEmail }: { userEmail?: string }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <a href="/sites" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">P</span>
+            <div className="w-8 h-8 rounded-lg overflow-hidden bg-white">
+              <Image
+                src="/brand/plansureai-logo.png"
+                alt="PlanSureAI logo"
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+                priority
+              />
             </div>
-            <span className="text-xl font-bold text-gray-900">PlansurAI</span>
+            <span className="text-xl font-bold text-gray-900">PlanSureAI</span>
           </a>
 
           <div className="flex flex-wrap items-center gap-1">
