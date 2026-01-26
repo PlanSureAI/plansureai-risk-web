@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 
 type SiteData = {
   id: string;
@@ -42,13 +43,17 @@ type FinanceAssessment = {
 };
 
 type AssessmentClientProps = {
-  site: SiteData;
-  finance: FinanceAssessment | null;
+  siteId: string;
 };
 
-export default function AssessmentClient({ site, finance }: AssessmentClientProps) {
+export default function AssessmentClient({ siteId }: AssessmentClientProps) {
   const router = useRouter();
   const reportRef = useRef<HTMLDivElement>(null);
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const [site, setSite] = useState<SiteData | null>(null);
+  const [finance, setFinance] = useState<FinanceAssessment | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -60,6 +65,77 @@ export default function AssessmentClient({ site, finance }: AssessmentClientProp
     equity_available: "",
     income_verified: false,
   });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadData() {
+      if (!siteId) return;
+      setLoadError(null);
+      setLoading(true);
+
+      const { data: siteData, error: siteError } = await supabase
+        .from("sites")
+        .select(
+          "id, site_name, address, postcode, local_planning_authority, risk_profile, ai_outcome, ai_risk_summary, key_planning_considerations, objection_likelihood, planning_confidence_score"
+        )
+        .eq("id", siteId)
+        .maybeSingle();
+
+      if (!isMounted) return;
+
+      if (siteError || !siteData) {
+        setLoadError(siteError?.message || "Site not found.");
+        setLoading(false);
+        return;
+      }
+
+      const { data: financeData } = await supabase
+        .from("finance_assessments")
+        .select("verdict, confidence, confidence_level, summary, blocking_items, next_steps, updated_at")
+        .eq("site_id", siteId)
+        .maybeSingle();
+
+      if (!isMounted) return;
+
+      setSite(siteData as SiteData);
+      setFinance((financeData as FinanceAssessment) ?? null);
+      setLoading(false);
+    }
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [siteId, supabase]);
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 w-64 rounded bg-zinc-200" />
+            <div className="h-4 w-96 rounded bg-zinc-100" />
+            <div className="h-32 w-full rounded bg-zinc-100" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!site || loadError) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          {loadError || "Unable to load assessment."}
+        </div>
+        <Link href="/sites" className="mt-4 inline-flex text-sm text-blue-600 hover:text-blue-800">
+          ← Back to Sites
+        </Link>
+      </div>
+    );
+  }
 
   const planningScore = site.risk_profile?.overallRiskScore ?? 0;
   const planningVerdict =
@@ -123,6 +199,12 @@ export default function AssessmentClient({ site, finance }: AssessmentClientProp
       }
 
       router.refresh();
+      const { data: financeData } = await supabase
+        .from("finance_assessments")
+        .select("verdict, confidence, confidence_level, summary, blocking_items, next_steps, updated_at")
+        .eq("site_id", site.id)
+        .maybeSingle();
+      setFinance((financeData as FinanceAssessment) ?? null);
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Failed to run finance assessment");
     } finally {
