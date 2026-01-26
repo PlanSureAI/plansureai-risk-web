@@ -3,8 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { createSupabaseBrowserClient } from "@/app/lib/supabaseBrowser";
 
 type SiteData = {
@@ -70,7 +68,11 @@ export default function AssessmentClient({ siteId }: AssessmentClientProps) {
     let isMounted = true;
 
     async function loadData() {
-      if (!siteId) return;
+      if (!siteId) {
+        setLoadError("Missing site id.");
+        setLoading(false);
+        return;
+      }
       setLoadError(null);
       setLoading(true);
 
@@ -218,6 +220,10 @@ export default function AssessmentClient({ siteId }: AssessmentClientProps) {
     setIsExporting(true);
 
     try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
       const canvas = await html2canvas(reportRef.current, {
         scale: 2,
         useCORS: true,
