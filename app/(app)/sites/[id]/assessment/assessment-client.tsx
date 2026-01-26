@@ -63,6 +63,8 @@ export default function AssessmentClient({ siteId }: AssessmentClientProps) {
     equity_available: "",
     income_verified: false,
   });
+  const hasPlanning = Boolean(site?.risk_profile || site?.ai_risk_summary);
+  const hasFinance = Boolean(finance);
 
   useEffect(() => {
     let isMounted = true;
@@ -276,6 +278,30 @@ export default function AssessmentClient({ siteId }: AssessmentClientProps) {
           >
             {isExporting ? "Preparing PDF..." : "Download Unified PDF"}
           </button>
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+        <h3 className="mb-3 font-semibold text-zinc-900">Assessment Progress:</h3>
+        <div className="space-y-2 text-sm text-zinc-700">
+          <div className="flex items-center gap-2">
+            <span>{hasPlanning ? "✅" : "⏸️"}</span>
+            <span>Planning Risk Assessment</span>
+            {!hasPlanning ? (
+              <Link href={`/sites/${site.id}/risk`} className="ml-auto">
+                <span className="rounded bg-blue-600 px-3 py-1 text-xs font-semibold text-white">
+                  Run Assessment
+                </span>
+              </Link>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-2">
+            <span>{hasFinance ? "✅" : "⏸️"}</span>
+            <span>Finance Readiness Check</span>
+            {!hasFinance ? (
+              <span className="ml-auto text-xs text-zinc-600">Complete form below</span>
+            ) : null}
+          </div>
         </div>
       </div>
 
